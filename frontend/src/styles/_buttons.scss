@@ -1,0 +1,80 @@
+@use 'sass:color';
+
+// Utility Mixin for shared button logic
+@mixin custom-btn-base {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font: var(--mat-sys-label-large);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    border: none;
+    gap: 8px;
+    text-decoration: none;
+    outline: none;
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+}
+
+// 1. Fulfilled (Solid/Default) Classes
+.btn-primary {
+    @include custom-btn-base;
+    background-color: var(--mat-sys-primary);
+    color: var(--mat-sys-on-primary);
+
+    &:hover:not(:disabled) {
+        background-color: color-mix(in srgb, var(--mat-sys-primary) 80%, black);
+    }
+}
+
+.btn-secondary {
+    @include custom-btn-base;
+    background-color: var(--mat-sys-secondary);
+    color: var(--mat-sys-on-secondary);
+
+    &:hover:not(:disabled) {
+        background-color: color-mix(in srgb, var(--mat-sys-secondary) 80%, black);
+    }
+}
+
+.btn-tertiary {
+    @include custom-btn-base;
+    background-color: var(--mat-sys-tertiary);
+    color: var(--mat-sys-on-tertiary);
+
+    &:hover:not(:disabled) {
+        background-color: color-mix(in srgb, var(--mat-sys-tertiary) 80%, black);
+    }
+}
+
+// 2. Outline Classes
+.btn-outline {
+    @include custom-btn-base;
+    background: transparent;
+    border: 1px solid var(--mat-sys-outline);
+    color: var(--mat-sys-primary);
+
+    &:hover:not(:disabled) {
+        background-color: color-mix(in srgb, var(--mat-sys-primary) 8%, transparent);
+        border-color: var(--mat-sys-primary);
+    }
+}
+
+// 3. Text (Ghost) Classes
+.btn-text {
+    @include custom-btn-base;
+    background: transparent;
+    color: var(--mat-sys-primary);
+    padding-left: 8px;
+    padding-right: 8px;
+
+    &:hover:not(:disabled) {
+        background-color: color-mix(in srgb, var(--mat-sys-primary) 8%, transparent);
+    }
+}
