@@ -9,6 +9,8 @@ const names = [
     'Caesar Salad',
 ];
 
+export const DUMMY_CATEGORIES = ['Fast Food', 'Italian', 'Healthy'];
+
 export const DUMMY_ITEMS: MenuItem[] = Array.from({ length: 12 }, (_, i) => ({
     _id: (i + 1).toString(),
     name: names[i % names.length],

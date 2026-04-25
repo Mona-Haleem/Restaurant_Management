@@ -1,2 +1,3 @@
-<app-menu-grid [items]="items" />
+<app-category-filter [categories]="categories" [activeCategory]="activeCategory" (categorySelected)="onCategorySelected($event)" />
+<app-menu-grid [items]="filteredItems" />
 <router-outlet />

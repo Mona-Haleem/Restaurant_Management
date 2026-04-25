@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 
 @Component({
   selector: 'app-category-filter',
@@ -6,4 +6,14 @@ import { Component } from '@angular/core';
   templateUrl: './category-filter.html',
   styleUrl: './category-filter.scss',
 })
-export class CategoryFilter {}
+export class CategoryFilter {
+  @Input({ required: true }) categories!: string[];
+  @Input({ required: true }) activeCategory: string = 'all';
+  @Output() categorySelected = new EventEmitter<string>();
+
+  onCategoryClick(category: string) {
+    this.activeCategory = category;
+    this.categorySelected.emit(category);
+  }
+
+}

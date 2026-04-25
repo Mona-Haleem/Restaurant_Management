@@ -1,6 +1,5 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { MenuCard } from '../menu-card/menu-card';
-import { DUMMY_ITEMS } from '../../../../core/DummyData/item';
 import { MenuItem } from '../../../../core/models';
 
 @Component({
@@ -15,6 +14,5 @@ export class MenuGrid {
   @Output() addToCart = new EventEmitter<MenuItem>();
   onAddToCart(item: MenuItem) {
     this.addToCart.emit(item);
-    console.log(item);
   }
 }

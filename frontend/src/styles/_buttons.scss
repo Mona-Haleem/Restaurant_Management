@@ -22,59 +22,58 @@
     }
 }
 
-// 1. Fulfilled (Solid/Default) Classes
-.btn-primary {
+$variants: primary, secondary, tertiary;
+
+@mixin btn-filled-variant($variant) {
     @include custom-btn-base;
-    background-color: var(--mat-sys-primary);
-    color: var(--mat-sys-on-primary);
+    background-color: var(--mat-sys-#{$variant});
+    color: var(--mat-sys-on-#{$variant});
 
     &:hover:not(:disabled) {
-        background-color: color-mix(in srgb, var(--mat-sys-primary) 80%, black);
+        background-color: color-mix(in srgb,
+            var(--mat-sys-#{$variant}) 80%,
+            black);
     }
 }
 
-.btn-secondary {
-    @include custom-btn-base;
-    background-color: var(--mat-sys-secondary);
-    color: var(--mat-sys-on-secondary);
-
-    &:hover:not(:disabled) {
-        background-color: color-mix(in srgb, var(--mat-sys-secondary) 80%, black);
-    }
-}
-
-.btn-tertiary {
-    @include custom-btn-base;
-    background-color: var(--mat-sys-tertiary);
-    color: var(--mat-sys-on-tertiary);
-
-    &:hover:not(:disabled) {
-        background-color: color-mix(in srgb, var(--mat-sys-tertiary) 80%, black);
-    }
-}
-
-// 2. Outline Classes
-.btn-outline {
+@mixin btn-outline-variant($color-var) {
     @include custom-btn-base;
     background: transparent;
     border: 1px solid var(--mat-sys-outline);
-    color: var(--mat-sys-primary);
+    color: var(#{$color-var});
 
     &:hover:not(:disabled) {
-        background-color: color-mix(in srgb, var(--mat-sys-primary) 8%, transparent);
-        border-color: var(--mat-sys-primary);
+        background-color: color-mix(in srgb, var(#{$color-var}) 8%, transparent);
+        border-color: var(#{$color-var});
     }
 }
 
-// 3. Text (Ghost) Classes
-.btn-text {
+@mixin btn-text-variant($color-var) {
     @include custom-btn-base;
     background: transparent;
-    color: var(--mat-sys-primary);
+    color: var(#{$color-var});
     padding-left: 8px;
     padding-right: 8px;
 
     &:hover:not(:disabled) {
-        background-color: color-mix(in srgb, var(--mat-sys-primary) 8%, transparent);
+        background-color: color-mix(in srgb, var(#{$color-var}) 8%, transparent);
+    }
+}
+
+@each $variant in $variants {
+
+    // Filled buttons
+    .btn-#{$variant} {
+        @include btn-filled-variant($variant);
+    }
+
+    // Outline buttons
+    .btn-outline-#{$variant} {
+        @include btn-outline-variant(--mat-sys-#{$variant});
+    }
+
+    // Text buttons
+    .btn-text-#{$variant} {
+        @include btn-text-variant(--mat-sys-#{$variant});
     }
 }
