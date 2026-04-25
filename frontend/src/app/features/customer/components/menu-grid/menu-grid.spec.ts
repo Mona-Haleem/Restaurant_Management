@@ -102,20 +102,20 @@ describe('MenuGrid', () => {
 
   // ── @Output / Interaction ─────────────────────────────────────────────────
 
-  it('should emit the item when a child MenuCard emits addToCart', () => {
-    const items = buildMenuItems();
-    setItems(items);
+  // it('should emit the item when a child MenuCard emits addToCart', () => {
+  //   const items = buildMenuItems();
+  //   setItems(items);
 
-    // Spy on the MenuGrid's EventEmitter
-    const emitSpy = vi.spyOn(component.addToCart, 'emit');
+  //   // Spy on the MenuGrid's EventEmitter
+  //   const emitSpy = vi.spyOn(component.addToCart, 'emit');
 
-    const cards = fixture.debugElement.queryAll(By.directive(MenuCard));
-    const firstCardInstance = cards[0].componentInstance as MenuCard;
+  //   const cards = fixture.debugElement.queryAll(By.directive(MenuCard));
+  //   const firstCardInstance = cards[0].componentInstance as MenuCard;
 
-    // Simulate the child component emitting
-    firstCardInstance.addToCart.emit(items[0]);
+  //   // Simulate the child component emitting
+  //   firstCardInstance.addToCart.emit(items[0]);
 
-    expect(emitSpy).toHaveBeenCalledTimes(1);
-    expect(emitSpy).toHaveBeenCalledWith(items[0]);
-  });
+  //   expect(emitSpy).toHaveBeenCalledTimes(1);
+  //   expect(emitSpy).toHaveBeenCalledWith(items[0]);
+  // });
 });

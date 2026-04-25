@@ -3,10 +3,11 @@ import { RouterOutlet } from '@angular/router';
 import { MenuGrid } from './features/customer/components/menu-grid/menu-grid';
 import { DUMMY_ITEMS, DUMMY_CATEGORIES } from './core/DummyData/item';
 import { CategoryFilter } from './features/customer/components/category-filter/category-filter';
+import { CartSidebar } from './features/customer/components/cart-sidebar/cart-sidebar';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, MenuGrid, CategoryFilter],
+  imports: [RouterOutlet, MenuGrid, CategoryFilter, CartSidebar],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })

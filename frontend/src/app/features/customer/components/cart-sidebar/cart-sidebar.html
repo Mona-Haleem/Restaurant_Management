@@ -1,0 +1,74 @@
+<aside class="cart-sidebar">
+  <header>
+      <h5>ORDER SUMMARY</h5>
+      <h5>QTY</h5>  
+ </header>
+   @if (cartItems$ | async; as items) {
+    @if (items.length === 0) {
+      <p class="empty-cart" data-testid="empty-cart-msg">Your cart is empty</p>
+    } @else {
+      <div class="cart-items">
+        @for (item of items; track item._id) {
+          <div class="cart-item" data-testid="cart-item-row">
+            <div class="item-details">
+                <img src="{{ item.imageUrl }}" alt="{{ item.name }}">
+                <div class="item-info">
+                    <span class="item-name">{{ item.name }}</span>
+                    <span class="item-price">{{ item.price  | currency : "EGP " }}</span>
+                </div>
+            </div>
+            <div class="item-quantity">
+              <button class="btn-outline-primary btn-sm" (click)="removeFromCart(item._id)" data-testid="remove-item-btn">
+                -
+              </button>
+                  <span class="item-quantity">{{ item.quantity }}x</span>
+              <button class="btn-outline-primary btn-sm" (click)="addToCart(item)" data-testid="add-item-btn">
+                +
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+
+      <div class="cart-summary">
+        <div class="summary-details">
+
+            <div class="summary-row">
+                <span>Total Items:</span>
+                <span>{{ count | async }}</span>
+            </div>
+            <div class="summary-row">
+                <span>Subtotal:</span>
+                <span data-testid="cart-total">{{ total | async | currency : "EGP " }}</span>
+            </div>
+            @if(serviceFee > 0){
+                <div class="summary-row">
+                    <span>Service Fee:</span>
+                    <span data-testid="cart-service-fee">{{ serviceFee | currency : "EGP " }}</span>
+                </div>
+            }
+            @if(tax > 0){
+                <div class="summary-row">
+                    <span>Tax:</span>
+                    <span data-testid="cart-tax">{{ tax | currency : "EGP " }}</span>
+                </div>
+            }
+            @if(discount > 0){
+                <div class="summary-row">
+                    <span>Discount:</span>
+                    <span data-testid="cart-discount" class="discount">- {{ discount | currency : "EGP " }}</span>
+                </div>
+            }
+        </div>
+        <div class="summary-total">
+            <span>Total:</span>
+            <span data-testid="cart-total-payment">{{ totalpayment | async | currency : "EGP" }}</span>
+        </div>
+      </div>
+
+      <button class="btn-secondary" (click)="clearCart()" data-testid="clear-cart-btn">
+        Clear Cart
+      </button>
+    }
+  } 
+</aside>

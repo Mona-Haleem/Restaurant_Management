@@ -11,8 +11,4 @@ import { MenuItem } from '../../../../core/models';
 export class MenuGrid {
   // items = DUMMY_ITEMS;
   @Input() items: MenuItem[] = [];
-  @Output() addToCart = new EventEmitter<MenuItem>();
-  onAddToCart(item: MenuItem) {
-    this.addToCart.emit(item);
-  }
 }

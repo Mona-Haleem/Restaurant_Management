@@ -108,28 +108,53 @@ describe('MenuCard', () => {
 
   // ── @Output / Interaction ─────────────────────────────────────────────────
 
-  it('should emit the menu item when the Add to Cart button is clicked', () => {
+  // it('should emit the menu item when the Add to Cart button is clicked', () => {
+  //   const item = buildMenuItem({ name: 'Caesar Salad', isAvailable: true });
+  //   setItem(item);
+
+  //   // Spy on the EventEmitter
+  //   const emitSpy = vi.spyOn(component.addToCart, 'emit');
+
+  //   const btn = fixture.debugElement.query(By.css('[data-testid="add-to-cart-btn"]'));
+  //   btn.nativeElement.click();
+
+  //   expect(emitSpy).toHaveBeenCalledTimes(1);
+  //   expect(emitSpy).toHaveBeenCalledWith(item);
+  // });
+
+  // it('should NOT emit when the Add to Cart button is clicked on an unavailable item', () => {
+  //   const item = buildMenuItem({ isAvailable: false });
+  //   setItem(item);
+
+  //   const emitSpy = vi.spyOn(component.addToCart, 'emit');
+  //   const btn = fixture.debugElement.query(By.css('[data-testid="add-to-cart-btn"]'));
+  //   btn.nativeElement.click(); // button is disabled, click should be ignored
+
+  //   expect(emitSpy).not.toHaveBeenCalled();
+  // });
+
+  it('should call cartService.addToCart when the Add to Cart button is clicked', () => {
     const item = buildMenuItem({ name: 'Caesar Salad', isAvailable: true });
     setItem(item);
 
-    // Spy on the EventEmitter
-    const emitSpy = vi.spyOn(component.addToCart, 'emit');
+    // Spy on the service method
+    const addToCartSpy = vi.spyOn(component.cartService, 'addToCart');
 
     const btn = fixture.debugElement.query(By.css('[data-testid="add-to-cart-btn"]'));
     btn.nativeElement.click();
 
-    expect(emitSpy).toHaveBeenCalledTimes(1);
-    expect(emitSpy).toHaveBeenCalledWith(item);
+    expect(addToCartSpy).toHaveBeenCalledTimes(1);
+    expect(addToCartSpy).toHaveBeenCalledWith(item);
   });
 
-  it('should NOT emit when the Add to Cart button is clicked on an unavailable item', () => {
+  it('should NOT call cartService.addToCart when the Add to Cart button is clicked on an unavailable item', () => {
     const item = buildMenuItem({ isAvailable: false });
     setItem(item);
 
-    const emitSpy = vi.spyOn(component.addToCart, 'emit');
+    const addToCartSpy = vi.spyOn(component.cartService, 'addToCart');
     const btn = fixture.debugElement.query(By.css('[data-testid="add-to-cart-btn"]'));
     btn.nativeElement.click(); // button is disabled, click should be ignored
 
-    expect(emitSpy).not.toHaveBeenCalled();
+    expect(addToCartSpy).not.toHaveBeenCalled();
   });
 });
