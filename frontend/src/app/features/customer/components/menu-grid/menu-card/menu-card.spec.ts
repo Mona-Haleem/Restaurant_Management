@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { MenuCard } from './menu-card';
-import { MenuItem } from '../../../../core/models';
+import { MenuItem } from '../../../../../core/models';
 
 // ---------------------------------------------------------------------------
 // Helpers

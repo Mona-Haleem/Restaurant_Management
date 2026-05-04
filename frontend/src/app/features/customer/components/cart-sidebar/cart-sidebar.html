@@ -1,6 +1,10 @@
 <aside class="cart-sidebar">
   <header>
-      <h5>ORDER SUMMARY</h5>
+      <h5>
+              <mat-icon>shopping_bag</mat-icon>
+
+        ORDER SUMMARY
+      </h5>
       <h5>QTY</h5>  
  </header>
    @if (cartItems$ | async; as items) {
@@ -9,24 +13,7 @@
     } @else {
       <div class="cart-items">
         @for (item of items; track item._id) {
-          <div class="cart-item" data-testid="cart-item-row">
-            <div class="item-details">
-                <img src="{{ item.imageUrl }}" alt="{{ item.name }}">
-                <div class="item-info">
-                    <span class="item-name">{{ item.name }}</span>
-                    <span class="item-price">{{ item.price  | currency : "EGP " }}</span>
-                </div>
-            </div>
-            <div class="item-quantity">
-              <button class="btn-outline-primary btn-sm" (click)="removeFromCart(item._id)" data-testid="remove-item-btn">
-                -
-              </button>
-                  <span class="item-quantity">{{ item.quantity }}x</span>
-              <button class="btn-outline-primary btn-sm" (click)="addToCart(item)" data-testid="add-item-btn">
-                +
-              </button>
-            </div>
-          </div>
+          <app-cart-item [item]="item" />
         }
       </div>
 
@@ -66,9 +53,14 @@
         </div>
       </div>
 
-      <button class="btn-secondary" (click)="clearCart()" data-testid="clear-cart-btn">
-        Clear Cart
-      </button>
+      <div class="actions">
+          <button class="btn-secondary" (click)="clearCart()" data-testid="clear-cart-btn">
+            Clear Cart
+          </button>
+          <button class="btn-primary checkout" >
+            Checkout
+          </button>
+      </div>
     }
   } 
 </aside>

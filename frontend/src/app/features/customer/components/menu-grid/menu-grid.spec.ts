@@ -1,8 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { vi } from 'vitest';
 import { MenuGrid } from './menu-grid';
-import { MenuCard } from '../menu-card/menu-card';
+import { MenuCard } from './menu-card/menu-card';
 import { MenuItem } from '../../../../core/models';
+import { MenuService } from '../../../../core/services/menu/menu.service';
+import { of } from 'rxjs';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -47,31 +50,37 @@ function buildMenuItems(): MenuItem[] {
 describe('MenuGrid', () => {
   let fixture: ComponentFixture<MenuGrid>;
   let component: MenuGrid;
+  let menuServiceMock: Partial<MenuService>;
 
-  function setItems(items: MenuItem[]) {
-    component.items = items;
+  function createComponent(items: MenuItem[], activeCategory: string = '') {
+    menuServiceMock = {
+      getItems: vi.fn().mockReturnValue(of(items)),
+      get selectedCategory() { return activeCategory; },
+    };
+
+    TestBed.overrideProvider(MenuService, { useValue: menuServiceMock });
+
+    fixture = TestBed.createComponent(MenuGrid);
+    component = fixture.componentInstance;
     fixture.detectChanges();
   }
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [MenuGrid, MenuCard],
+      providers: [{ provide: MenuService, useValue: {} }],
     }).compileComponents();
-
-    fixture = TestBed.createComponent(MenuGrid);
-    component = fixture.componentInstance;
   });
 
   // ── Rendering ────────────────────────────────────────────────────────────
 
   it('should create the component', () => {
-    setItems([]);
+    createComponent([]);
     expect(component).toBeTruthy();
   });
 
-  it('should render an app-menu-card for each item in the @Input array', () => {
-    const items = buildMenuItems();
-    setItems(items);
+  it('should render an app-menu-card for each item returned by the service', () => {
+    createComponent(buildMenuItems());
 
     const cards = fixture.debugElement.queryAll(By.css('app-menu-card'));
     expect(cards.length).toBe(3);
@@ -79,43 +88,32 @@ describe('MenuGrid', () => {
 
   it('should pass the correct item to each MenuCard', () => {
     const items = buildMenuItems();
-    setItems(items);
+    createComponent(items);
 
     const cards = fixture.debugElement.queryAll(By.directive(MenuCard));
     expect(cards.length).toBe(3);
 
-    // Verify first card gets the first item
     const firstCardInstance = cards[0].componentInstance as MenuCard;
     expect(firstCardInstance.item).toEqual(items[0]);
 
-    // Verify second card gets the second item
     const secondCardInstance = cards[1].componentInstance as MenuCard;
     expect(secondCardInstance.item).toEqual(items[1]);
   });
 
-  it('should display a "No items found" message if array is empty', () => {
-    setItems([]);
-    const emptyMessage = fixture.debugElement.query(By.css('[data-testid="empty-grid-msg"]'));
+  it('should display a "No items found" message when the service returns an empty array', () => {
+    createComponent([]);
+
+    const emptyMessage = fixture.debugElement.query(
+      By.css('[data-testid="empty-grid-msg"]')
+    );
     expect(emptyMessage).toBeTruthy();
     expect(emptyMessage.nativeElement.textContent).toContain('No items found');
   });
 
-  // ── @Output / Interaction ─────────────────────────────────────────────────
+  // ── Service integration ───────────────────────────────────────────────────
 
-  // it('should emit the item when a child MenuCard emits addToCart', () => {
-  //   const items = buildMenuItems();
-  //   setItems(items);
-
-  //   // Spy on the MenuGrid's EventEmitter
-  //   const emitSpy = vi.spyOn(component.addToCart, 'emit');
-
-  //   const cards = fixture.debugElement.queryAll(By.directive(MenuCard));
-  //   const firstCardInstance = cards[0].componentInstance as MenuCard;
-
-  //   // Simulate the child component emitting
-  //   firstCardInstance.addToCart.emit(items[0]);
-
-  //   expect(emitSpy).toHaveBeenCalledTimes(1);
-  //   expect(emitSpy).toHaveBeenCalledWith(items[0]);
-  // });
+  it('should call getItems with the current selectedCategory', () => {
+    createComponent(buildMenuItems(), 'Main');
+    expect(menuServiceMock.getItems).toHaveBeenCalledWith('Main');
+  });
 });

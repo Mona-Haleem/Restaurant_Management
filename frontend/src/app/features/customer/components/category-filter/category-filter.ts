@@ -1,19 +1,22 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { MenuService } from '../../../../core/services/menu/menu.service';
+import { AsyncPipe } from '@angular/common';
 
 @Component({
   selector: 'app-category-filter',
-  imports: [],
+  imports: [AsyncPipe],
   templateUrl: './category-filter.html',
   styleUrl: './category-filter.scss',
 })
 export class CategoryFilter {
-  @Input({ required: true }) categories!: string[];
-  @Input({ required: true }) activeCategory: string = 'all';
-  @Output() categorySelected = new EventEmitter<string>();
+  private itemsService = inject(MenuService)
+  categories = this.itemsService.getCategories();
+  get activeCategory() {
+    return this.itemsService.selectedCategory;
+  };
 
   onCategoryClick(category: string) {
-    this.activeCategory = category;
-    this.categorySelected.emit(category);
+    this.itemsService.setActiveFilter(category);
   }
 
 }

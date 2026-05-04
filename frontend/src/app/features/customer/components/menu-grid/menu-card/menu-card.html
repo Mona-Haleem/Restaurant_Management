@@ -22,7 +22,7 @@
         <p class="item-price" data-testid="item-price">{{item.price | currency}}</p>
     </div>
     <p class="item-description" data-testid="item-description">{{item.description}}</p>
-    <button class="btn-tertiary" [disabled]="!item.isAvailable" data-testid="add-to-cart-btn" (click)="addToCart()">
+    <button class="btn-primary" [disabled]="!item.isAvailable" data-testid="add-to-cart-btn" (click)="addToCart()">
         <mat-icon>shopping_cart</mat-icon>
         <span>ADD TO CART</span>
     </button>

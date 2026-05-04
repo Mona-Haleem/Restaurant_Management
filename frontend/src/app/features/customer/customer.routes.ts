@@ -1,11 +1,11 @@
 import { Routes } from '@angular/router';
 
 export const customerRoutes: Routes = [
-  // {
-  //   path: '',
-  //   loadComponent: () =>
-  //     import('./pages/menu/menu.component').then((m) => m.MenuComponent),
-  // },
+  {
+    path: '',
+    loadComponent: () =>
+      import('./pages/menu/menu.page').then((m) => m.MenuPage),
+  },
   // {
   //   path: 'cart',
   //   loadComponent: () =>

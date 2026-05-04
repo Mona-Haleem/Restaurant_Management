@@ -1,10 +1,8 @@
-<div class="category-filter">
     <button [class]="activeCategory === '' ? 'btn-primary' : 'btn-text-primary'" (click)="onCategoryClick('')">
         All
     </button>
-    @for (category of categories; track category){
+    @for (category of (categories | async); track category){
     <button [class]="activeCategory === category ? 'btn-primary' : 'btn-text-primary'" (click)="onCategoryClick(category)">
         {{ category }}
     </button>
     }
-</div>
