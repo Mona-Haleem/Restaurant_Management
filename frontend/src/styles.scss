@@ -21,6 +21,12 @@ html {
     ));
 }
 
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
 body {
   // Default the application to a light color theme. This can be changed to
   // `dark` to enable the dark color theme, or to `light dark` to defer to the
@@ -30,7 +36,8 @@ body {
   // Set a default background, font and text colors for the application using
   // Angular Material's system-level CSS variables. Learn more about these
   // variables at https://material.angular.dev/guide/system-variables
-  background-color: var(--mat-sys-surface);
+  background-image: radial-gradient(circle, var(--mat-sys-outline) 1px, transparent 1px);
+  background-size: 35px 35px;
   color: var(--mat-sys-on-surface);
   font: var(--mat-sys-body-medium);
 

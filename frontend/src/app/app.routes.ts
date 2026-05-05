@@ -3,8 +3,9 @@ import { Routes } from '@angular/router';
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: 'customer',
     pathMatch: 'full',
+    loadComponent: () =>
+      import('./pages/landing/landing.page').then((m) => m.LandingPage),
   },
   {
     path: 'customer',

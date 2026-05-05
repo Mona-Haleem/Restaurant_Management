@@ -66,7 +66,7 @@ describe('CategoryFilter', () => {
     buttons[1].nativeElement.click(); // "Pasta"
     fixture.detectChanges();
 
-    expect(menuServiceMock.setActiveFilter).toHaveBeenCalledWith('Pasta');
+    expect(menuServiceMock.setActiveFilter).toHaveBeenCalledWith({ category: 'Pasta' });
   });
 
   it('should call setActiveFilter with empty string when "All" button is clicked', () => {
@@ -76,6 +76,6 @@ describe('CategoryFilter', () => {
     buttons[0].nativeElement.click(); // "All"
     fixture.detectChanges();
 
-    expect(menuServiceMock.setActiveFilter).toHaveBeenCalledWith('');
+    expect(menuServiceMock.setActiveFilter).toHaveBeenCalledWith({ category: '' });
   });
 });

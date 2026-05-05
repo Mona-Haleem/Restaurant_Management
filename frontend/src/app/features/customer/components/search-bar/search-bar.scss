@@ -1,0 +1,42 @@
+:host {
+    margin: 1rem 3rem 0;
+    display: flex;
+    align-items: center;
+    flex: 1;
+    border-bottom: 1px solid var(--mat-sys-primary);
+    overflow: hidden;
+    border-radius: 10px;
+
+    mat-icon {
+        font-size: 1.2rem;
+        width: 2rem;
+        height: 2rem;
+        background: var(--mat-sys-surface-container);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    input {
+        flex: 1;
+        padding: 10px;
+        border: none;
+        outline: none;
+        color: var(--mat-sys-primary);
+
+        &::placeholder {
+            color: var(--mat-sys-primary);
+            opacity: .5;
+        }
+
+        &:focus {
+            background: var(--mat-sys-surface);
+        }
+    }
+}
+
+:host:has(:focus) {
+    border-bottom: none;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+
+}

@@ -16,7 +16,7 @@ export class CategoryFilter {
   };
 
   onCategoryClick(category: string) {
-    this.itemsService.setActiveFilter(category);
+    this.itemsService.setActiveFilter({ category });
   }
 
 }

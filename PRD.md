@@ -1,6 +1,6 @@
 # Tablz — Restaurant Management System
 
-**Product Requirements Document · v1.0**  
+**Product Requirements Document · v1.1**  
 Angular Portfolio Project
 
 ---
@@ -9,14 +9,16 @@ Angular Portfolio Project
 
 **Tablz** is a multi-role restaurant management web application built with Angular.  
 It covers the full operational loop:
-
 - Customer ordering
 - Kitchen workflow
 - Inventory deduction
 - Waste logging
 - End-of-day reporting
+- **Customer**: Browsing menu, managing cart, and tracking orders.
+- **Worker**: Real-time order management and waste logging.
+- **Manager**: Inventory control, reporting, and staff management.
 
-Designed as a **portfolio project** demonstrating production-level Angular architecture across three roles.
+Designed as a **production-grade portfolio project** demonstrating robust Angular architecture.
 
 ---
 
@@ -36,6 +38,8 @@ This leads to:
 
 **Tablz digitizes this entire workflow.**
 
+
+
 ---
 
 ## 🎯 Goals
@@ -44,7 +48,7 @@ This leads to:
 - Build a complete v1 in **3–4 weeks**
 - Create a strong **interview-ready portfolio project**
 - Provide a base for real-time v2 features
-
+- Maintain high coverage with Vitest/Angular Testing Library.
 ---
 
 ## ❌ Out of Scope (v1)
@@ -54,14 +58,12 @@ This leads to:
 - Multi-branch support
 - Mobile apps
 - Notifications (SMS/email)
-
 ---
-
 ## 👥 User Roles
 
 | Role     | Description              | Goal |
 |----------|------------------------|------|
-| Customer | Restaurant patron       | Browse & order food |
+| Customer | Restaurant patron       | Browse & order food or cancel order|
 | Worker   | Waiter / staff          | Manage orders & waste |
 | Manager  | Owner / operator        | Inventory & reports |
 
@@ -81,15 +83,19 @@ This leads to:
 
 ---
 
-## 🔁 Order State Machine
+## 👥 User Roles & Core Workflows
 
-| From | To | Trigger |
-|------|----|--------|
-| — | PENDING | Customer / Worker |
-| PENDING | IN_PREPARATION | Worker |
-| IN_PREPARATION | READY | Worker |
-| READY | DELIVERED | Worker |
-| PENDING / IN_PREP | CANCELED | Worker / Manager |
+### 1. Customer (Patron)
+- **Workflow**: Browse Menu → Filter/Search → Add to Cart → Place Order → Track Status.
+- **Key Pain Point**: Knowing exactly when food is ready.
+
+### 2. Worker (Staff/Kitchen)
+- **Workflow**: View Pending Orders → Start Preparation → Mark Ready → Confirm Delivery.
+- **Key Pain Point**: Communicating order status and tracking inventory waste.
+
+### 3. Manager (Owner)
+- **Workflow**: Manage Menu → Monitor Inventory → View Revenue Reports.
+- **Key Pain Point**: Lack of visibility into stock levels and daily profit.
 
 ---
 
@@ -106,24 +112,26 @@ This leads to:
 ---
 
 ### 🧑‍🍳 Customer Module
+- **Menu Experience**:
+  - Search by item name.
+  - Filter by categories (Main, Starters, Drinks, etc.).
+  - Responsive Grid layout.
+- **Cart Management**:
+  - Add/Remove items.
+  - Adjust quantities.
+  - Total price calculation in real-time.
+- **Order Tracking**:
+  - Real-time status updates (Polling/RxJS).
+  - Order history (Simple view).
+  - Cancel order (PENDING only)
 
-- Menu browsing (search + filter)
-- Cart with quantity control
-- Multi-step checkout (Reactive Forms)
-- Order tracking (polling every 10s)
-- Cancel order (PENDING only)
-
----
 
 ### 👨‍🔧 Worker Module
-
-- Live orders board (Kanban)
-- Update order status
-- Cancel with reason
-- Waste logging (updates inventory)
-- View personal waste logs
-
----
+- **Orders Board**:
+  - Kanban-style board for `PENDING`, `IN_PREPARATION`, and `READY` orders.
+- **Inventory Actions**:
+  - Mark order as `DELIVERED` (triggers auto-inventory deduction).
+  - Log item waste (manual stock correction).
 
 ### 🧑‍💼 Manager Module
 
@@ -151,7 +159,6 @@ This leads to:
 ---
 
 ## 🏗️ Angular Architecture
-
 ### Modules
 
 - `CoreModule` → services, guards, interceptor
@@ -223,25 +230,22 @@ This leads to:
 
 ---
 
-## 📅 Build Plan
+## 🧰 Tech Stack (Updated)
 
-| Week | Focus |
-|------|------|
-| Week 1 | Setup, auth, routing |
-| Week 2 | Customer + Worker features |
-| Week 3 | Inventory + Manager |
-| Week 4 | Reports + polish |
-
----
+- **Frontend**: Angular 17+ (Stand-alone components)
+- **State**: RxJS (Observables), Signals
+- **Styling**: SCSS (BEM naming convention)
+- **Testing**: Vitest, Angular Testing Library
+- **Icons**: Lucide Angular / FontAwesome
+- **Angular Material**
+- **ngx-charts**
+- **Backend**: JSON Server / Firebase (Temporary) (next step :express , mogo ,mongoose)
 
 ## 🧰 Tech Stack
 
 - **Angular 17+**
-- **Angular Material**
 - **RxJS**
 - **Angular Signals**
-- **JSON Server / Firebase**
-- **ngx-charts**
 - **SCSS**
 
 ---
@@ -272,18 +276,18 @@ This leads to:
 - Kitchen display screen
 - Push notifications
 - Multi-branch support
-
 ---
 
 ## 📄 Status
-
-✅ Ready to build (v1 scope)  
-⏳ Timeline: 3–4 weeks (solo project)
-
----
-
-## 📌 Author
-
-Portfolio project for Angular demonstration.
+✅ PRD Revised (v1.1)  
+⏳ Current Focus: Completing Customer Module Tracking logic.
 
 ---
+## 🚦 Project Status
+
+| Module | Status | Progress |
+|--------|--------|----------|
+| **Core** | In Progress | Models defined, Base Services created |
+| **Customer** | In Progress | Menu, Search, Category Filter, Cart Sidebar (Draft) |
+| **Worker** | Not Started | Routes defined |
+| **Manager** | Not Started | Planning phase |

@@ -13,6 +13,6 @@ export class MenuGrid {
   private itemsService = inject(MenuService)
 
   get items() {
-    return this.itemsService.getItems(this.itemsService.selectedCategory);
+    return this.itemsService.getActiveFilterItems();
   }
 }

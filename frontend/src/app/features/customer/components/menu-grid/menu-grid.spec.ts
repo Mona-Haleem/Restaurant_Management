@@ -55,6 +55,7 @@ describe('MenuGrid', () => {
   function createComponent(items: MenuItem[], activeCategory: string = '') {
     menuServiceMock = {
       getItems: vi.fn().mockReturnValue(of(items)),
+      getActiveFilterItems: vi.fn().mockReturnValue(of(items)),
       get selectedCategory() { return activeCategory; },
     };
 
@@ -112,8 +113,8 @@ describe('MenuGrid', () => {
 
   // ── Service integration ───────────────────────────────────────────────────
 
-  it('should call getItems with the current selectedCategory', () => {
+  it('should refetch items when current selectedCategory is changed', () => {
     createComponent(buildMenuItems(), 'Main');
-    expect(menuServiceMock.getItems).toHaveBeenCalledWith('Main');
+    expect(menuServiceMock.getActiveFilterItems).toHaveBeenCalled();
   });
 });

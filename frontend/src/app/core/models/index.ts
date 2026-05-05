@@ -23,14 +23,20 @@ export interface MenuItem {
   ingredients: { inventoryItemId: string; quantity: number }[];
 }
 
+export interface MenuFilter {
+  category?: string;
+  search?: string;
+  isAvailable?: boolean;
+}
+
 export interface CartItem extends MenuItem {
   quantity: number;
 }
 
 export interface Order {
   _id: string;
-  tableNumber: number;
-  items: { menuItem: MenuItem; quantity: number }[];
+  tableNumber: number | 'delivery' | 'pickup';
+  items: CartItem[];
   status: OrderStatus;
   totalPrice: number;
   createdBy: string;

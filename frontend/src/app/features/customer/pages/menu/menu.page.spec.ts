@@ -18,6 +18,9 @@ describe('MenuPage', () => {
     getItems: vi.fn().mockReturnValue(of([
       { _id: '1', name: 'Pizza', category: 'Pizza', price: 10, isAvailable: true }
     ])),
+    getActiveFilterItems: vi.fn().mockReturnValue(of([
+      { _id: '1', name: 'Pizza', category: 'Pizza', price: 10, isAvailable: true }
+    ])),
     setActiveFilter: vi.fn(),
     get selectedCategory() { return ''; },
   };
