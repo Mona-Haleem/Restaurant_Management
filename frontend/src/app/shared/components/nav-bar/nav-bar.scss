@@ -1,0 +1,97 @@
+header {
+    background-color: #fff;
+    height: 64px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+    box-shadow: 0 2px 3px rgba(0, 0, 0, 0.1);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+
+    nav {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+
+        #logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-right: 20px;
+            color: var(--mat-sys-primary);
+            font-size: 1.25rem;
+
+            &:hover {
+                color: var(--mat-sys-primary);
+            }
+
+            mat-icon {
+                font-size: 1.5rem;
+
+            }
+
+        }
+
+
+
+
+        a {
+            margin-left: 20px;
+            text-decoration: none;
+            font-weight: bold;
+            color: var(--mat-sys-on-surface);
+            transition: all 0.1s ease;
+
+            &:hover {
+                scale: 1.1;
+                text-shadow: 0 0 1px var(--mat-sys-tertiary);
+                color: var(--mat-sys-tertiary);
+            }
+        }
+    }
+
+    #actions {
+        flex: 1;
+        display: flex;
+        align-items: center;
+
+        gap: 15px;
+
+        app-search-bar {
+            margin-right: 50px;
+        }
+    }
+
+}
+
+
+.relative {
+    position: relative;
+
+
+}
+
+.badge {
+    width: 15px;
+    height: 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    top: -6px;
+    right: -4px;
+    background-color: var(--mat-sys-primary);
+    color: white;
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 0.5rem;
+}
+
+a {
+    cursor: pointer;
+}

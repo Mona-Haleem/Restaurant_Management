@@ -1,0 +1,24 @@
+<header>
+    <nav>
+        <a id="logo" routerLink="/customer/">
+            <mat-icon fontSet="material-symbols-outlined">restaurant</mat-icon>
+            <h2>Resto</h2>
+        </a>
+        <a routerLink="/menu">Menu</a>
+        <a routerLink="/order">Order</a>
+    </nav>
+    <div id="actions">
+        <app-search-bar />
+        <a class="relative" routerLink="/cart">
+            <mat-icon fontSet="material-symbols-outlined">shopping_cart</mat-icon>
+            @if(count | async ;as c){
+            <span class="badge">
+                {{c}}
+            </span>
+            }
+        </a>
+        <mat-icon fontSet="material-symbols-outlined">settings</mat-icon>
+        <mat-icon fontSet="material-symbols-outlined">notifications</mat-icon>
+        <mat-icon fontSet="material-symbols-outlined" routerLink="/customer/profile">account_circle</mat-icon>
+    </div>
+</header>
