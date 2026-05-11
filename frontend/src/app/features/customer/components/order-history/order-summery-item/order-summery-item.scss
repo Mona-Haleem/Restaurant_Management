@@ -1,0 +1,54 @@
+:host {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-direction: row;
+    background-color: #f7f7f7;
+    padding: 0.8rem;
+
+    .item-details {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    img {
+        width: 60px;
+        height: 60px;
+        border: 1px solid #E0E0E0;
+    }
+
+    .item-name {
+
+        color: #000;
+        font-size: 1rem;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+
+    .item-content {
+        color: #6e6c6c;
+        font-size: 0.75rem;
+        display: block;
+        font-weight: 400;
+        text-transform: uppercase;
+    }
+
+    .item-total {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+    }
+
+    .item-price {
+        color: var(--mat-sys-primary);
+        font-size: 0.9rem;
+
+    }
+
+    .item-qty {
+        color: #a3a3a3;
+        font-size: 0.75rem;
+
+    }
+}

@@ -1,0 +1,23 @@
+<app-steps-tracker [steps]="steps" [currentStep]="currentStep"></app-steps-tracker>
+<div class="container">
+    <Section>
+        @if(currentStep == 0){
+            <app-customer-data-form/>
+        }@else if(currentStep == 1){
+            <app-payment-form/>
+        }
+       
+        <app-section-card title="items" subtitle="review selections">
+            <button class="btn-text-primary" actions>
+                EDIT ORDER
+            </button>
+            @for(item of order?.items; track item._id){
+                <app-order-summery-item [item]="item" view="readonly"/>
+            }
+        </app-section-card >
+    </Section>
+    <aside>
+        <app-order-summary/>
+        <app-eta-status/>
+    </aside>
+</div>

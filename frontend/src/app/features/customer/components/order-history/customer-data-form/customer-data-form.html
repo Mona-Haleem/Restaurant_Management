@@ -1,0 +1,49 @@
+<app-section-card title='CUSTOMER LOGISTICS' subtitle='IDENTITY & LOCATIONS' >
+
+    
+        <form (ngSubmit)="onSubmit()">
+          <section>
+            <div>
+                <label>CUSTOMER NAME</label>
+                <input type="text" name="username" placeholder="full name" required [(ngModel)]="fullName">
+            </div>
+            <div>
+                <label>CONTACT NUMBER</label>
+                <input type="text" name="phone" placeholder="+2 01xxxxxxxxx" required [(ngModel)]="phone">
+            </div>
+        </section>
+        <section>
+            <div>
+                <label>
+                    Order Destination
+                </label>
+                <div class="order-type">
+                    <div (click)="setOrderType('dine-in')" class="destination-box" [class.selected]="orderDestination == 'dine-in'" >
+                        <mat-icon fontSet="material-symbols-outlined">table_restaurant</mat-icon>
+                        <p>Dine-in</p>
+                    </div>
+                    <div (click)="setOrderType('pickup')" class="destination-box" [class.selected]="orderDestination == 'pickup'" >
+                        <mat-icon fontSet="material-symbols-outlined">takeout_dining</mat-icon>
+                        <p>Pickup</p>
+                    </div>
+                    <div (click)="setOrderType('delivery')" class="destination-box" [class.selected]="orderDestination == 'delivery'" >
+                        <mat-icon fontSet="material-symbols-outlined">local_shipping</mat-icon>
+                        <p>Delivery</p>
+                    </div>
+                </div>
+            </div>
+            @if(orderDestination === 'delivery') {
+            <div>
+                <label>DELIVERY ADDRESS</label>
+                <input type="text" name="delivery_address" placeholder="delivery address" required [(ngModel)]="delivery_address">
+            </div>
+            }
+            @if(orderDestination === 'dine-in') {
+            <div>
+                <label>TABLE NUMBER</label>
+                <input type="number" name="table_number" placeholder="table number" required [(ngModel)]="table_number">
+            </div>
+            }
+        </section>    
+        </form>
+</app-section-card>
