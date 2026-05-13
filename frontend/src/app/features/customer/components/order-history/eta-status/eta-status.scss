@@ -1,0 +1,34 @@
+:host {
+    display: flex;
+    gap: 0.5rem;
+    padding: 1.5rem;
+    margin-top: 1rem;
+    text-transform: uppercase;
+    background-color: color-mix(in srgb, var(--mat-sys-secondary-container) 50%, #ffffff);
+    border: 1px solid var(--mat-sys-secondary);
+    text-transform: uppercase;
+
+    mat-icon {
+        font-size: 2rem;
+        width: 2rem;
+        height: 2rem;
+        color: var(--mat-sys-secondary);
+
+    }
+
+    .header {
+        font-weight: bold;
+        align-items: center;
+        color: var(--mat-sys-secondary);
+    }
+
+    .label {
+        font-weight: 700;
+        color: color-mix(in srgb, var(--mat-sys-secondary) 50%, black);
+    }
+
+    .value {
+        color: var(--mat-sys-primary);
+        font-weight: 600;
+    }
+}
