@@ -1,11 +1,11 @@
 import { Component, inject } from '@angular/core';
 import { MenuService } from '../../../../core/services/menu/menu.service';
 import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
-import { MatIcon } from '@angular/material/icon';
+import { MatIcon, MatIconModule } from '@angular/material/icon';
 
 @Component({
   selector: 'app-search-bar',
-  imports: [MatIcon],
+  imports: [MatIconModule],
   templateUrl: './search-bar.html',
   styleUrl: './search-bar.scss',
 })
@@ -23,9 +23,8 @@ export class SearchBar {
     });
   }
 
-  onSearch(event: Event) {
-    const input = (event.target as HTMLInputElement).value;
-    this.searchSubject.next(input);
+  onSearch(value: string) {
+    this.searchSubject.next(value);
   }
 
 }

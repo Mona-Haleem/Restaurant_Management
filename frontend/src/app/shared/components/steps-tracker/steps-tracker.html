@@ -5,7 +5,7 @@
         <div class="step" [class]="{
             passed: $index <= currentStep,
             active: $index === currentStep
-        }">
+        }" (click)="onStepClick($index)">
             @if (step.isIcon) {
                 <mat-icon fontSet="material-symbols-outlined">{{ step.icon }}</mat-icon>
             } @else {

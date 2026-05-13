@@ -4,7 +4,7 @@ import { MenuPage } from './menu.page';
 import { MenuService } from '../../../../core/services/menu/menu.service';
 import { CartService } from '../../../../core/services/cart/cart.service';
 import { of, BehaviorSubject } from 'rxjs';
-import { CategoryFilter } from '../../components/category-filter/category-filter';
+import { CategoryFilter } from '../../components/menu/category-filter/category-filter';
 import { MenuGrid } from '../../components/menu-grid/menu-grid';
 import { CartSidebar } from '../../components/cart-sidebar/cart-sidebar';
 

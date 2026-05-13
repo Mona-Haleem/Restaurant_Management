@@ -1,26 +1,35 @@
 import { Routes } from '@angular/router';
+import { MenuPage } from './pages/menu/menu.page';
+import { NotFound } from '../../shared/components/not-found/not-found';
+import { CartPage } from './pages/cart/cart.page';
+import { CheckoutPage } from './pages/checkout/checkout.page';
+import { OrderTrackingPage } from './pages/order-tracking/order-tracking.page';
 
 export const customerRoutes: Routes = [
   {
     path: '',
-    loadComponent: () =>
-      import('./pages/menu/menu.page').then((m) => m.MenuPage),
+    redirectTo: 'menu',
+    pathMatch: 'full'
   },
-  // {
-  //   path: 'cart',
-  //   loadComponent: () =>
-  //     import('./pages/cart/cart.component').then((m) => m.CartComponent),
-  // },
-  // {
-  //   path: 'checkout',
-  //   loadComponent: () =>
-  //     import('./pages/checkout/checkout.component').then((m) => m.CheckoutComponent),
-  // },
-  // {
-  //   path: 'orders/:id',
-  //   loadComponent: () =>
-  //     import('./pages/order-tracking/order-tracking.component').then(
-  //       (m) => m.OrderTrackingComponent
-  //     ),
-  // },
+  {
+    path: 'menu',
+    component: MenuPage,
+  },
+  {
+    path: 'cart',
+    component: CartPage,
+  },
+  {
+    path: 'checkout',
+    component: CheckoutPage,
+  },
+  {
+    path: 'order',
+    component: OrderTrackingPage,
+  },
+  {
+    path: 'profile',
+    component:// ProfilePage,
+      NotFound
+  },
 ];

@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 import { DUMMY_CATEGORIES, DUMMY_ITEMS } from '../../DummyData/item';
-import { Observable, of } from 'rxjs';
+import { BehaviorSubject, map, Observable, of } from 'rxjs';
 import { MenuFilter, MenuItem } from '../../models';
+
 
 @Injectable({
   providedIn: 'root',
@@ -9,30 +10,34 @@ import { MenuFilter, MenuItem } from '../../models';
 export class MenuService {
   private items = DUMMY_ITEMS;
   private categories = DUMMY_CATEGORIES;
-  private activeFilter: MenuFilter = { category: '' };
+
+  private activeFilterSubject = new BehaviorSubject<MenuFilter>({ category: '' });
+  activeFilter$ = this.activeFilterSubject.asObservable();
 
   getCategories(): Observable<string[]> {
     return of(this.categories);
   }
 
-  getItems(filter?: MenuFilter): Observable<MenuItem[]> {
-    return of(this.items.filter(item =>
+  private getItems(filter?: MenuFilter): MenuItem[] {
+    return this.items.filter(item =>
       (!filter?.category || filter.category === 'all' || item.category === filter.category) &&
-      (!filter?.search || item.name.toLowerCase().includes(filter.search?.trim().toLowerCase())) &&
-      (filter?.isAvailable === undefined || item.isAvailable === filter.isAvailable)));
+      (!filter?.search || item.name.toLowerCase().includes(filter.search.trim().toLowerCase())) &&
+      (filter?.isAvailable === undefined || item.isAvailable === filter.isAvailable)
+    );
   }
 
   getActiveFilterItems(): Observable<MenuItem[]> {
-    return this.getItems(this.activeFilter);
+    return this.activeFilter$.pipe(
+      map(filter => this.getItems(filter))
+    );
   }
 
   setActiveFilter(filter: MenuFilter) {
-    this.activeFilter = { ...this.activeFilter, ...filter };
+    const current = this.activeFilterSubject.value;
+    this.activeFilterSubject.next({ ...current, ...filter });
   }
 
   get selectedCategory() {
-    return this.activeFilter.category;
+    return this.activeFilterSubject.value.category;
   }
-
-
 }

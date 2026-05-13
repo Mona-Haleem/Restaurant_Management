@@ -4,11 +4,14 @@ import { CartSidebar } from './cart-sidebar';
 import { CartService } from '../../../../core/services/cart/cart.service';
 import { BehaviorSubject, of } from 'rxjs';
 import { CartItem } from '../../../../core/models';
+import { OrderService } from '../../../../core/services/order/order.service';
+import { vi } from 'vitest';
 
 describe('CartSidebar', () => {
   let fixture: ComponentFixture<CartSidebar>;
   let component: CartSidebar;
   let cartServiceStub: Partial<CartService>;
+  let orderServiceStub: Partial<OrderService>;
 
   // We mock the service's state so we can control what the component sees
   const mockCartItems$ = new BehaviorSubject<CartItem[]>([]);
@@ -19,14 +22,20 @@ describe('CartSidebar', () => {
       cartItems$: mockCartItems$.asObservable(),
       get total() { return of(15); },
       removeFromCart: vi.fn(),
-      clearCart: vi.fn()
+      clearCart: vi.fn(),
+      getCart: vi.fn().mockReturnValue([]) // Add getCart since we might need it for checkout
+    };
+
+    orderServiceStub = {
+      placeOrder: vi.fn().mockReturnValue(of({}))
     };
 
     // 2. Configure the testing module to USE our stub whenever someone asks for CartService
     await TestBed.configureTestingModule({
       imports: [CartSidebar],
       providers: [
-        { provide: CartService, useValue: cartServiceStub }
+        { provide: CartService, useValue: cartServiceStub },
+        { provide: OrderService, useValue: orderServiceStub }
       ]
     }).compileComponents();
 
@@ -94,6 +103,29 @@ describe('CartSidebar', () => {
     const clearBtn = fixture.debugElement.query(By.css('[data-testid="clear-cart-btn"]'));
     clearBtn.nativeElement.click();
 
+    expect(cartServiceStub.clearCart).toHaveBeenCalledTimes(1);
+  });
+
+  it('should call orderService.placeOrder and cartService.clearCart when checkout is clicked', async () => {
+    // Setup a cart with items
+    const testItems: CartItem[] = [
+      { _id: '1', name: 'Pizza', description: '', price: 10, category: 'Main', isAvailable: true, ingredients: [], quantity: 1 }
+    ];
+    mockCartItems$.next(testItems);
+    // Mock getCart to return the items, as the component might use it
+    (cartServiceStub.getCart as any).mockReturnValue(testItems);
+
+    fixture.detectChanges();
+
+    const checkoutBtn = fixture.debugElement.query(By.css('[data-testid="checkout-btn"]'));
+    checkoutBtn.nativeElement.click();
+    
+    await fixture.whenStable();
+
+    // Verify order was placed (pickup as default for now or whatever you choose to implement)
+    expect(orderServiceStub.placeOrder).toHaveBeenCalledWith(testItems, 'pickup');
+
+    // Verify cart was cleared after order placement
     expect(cartServiceStub.clearCart).toHaveBeenCalledTimes(1);
   });
 });

@@ -1,0 +1,72 @@
+:host {
+    display: block;
+    background-color: var(--mat-sys-on-surface);
+    border-top: 6px solid var(--mat-sys-secondary);
+    color: color-mix(in srgb, var(--mat-sys-surface) 60%, transparent);
+    text-transform: uppercase;
+
+    header {
+        display: flex;
+        justify-content: space-between;
+        align-items: stretch;
+        padding: 1.5rem 2rem;
+        border-bottom: 1px solid color-mix(in srgb, var(--mat-sys-surface) 15%, transparent);
+
+        div {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+
+            &:last-child {
+                text-align: right;
+            }
+        }
+
+        p {
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            color: color-mix(in srgb, var(--mat-sys-surface) 50%, transparent);
+        }
+
+        h2 {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--mat-sys-surface);
+        }
+    }
+
+    #updates {
+        padding: 1rem 2rem;
+
+        div {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid color-mix(in srgb, var(--mat-sys-surface) 10%, transparent);
+
+            mat-icon {
+                font-size: 1rem;
+                width: 1rem;
+                height: 1rem;
+                color: var(--mat-sys-secondary);
+                flex-shrink: 0;
+            }
+
+            p {
+                font-size: 0.8rem;
+
+                &:first-of-type {
+                    color: color-mix(in srgb, var(--mat-sys-surface) 45%, transparent);
+                    min-width: 4.5rem;
+                }
+
+                &:last-of-type {
+                    font-weight: 700;
+                    color: var(--mat-sys-surface);
+                }
+            }
+        }
+    }
+}

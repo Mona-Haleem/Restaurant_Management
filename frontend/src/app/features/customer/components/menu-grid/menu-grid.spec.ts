@@ -54,7 +54,6 @@ describe('MenuGrid', () => {
 
   function createComponent(items: MenuItem[], activeCategory: string = '') {
     menuServiceMock = {
-      getItems: vi.fn().mockReturnValue(of(items)),
       getActiveFilterItems: vi.fn().mockReturnValue(of(items)),
       get selectedCategory() { return activeCategory; },
     };

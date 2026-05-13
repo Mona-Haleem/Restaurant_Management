@@ -3,12 +3,13 @@ import { MatIconModule } from '@angular/material/icon';
 import { SearchBar } from '../../../features/customer/components/search-bar/search-bar';
 import { CartService } from '../../../core/services/cart/cart.service';
 import { AsyncPipe } from '@angular/common';
-import { firstValueFrom, map } from 'rxjs';
+import { map } from 'rxjs';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 //temporary has to be updated and tested.
 
 @Component({
   selector: 'app-nav-bar',
-  imports: [MatIconModule, SearchBar, AsyncPipe],
+  imports: [MatIconModule, SearchBar, AsyncPipe, RouterLink, RouterLinkActive],
   templateUrl: './nav-bar.html',
   styleUrl: './nav-bar.scss',
 })

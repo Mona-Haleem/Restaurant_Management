@@ -10,6 +10,7 @@
 app-steps-tracker {
     margin: 7rem 5rem 2rem;
     display: block;
+    cursor: pointer;
 }
 
 .container {
@@ -33,4 +34,35 @@ app-steps-tracker {
 
 app-section-card {
     margin-top: 1.5rem;
+}
+
+.empty-cart {
+    padding: 2rem 0;
+    text-align: center;
+    color: #aaa;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.review-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1.5rem;
+    padding: 1rem 0;
+
+    .review-item {
+        label {
+            font-size: 0.7rem;
+            color: #8f8f8f;
+            font-weight: 700;
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+        p {
+            font-weight: 600;
+            font-size: 1rem;
+            color: var(--mat-sys-on-surface);
+        }
+    }
 }

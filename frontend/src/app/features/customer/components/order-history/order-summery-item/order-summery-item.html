@@ -1,5 +1,5 @@
     <div class="item-details">
-        <img src="{{ item.imageUrl }}" alt="{{ item.name }}">
+        <img src="{{ item.imageUrl }}" alt="{{ item.name }}" [class.lg]="view === 'default'">
         <div class="item-info">
             <span class="item-name">{{ item.name }}</span>
             <span class="item-content">{{ item.addtions | summeryItems }}</span>
@@ -15,10 +15,10 @@
         </div>}
         </div>
     </div>
-    <div class="item-total">
+    <div class="item-total" [class.lg]="view === 'default'">
         <span class="item-price">{{ item.price * item.quantity | currency : "EGP " }}</span>
         @if(view === "default") { 
-            <button class="btn-outline-primary btn-sm" (click)="removeItem()" data-testid="remove-item-btn">
+            <button class="btn-text-primary btn-sm" (click)="removeItem()" data-testid="remove-item-btn">
                 <mat-icon fontSet="material-symbols-outlined">delete</mat-icon>
                 REMEVOE ITEM
             </button>

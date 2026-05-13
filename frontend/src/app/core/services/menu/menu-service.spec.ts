@@ -23,7 +23,7 @@ describe('MenuService', () => {
   });
 
   it('should return menu items as an Observable', async () => {
-    const items$ = service.getItems();
+    const items$ = service.getActiveFilterItems();
     const items = await firstValueFrom(items$);
 
     expect(Array.isArray(items)).toBe(true);
@@ -31,7 +31,8 @@ describe('MenuService', () => {
   });
 
   it('should return items filtered by category', async () => {
-    const items$ = service.getItems({ category: 'Italian' });
+    service.setActiveFilter({ category: 'Italian' });
+    const items$ = service.getActiveFilterItems();
     const items = await firstValueFrom(items$);
 
     expect(Array.isArray(items)).toBe(true);

@@ -1,4 +1,4 @@
-import { Component, HostBinding, Input } from '@angular/core';
+import { Component, EventEmitter, HostBinding, Input, Output } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 
 @Component({
@@ -8,8 +8,10 @@ import { MatIconModule } from '@angular/material/icon';
   styleUrl: './steps-tracker.scss',
 })
 export class StepsTracker {
-  @Input({ required: true }) steps !: { isIcon: boolean, label: string, icon: string }[];
+  @Input({ required: true }) steps!: { isIcon: boolean, label: string, icon: string, isLocked?: boolean }[];
   @Input({ required: true }) currentStep: number = 0;
+  @Output() currentStepChange = new EventEmitter<number>();
+
   @Input() varients = ['primary']
 
   @HostBinding('class')
@@ -18,5 +20,10 @@ export class StepsTracker {
   }
   get width(): number {
     return this.currentStep / (this.steps.length - 1) * 100;
+  }
+
+  onStepClick(step: number) {
+    if (this.steps[step].isLocked) return;
+    this.currentStepChange.emit(step);
   }
 }

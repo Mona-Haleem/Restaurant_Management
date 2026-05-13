@@ -51,19 +51,19 @@ describe('OrderService', () => {
 
   it('should place an order and return it with status PENDING', async () => {
     const order = await firstValueFrom(
-      service.placeOrder(mockCartItems, 5)
+      service.placeOrder(mockCartItems, "dine-in", 5)
     );
 
     expect(order).toBeTruthy();
     expect(order.status).toBe('PENDING');
-    expect(order.tableNumber).toBe(5);
+    expect(order.location).toBe(5);
     expect(order._id).toBeTruthy();
   });
 
   it('should calculate totalPrice from cart items (price × quantity)', async () => {
     // Pizza: 10 × 2 = 20, Cola: 3 × 1 = 3 → total = 23
     const order = await firstValueFrom(
-      service.placeOrder(mockCartItems, 5)
+      service.placeOrder(mockCartItems, "dine-in", 5)
     );
 
     expect(order.totalPrice).toBe(23);
@@ -71,7 +71,7 @@ describe('OrderService', () => {
 
   it('should map cart items into the order items array', async () => {
     const order = await firstValueFrom(
-      service.placeOrder(mockCartItems, 5)
+      service.placeOrder(mockCartItems, "dine-in", 5)
     );
 
     expect(order.items.length).toBe(2);
@@ -80,15 +80,15 @@ describe('OrderService', () => {
   });
 
   it('should add the placed order to the orders list', async () => {
-    await firstValueFrom(service.placeOrder(mockCartItems, 5));
+    await firstValueFrom(service.placeOrder(mockCartItems, "dine-in", 5));
 
     const orders = await firstValueFrom(service.getOrders());
     expect(orders.length).toBe(1);
   });
 
   it('should generate unique IDs for each order', async () => {
-    const order1 = await firstValueFrom(service.placeOrder(mockCartItems, 1));
-    const order2 = await firstValueFrom(service.placeOrder(mockCartItems, 2));
+    const order1 = await firstValueFrom(service.placeOrder(mockCartItems, "dine-in", 1));
+    const order2 = await firstValueFrom(service.placeOrder(mockCartItems, "dine-in", 2));
 
     expect(order1._id).not.toBe(order2._id);
   });
@@ -96,7 +96,7 @@ describe('OrderService', () => {
   // ── getOrderById ────────────────────────────────────────────────────────
 
   it('should retrieve an order by its ID', async () => {
-    const placed = await firstValueFrom(service.placeOrder(mockCartItems, 3));
+    const placed = await firstValueFrom(service.placeOrder(mockCartItems, "dine-in", 3));
     const found = await firstValueFrom(service.getOrderById(placed._id));
 
     expect(found).toBeTruthy();
@@ -111,7 +111,7 @@ describe('OrderService', () => {
   // ── cancelOrder ─────────────────────────────────────────────────────────
 
   it('should cancel a PENDING order', async () => {
-    const placed = await firstValueFrom(service.placeOrder(mockCartItems, 4));
+    const placed = await firstValueFrom(service.placeOrder(mockCartItems, "dine-in", 4));
     const canceled = await firstValueFrom(service.cancelOrder(placed._id));
 
     expect(canceled.status).toBe('CANCELED');
@@ -119,7 +119,7 @@ describe('OrderService', () => {
 
   it('should NOT cancel an order that is not PENDING', async () => {
     // Place and then manually advance to IN_PREPARATION (simulate worker action)
-    const placed = await firstValueFrom(service.placeOrder(mockCartItems, 4));
+    const placed = await firstValueFrom(service.placeOrder(mockCartItems, "dine-in", 4));
     // We need updateStatus to test this properly — use it if available
     await firstValueFrom(service.updateStatus(placed._id, 'IN_PREPARATION'));
 
@@ -131,7 +131,7 @@ describe('OrderService', () => {
   // ── updateStatus ────────────────────────────────────────────────────────
 
   it('should update order status from PENDING to IN_PREPARATION', async () => {
-    const placed = await firstValueFrom(service.placeOrder(mockCartItems, 6));
+    const placed = await firstValueFrom(service.placeOrder(mockCartItems, "dine-in", 6));
     const updated = await firstValueFrom(
       service.updateStatus(placed._id, 'IN_PREPARATION')
     );
@@ -140,7 +140,7 @@ describe('OrderService', () => {
   });
 
   it('should reflect status changes in getOrders()', async () => {
-    const placed = await firstValueFrom(service.placeOrder(mockCartItems, 7));
+    const placed = await firstValueFrom(service.placeOrder(mockCartItems, "dine-in", 7));
     await firstValueFrom(service.updateStatus(placed._id, 'READY'));
 
     const orders = await firstValueFrom(service.getOrders());

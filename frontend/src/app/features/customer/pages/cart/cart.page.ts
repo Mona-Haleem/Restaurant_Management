@@ -1,0 +1,18 @@
+import { Component, inject } from '@angular/core';
+import { CartService } from '../../../../core/services/cart/cart.service';
+import { OrderSummeryItem } from '../../components/order-history/order-summery-item/order-summery-item';
+import { AsyncPipe } from '@angular/common';
+import { SectionCard } from '../../../../shared/section-card/section-card';
+import { OrderSummary } from '../../components/order-history/order-summary/order-summary';
+
+@Component({
+  selector: 'app-cart.page',
+  imports: [OrderSummeryItem, OrderSummary, SectionCard, AsyncPipe],
+  templateUrl: './cart.page.html',
+  styleUrl: './cart.page.scss',
+})
+export class CartPage {
+  private cartService = inject(CartService);
+  cartItems$ = this.cartService.cartItems$;
+  count$ = this.cartService.count;
+}

@@ -1,0 +1,60 @@
+<app-section-card title="PAYMENT METHOD" subtitle="BILLING & SECURITY">
+    <form (ngSubmit)="onSubmit()">
+        <section>
+            <div>
+                <label>Payment Type</label>
+                <div class="payment-type">
+                    <div (click)="setPaymentMethod('cash')" class="payment-box" [class.selected]="paymentMethod === 'cash'">
+                        <mat-icon fontSet="material-symbols-outlined">payments</mat-icon>
+                        <p>Cash</p>
+                    </div>
+                    <div (click)="setPaymentMethod('card')" class="payment-box" [class.selected]="paymentMethod === 'card'">
+                        <mat-icon fontSet="material-symbols-outlined">credit_card</mat-icon>
+                        <p>Card</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        @if(paymentMethod === 'card') {
+        <section>
+            <div>
+                <label>CARDHOLDER NAME</label>
+                <input type="text" name="cardHolder" placeholder="Name on card" required [(ngModel)]="cardHolder">
+            </div>
+            <div>
+                <label>CARD NUMBER</label>
+                <input type="text" name="cardNumber" placeholder="0000 0000 0000 0000" maxlength="19" required [(ngModel)]="cardNumber">
+            </div>
+            <div class="card-meta">
+                <div>
+                    <label>EXPIRY DATE</label>
+                    <input type="text" name="expiry" placeholder="MM / YY" maxlength="7" required [(ngModel)]="expiry">
+                </div>
+                <div>
+                    <label>CVV</label>
+                    <input type="text" name="cvv" placeholder="•••" maxlength="3" required [(ngModel)]="cvv">
+                </div>
+            </div>
+        </section>
+        }
+
+        <section class="coupon-section">
+            <label>HAVE A COUPON CODE ?</label>
+            <div class="coupon-input">
+                <input type="text" name="couponCode" placeholder="coupon code" [(ngModel)]="couponCode">
+                <button type="button" class="btn-primary btn-sm" (click)="applyCoupon()">APPLY</button>
+            </div>
+            @if(couponError) {
+                <p class="error-text">{{couponError}}</p>
+            }
+            @if(appliedCoupon$ | async; as coupon) {
+                <div class="applied-coupon">
+                    <mat-icon fontSet="material-symbols-outlined">local_offer</mat-icon>
+                    <span>{{coupon.code}} ({{coupon.discountPercent}}% OFF)</span>
+                    <button type="button" class="btn-text-tertiary btn-sm" (click)="removeCoupon()">REMOVE</button>
+                </div>
+            }
+        </section>
+    </form>
+</app-section-card>

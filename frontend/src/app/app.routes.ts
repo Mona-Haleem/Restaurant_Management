@@ -1,11 +1,11 @@
 import { Routes } from '@angular/router';
+import { LandingPage } from './pages/landing/landing.page';
 
 export const routes: Routes = [
   {
     path: '',
     pathMatch: 'full',
-    loadComponent: () =>
-      import('./pages/landing/landing.page').then((m) => m.LandingPage),
+    component: LandingPage,
   },
   {
     path: 'customer',
@@ -22,11 +22,11 @@ export const routes: Routes = [
     loadChildren: () =>
       import('./features/manager/manager.routes').then((m) => m.managerRoutes),
   },
-  // {
-  //   path: '**',
-  //   loadComponent: () =>
-  //     import('./shared/components/not-found/not-found.component').then(
-  //       (m) => m.NotFoundComponent
-  //     ),
-  // },
+  {
+    path: '**',
+    loadComponent: () =>
+      import('./shared/components/not-found/not-found').then(
+        (m) => m.NotFound
+      ),
+  },
 ];

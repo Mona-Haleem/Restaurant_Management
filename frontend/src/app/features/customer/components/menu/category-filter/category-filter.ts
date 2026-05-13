@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { MenuService } from '../../../../core/services/menu/menu.service';
+import { MenuService } from '../../../../../core/services/menu/menu.service';
 import { AsyncPipe } from '@angular/common';
 
 @Component({

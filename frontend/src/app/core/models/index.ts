@@ -17,6 +17,7 @@ export interface MenuItem {
   name: string;
   description: string;
   price: number;
+  discount?: number;  // item-level discount percentage (0–100), e.g. 10 = 10% off
   category: string;
   imageUrl?: string;
   isAvailable: boolean;
@@ -31,11 +32,13 @@ export interface MenuFilter {
 
 export interface CartItem extends MenuItem {
   quantity: number;
+  addtions?: string[]
 }
-
+export type OrderType = 'delivery' | 'pickup' | 'dine-in';
 export interface Order {
   _id: string;
-  tableNumber: number | 'delivery' | 'pickup';
+  type: OrderType;
+  location: string | number;
   items: CartItem[];
   status: OrderStatus;
   totalPrice: number;

@@ -1,25 +1,40 @@
-import { CurrencyPipe } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { AsyncPipe, CurrencyPipe } from '@angular/common';
+import { Component, EventEmitter, inject, Input, Output } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
+import { map } from 'rxjs';
+import { CartService } from '../../../../../core/services/cart/cart.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-order-summary',
-  imports: [MatIconModule, CurrencyPipe],
+  imports: [MatIconModule, CurrencyPipe, AsyncPipe],
   templateUrl: './order-summary.html',
   styleUrl: './order-summary.scss',
 })
 export class OrderSummary {
-  @Input({ required: true }) currentStep: number = 0;
+  private cartService = inject(CartService);
+  private router = inject(Router);
+  @Input() currentStep?: number;
   @Output() currentStepChange = new EventEmitter<number>();
-  subtotal = 100;
-  serviceFee = 10;
-  tax = 5;
-  discount = 0;
+  @Output() placeOrder = new EventEmitter<void>();
 
-  total = this.subtotal + this.serviceFee + this.tax - this.discount;
+  summary$ = this.cartService.getCartSummary();
+
+  get buttonLabel(): string {
+    if (!this.currentStep) {
+      return "Checkout";
+    }
+    return this.currentStep === 2 ? 'PLACE ORDER' : 'CONTINUE';
+  }
 
   onPress() {
-    this.currentStep++;
-    this.currentStepChange.emit(this.currentStep);
+    if (!this.currentStep) {
+      this.router.navigate(['customer', 'checkout'])
+    } else if (this.currentStep === 2) {
+      this.placeOrder.emit();
+    } else {
+      this.currentStep++;
+      this.currentStepChange.emit(this.currentStep);
+    }
   }
 }

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { CartItem, Order } from '../../models';
+import { CartItem, Order, OrderType } from '../../models';
 import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
 
 @Injectable({
@@ -8,10 +8,11 @@ import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
 export class OrderService {
   private orders: BehaviorSubject<Order[]> = new BehaviorSubject<Order[]>([]);
 
-  placeOrder(items: CartItem[], tableNumber: number | 'delivery' | 'pickup'): Observable<Order> {
+  placeOrder(items: CartItem[], type: OrderType, location: number | string): Observable<Order> {
     const order: Order = {
       _id: crypto.randomUUID(),
-      tableNumber,
+      type,
+      location,
       items: items.map(item => ({ ...item })),
       status: 'PENDING',
       totalPrice: items.reduce((sum, item) => sum + item.price * item.quantity, 0),

@@ -4,6 +4,7 @@ import { AsyncPipe, CurrencyPipe } from '@angular/common';
 import { map } from 'rxjs';
 import { CartItemComponent } from './cart-item/cart-item';
 import { MatIconModule } from '@angular/material/icon';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-cart-sidebar',
@@ -13,25 +14,18 @@ import { MatIconModule } from '@angular/material/icon';
 })
 export class CartSidebar {
   private cartService = inject(CartService);
-  serviceFee = 10;
-  tax = 10;
-  discount = 10;
+  private router = inject(Router);
 
   cartItems$ = this.cartService.cartItems$;
-
-  get total() {
-    return this.cartService.total;
-  }
-  get count() {
-    return this.cartService.count;
-  }
-
-  get totalpayment() {
-    return this.total.pipe(map((total) => total + this.serviceFee + this.tax - this.discount));
-  }
+  count$ = this.cartService.count;
+  summary$ = this.cartService.getCartSummary();
 
   clearCart() {
     this.cartService.clearCart();
+  }
 
+  /** Navigate to checkout — the order is placed at the END of the checkout flow, not here. */
+  checkout() {
+    this.router.navigate(['customer', 'checkout']);
   }
 }

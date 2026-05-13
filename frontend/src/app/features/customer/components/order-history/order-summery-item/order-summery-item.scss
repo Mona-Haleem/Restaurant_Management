@@ -18,8 +18,12 @@
         border: 1px solid #E0E0E0;
     }
 
-    .item-name {
+    img.lg {
+        width: 80px;
+        height: 80px;
+    }
 
+    .item-name {
         color: #000;
         font-size: 1rem;
         font-weight: bold;
@@ -38,17 +42,30 @@
         display: flex;
         flex-direction: column;
         align-items: flex-end;
+        justify-content: space-between;
+        height: 60px;
     }
 
     .item-price {
         color: var(--mat-sys-primary);
-        font-size: 0.9rem;
+        font-size: 1rem;
+        font-weight: 700;
 
+    }
+
+    .item-total.lg {
+        height: 80px;
     }
 
     .item-qty {
         color: #a3a3a3;
         font-size: 0.75rem;
 
+    }
+
+    span.item-quantity {
+        width: 2rem;
+        text-align: center;
+        display: inline-block;
     }
 }

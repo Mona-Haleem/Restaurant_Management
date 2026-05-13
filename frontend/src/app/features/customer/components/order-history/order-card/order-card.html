@@ -1,0 +1,21 @@
+<div class="order-type">
+    <mat-icon fontSet="material-symbols-outlined">{{ typeIcon }}</mat-icon>
+    @if(order.type === 'dine-in') {
+        <p>TABLE {{order.location}}</p>
+    } @else {
+        <p>{{ order.type }}</p>
+    }
+</div>
+
+<div class="order-info">
+    <p class="order-id">#{{ order._id }}</p>
+    <p class="order-items">{{ order.items | summeryItems }}</p>
+</div>
+
+<div class="order-meta">
+    <span class="order-eta">
+        <mat-icon fontSet="material-symbols-outlined">timer</mat-icon>
+        {{ expected_time }}
+    </span>
+    <span class="order-status">{{ order.status }}</span>
+</div>

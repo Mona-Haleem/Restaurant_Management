@@ -230,23 +230,16 @@ This leads to:
 
 ---
 
-## 🧰 Tech Stack (Updated)
+## 🧰 Tech Stack
 
 - **Frontend**: Angular 17+ (Stand-alone components)
 - **State**: RxJS (Observables), Signals
 - **Styling**: SCSS (BEM naming convention)
 - **Testing**: Vitest, Angular Testing Library
 - **Icons**: Lucide Angular / FontAwesome
-- **Angular Material**
-- **ngx-charts**
-- **Backend**: JSON Server / Firebase (Temporary) (next step :express , mogo ,mongoose)
-
-## 🧰 Tech Stack
-
-- **Angular 17+**
-- **RxJS**
-- **Angular Signals**
-- **SCSS**
+- **UI Components**: Angular Material
+- **Charts**: ngx-charts
+- **Backend**: JSON Server / Firebase (Temporary) (next step: Express, Mongo, Mongoose)
 
 ---
 
@@ -279,15 +272,23 @@ This leads to:
 ---
 
 ## 📄 Status
-✅ PRD Revised (v1.1)  
-⏳ Current Focus: Completing Customer Module Tracking logic.
+✅ PRD Revised (v1.2)  
+⏳ Current Focus: Customer Module (Orders Tracking).
 
 ---
 ## 🚦 Project Status
 
 | Module | Status | Progress |
 |--------|--------|----------|
-| **Core** | In Progress | Models defined, Base Services created |
-| **Customer** | In Progress | Menu, Search, Category Filter, Cart Sidebar (Draft) |
-| **Worker** | Not Started | Routes defined |
+| **Core** | In Progress | Models, Services (`OrderService`), Pipes (`OrderStatusPipe`) |
+| **Customer** | Completed (v1)| Menu, Cart, Checkout, Order History, Status Tracking |
+| **Worker** | In Progress | Routes defined, Kanban board next |
 | **Manager** | Not Started | Planning phase |
+
+## 🧪 Testing Workflow (TDD)
+We are currently following a strict Test-Driven Development (TDD) workflow:
+1. Write unit and integration tests.
+2. User writes code to pass the tests.
+3. Code review & discussion.
+4. Proceed to the next task's tests.
+*Note: Any folder without a test file, or with failing tests, is considered an unfinished task.*

@@ -1,33 +1,37 @@
-<h3>ORDER SUMMERY</h3>
+<h3>ORDER SUMMARY</h3>
 
-
+@if(summary$ | async; as s) {
     <p>
         SUBTOTAL
-        <span class="amount">{{subtotal | currency:'EGP'}}</span>
+        <span class="amount">{{ s.subtotal | currency:'EGP' }}</span>
     </p>
+    @if(s.itemDiscount > 0) {
+        <p>
+            ITEM SAVINGS
+            <span class="amount discount">- {{ s.itemDiscount | currency:'EGP' }}</span>
+        </p>
+    }
+    @if(s.couponDiscount > 0) {
+        <p>
+            COUPON DISCOUNT
+            <span class="amount discount">- {{ s.couponDiscount | currency:'EGP' }}</span>
+        </p>
+    }
     <p>
         SERVICE FEE
-        <span class="amount">{{serviceFee | currency:'EGP'}}</span>
+        <span class="amount">{{ s.serviceFee | currency:'EGP' }}</span>
     </p>
     <p>
-        TAX 
-        <span class="amount">{{tax | currency:'EGP'}}</span>
+        TAX (5%)
+        <span class="amount">{{ s.tax | currency:'EGP' }}</span>
     </p>
-    
-    <p>
-        DISCOUNT
-        <span class="amount">{{discount | currency:'EGP'}}</span>
-    </p>
-<hr>
-<section>
-    <h4> TOTAL AMOUNT </h4>
-    <p>{{total | currency:'EGP'}}</p>
-
-    <button class="btn-primary" (click)=onPress()>PLACE ORDER <mat-icon fontSet="material-symbols-outlined">arrow_forward</mat-icon></button>
-</section>
-<!-- 
-<section id="add-coupon">
-    <label>HAVE A COUPON CODE ?</label>
-        <input matInput type="text" name="coupon_code" placeholder="coupon code">
-    <button mat-flat-button>ADD COUPON</button>
-</section> -->
+    <hr>
+    <section>
+        <h4>TOTAL AMOUNT</h4>
+        <p>{{ s.total | currency:'EGP' }}</p>
+        <button class="btn-primary" (click)="onPress()">
+            {{ buttonLabel }}
+            <mat-icon fontSet="material-symbols-outlined">arrow_forward</mat-icon>
+        </button>
+    </section>
+}

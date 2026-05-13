@@ -1,2 +1,2 @@
-<mat-icon>search</mat-icon>
-<input type="text" name="search" id="search" placeholder="Search menu..." (input)="onSearch($event)">
+<mat-icon fontSet="material-symbols-outlined">search</mat-icon>
+<input #searchInput type="text" name="search" id="search" placeholder="Search menu..." (input)="onSearch(searchInput.value)" autocomplete="off">

@@ -21,4 +21,5 @@ export class CartItemComponent {
   removeFromCart() {
     this.cartService.removeFromCart(this.item._id);
   }
+
 }
