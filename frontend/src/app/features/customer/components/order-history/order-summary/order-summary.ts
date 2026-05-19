@@ -21,14 +21,14 @@ export class OrderSummary {
   summary$ = this.cartService.getCartSummary();
 
   get buttonLabel(): string {
-    if (!this.currentStep) {
+    if (!this.currentStep === undefined) {
       return "Checkout";
     }
     return this.currentStep === 2 ? 'PLACE ORDER' : 'CONTINUE';
   }
 
   onPress() {
-    if (!this.currentStep) {
+    if (this.currentStep === undefined) {
       this.router.navigate(['customer', 'checkout'])
     } else if (this.currentStep === 2) {
       this.placeOrder.emit();

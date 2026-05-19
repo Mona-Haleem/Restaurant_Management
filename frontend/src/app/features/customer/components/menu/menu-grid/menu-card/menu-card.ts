@@ -1,8 +1,8 @@
 import { Component, inject, Input } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
-import { MenuItem } from '../../../../../core/models';
+import { MenuItem } from '../../../../../../core/models';
 import { CurrencyPipe } from '@angular/common';
-import { CartService } from '../../../../../core/services/cart/cart.service';
+import { CartService } from '../../../../../../core/services/cart/cart.service';
 @Component({
   selector: 'app-menu-card',
   standalone: true,

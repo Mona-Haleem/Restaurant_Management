@@ -232,7 +232,7 @@ This leads to:
 
 ## 🧰 Tech Stack
 
-- **Frontend**: Angular 17+ (Stand-alone components)
+- **Frontend**: Angular 21+ (Stand-alone components)
 - **State**: RxJS (Observables), Signals
 - **Styling**: SCSS (BEM naming convention)
 - **Testing**: Vitest, Angular Testing Library
@@ -240,6 +240,7 @@ This leads to:
 - **UI Components**: Angular Material
 - **Charts**: ngx-charts
 - **Backend**: JSON Server / Firebase (Temporary) (next step: Express, Mongo, Mongoose)
+- **payment integration**: stripe
 
 ---
 
@@ -273,7 +274,7 @@ This leads to:
 
 ## 📄 Status
 ✅ PRD Revised (v1.2)  
-⏳ Current Focus: Customer Module (Orders Tracking).
+⏳ Current Focus: Customer Module (Checkout & Orders Tracking).
 
 ---
 ## 🚦 Project Status
@@ -281,7 +282,7 @@ This leads to:
 | Module | Status | Progress |
 |--------|--------|----------|
 | **Core** | In Progress | Models, Services (`OrderService`), Pipes (`OrderStatusPipe`) |
-| **Customer** | Completed (v1)| Menu, Cart, Checkout, Order History, Status Tracking |
+| **Customer** | In Progress (v1)| Menu, Cart, Checkout, Order History, Status Tracking |
 | **Worker** | In Progress | Routes defined, Kanban board next |
 | **Manager** | Not Started | Planning phase |
 

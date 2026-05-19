@@ -4,6 +4,10 @@ import { NotFound } from '../../shared/components/not-found/not-found';
 import { CartPage } from './pages/cart/cart.page';
 import { CheckoutPage } from './pages/checkout/checkout.page';
 import { OrderTrackingPage } from './pages/order-tracking/order-tracking.page';
+import { menuResolver } from './resolvers/menu.resolver';
+import { orderTrackingResolver } from './resolvers/order-tracking.resolver';
+import { cartResolver } from './resolvers/cart.resolver';
+import { ordersHistoryResolver } from './resolvers/orders-history.resolver';
 
 export const customerRoutes: Routes = [
   {
@@ -14,22 +18,30 @@ export const customerRoutes: Routes = [
   {
     path: 'menu',
     component: MenuPage,
+    resolve: { menuData: menuResolver },
   },
   {
     path: 'cart',
     component: CartPage,
+    resolve: { cartData: cartResolver }
   },
   {
     path: 'checkout',
     component: CheckoutPage,
+    resolve: { cartData: cartResolver }
+  },
+  {
+    path: 'orders',
+    component: NotFound,
+    resolve: { orders: ordersHistoryResolver }
   },
   {
     path: 'order',
     component: OrderTrackingPage,
+    resolve: { order: orderTrackingResolver },
   },
   {
     path: 'profile',
-    component:// ProfilePage,
-      NotFound
+    component: NotFound,
   },
 ];

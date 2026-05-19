@@ -1,10 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { CartSidebar } from './cart-sidebar';
-import { CartService } from '../../../../core/services/cart/cart.service';
+import { CartService } from '../../../../../core/services/cart/cart.service';
 import { BehaviorSubject, of } from 'rxjs';
-import { CartItem } from '../../../../core/models';
-import { OrderService } from '../../../../core/services/order/order.service';
+import { CartItem } from '../../../../../core/models';
+import { OrderService } from '../../../../../core/services/order/order.service';
 import { vi } from 'vitest';
 
 describe('CartSidebar', () => {
@@ -119,7 +119,7 @@ describe('CartSidebar', () => {
 
     const checkoutBtn = fixture.debugElement.query(By.css('[data-testid="checkout-btn"]'));
     checkoutBtn.nativeElement.click();
-    
+
     await fixture.whenStable();
 
     // Verify order was placed (pickup as default for now or whatever you choose to implement)

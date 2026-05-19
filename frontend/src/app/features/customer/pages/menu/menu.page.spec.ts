@@ -5,8 +5,8 @@ import { MenuService } from '../../../../core/services/menu/menu.service';
 import { CartService } from '../../../../core/services/cart/cart.service';
 import { of, BehaviorSubject } from 'rxjs';
 import { CategoryFilter } from '../../components/menu/category-filter/category-filter';
-import { MenuGrid } from '../../components/menu-grid/menu-grid';
-import { CartSidebar } from '../../components/cart-sidebar/cart-sidebar';
+import { MenuGrid } from '../../components/menu/menu-grid/menu-grid';
+import { CartSidebar } from '../../components/menu/cart-sidebar/cart-sidebar';
 
 describe('MenuPage', () => {
   let fixture: ComponentFixture<MenuPage>;

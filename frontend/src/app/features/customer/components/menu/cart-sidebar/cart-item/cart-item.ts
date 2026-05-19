@@ -1,7 +1,7 @@
 import { Component, Input } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
-import { type CartItem } from '../../../../../core/models';
-import { CartService } from '../../../../../core/services/cart/cart.service';
+import { type CartItem } from '../../../../../../core/models';
+import { CartService } from '../../../../../../core/services/cart/cart.service';
 
 @Component({
   selector: 'app-cart-item',

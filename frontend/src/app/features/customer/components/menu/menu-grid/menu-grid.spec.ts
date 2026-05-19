@@ -3,8 +3,8 @@ import { By } from '@angular/platform-browser';
 import { vi } from 'vitest';
 import { MenuGrid } from './menu-grid';
 import { MenuCard } from './menu-card/menu-card';
-import { MenuItem } from '../../../../core/models';
-import { MenuService } from '../../../../core/services/menu/menu.service';
+import { MenuItem } from '../../../../../core/models';
+import { MenuService } from '../../../../../core/services/menu/menu.service';
 import { of } from 'rxjs';
 
 // ---------------------------------------------------------------------------

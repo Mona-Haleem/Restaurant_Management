@@ -1,12 +1,8 @@
-<app-category-filter />
+<app-category-filter [categories]="(categories$ | async) ?? []" />
 <header>
     <div class="title">
-        <p>
-           station 01 - grill 
-        </p>
-    <h1>
-        dinner menu
-    </h1>
+        <p>station 01 - grill</p>
+        <h1>Our Menu</h1>
     </div>
     <div class="info">
         <div>
@@ -24,6 +20,6 @@
     </div>
 </header>
 <main>
-    <app-menu-grid  />
+    <app-menu-grid [menu]="(items$ | async) ?? []"  />
     <app-cart-sidebar />
 </main>

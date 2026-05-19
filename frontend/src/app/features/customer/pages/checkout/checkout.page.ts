@@ -1,5 +1,5 @@
 import { AsyncPipe, UpperCasePipe } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, inject, Input } from '@angular/core';
 import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { StepsTracker } from '../../../../shared/components/steps-tracker/steps-tracker';
@@ -12,6 +12,7 @@ import { SectionCard } from '../../../../shared/section-card/section-card';
 import { CartService } from '../../../../core/services/cart/cart.service';
 import { OrderService } from '../../../../core/services/order/order.service';
 import { OrderType } from '../../../../core/models';
+import { CartResolvedData } from '../../resolvers/cart.resolver';
 
 interface CustomerData {
   fullName: string;
@@ -20,7 +21,6 @@ interface CustomerData {
   table_number: number | null;
   type: OrderType;
 }
-
 @Component({
   selector: 'app-checkout',
   imports: [
@@ -34,6 +34,8 @@ export class CheckoutPage {
   private cartService = inject(CartService);
   private orderService = inject(OrderService);
   private router = inject(Router);
+
+  @Input() cartData?: CartResolvedData;
 
   steps = [
     { isIcon: false, label: 'info', icon: '1', isLocked: false },

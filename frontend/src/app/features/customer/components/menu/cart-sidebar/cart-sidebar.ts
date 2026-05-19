@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { CartService } from '../../../../core/services/cart/cart.service';
+import { CartService } from '../../../../../core/services/cart/cart.service';
 import { AsyncPipe, CurrencyPipe } from '@angular/common';
 import { map } from 'rxjs';
 import { CartItemComponent } from './cart-item/cart-item';

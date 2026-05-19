@@ -1,16 +1,18 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, Input } from '@angular/core';
 import { MenuService } from '../../../../../core/services/menu/menu.service';
-import { AsyncPipe } from '@angular/common';
+
 
 @Component({
   selector: 'app-category-filter',
-  imports: [AsyncPipe],
+  imports: [],
   templateUrl: './category-filter.html',
   styleUrl: './category-filter.scss',
 })
 export class CategoryFilter {
   private itemsService = inject(MenuService)
-  categories = this.itemsService.getCategories();
+
+  @Input() categories: string[] = [];
+
   get activeCategory() {
     return this.itemsService.selectedCategory;
   };
