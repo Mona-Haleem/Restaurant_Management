@@ -3,11 +3,12 @@ form {
     justify-content: space-between;
     gap: 3rem;
 
-    section {
+    fieldset {
         flex: 1;
+        border: 0;
     }
 
-    section>div {
+    fieldset>div {
         margin: 0.5rem 0 0.25rem;
     }
 
@@ -116,7 +117,7 @@ form {
                 font-size: 0.85rem;
                 flex: 1;
             }
-            
+
             mat-icon {
                 font-size: 1.2rem;
                 width: 1.2rem;

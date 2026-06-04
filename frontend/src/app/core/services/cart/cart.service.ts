@@ -4,27 +4,27 @@ import { BehaviorSubject, combineLatest, map, Observable } from "rxjs";
 
 // ─── Pricing constants (single source of truth) ───────────────────────────────
 export const SERVICE_FEE = 10;
-export const TAX_RATE    = 0.05;   // 5%
+export const TAX_RATE = 0.05;   // 5%
 
 // ─── Valid coupon codes ────────────────────────────────────────────────────────
 const VALID_COUPONS: Record<string, number> = {
     'WELCOME10': 10,   // 10% off subtotal
-    'RESTO20':   20,   // 20% off subtotal
-    'FEAST15':   15,   // 15% off subtotal
+    'RESTO20': 20,   // 20% off subtotal
+    'FEAST15': 15,   // 15% off subtotal
 };
 
 // ─── Summary shape returned by getSummary() ───────────────────────────────────
 export interface OrderSummaryData {
-    subtotal:       number;   // after item-level discounts
-    itemDiscount:   number;   // savings from item.discount %
+    subtotal: number;   // after item-level discounts
+    itemDiscount: number;   // savings from item.discount %
     couponDiscount: number;   // savings from coupon code
-    serviceFee:     number;
-    tax:            number;   // 5% on (subtotal - couponDiscount)
-    total:          number;
+    serviceFee: number;
+    tax: number;   // 5% on (subtotal - couponDiscount)
+    total: number;
 }
 
 export interface AppliedCoupon {
-    code:            string;
+    code: string;
     discountPercent: number;
 }
 
@@ -36,6 +36,7 @@ export interface AppliedCoupon {
  * @param couponPercent  Coupon discount as a whole-number percentage (default 0)
  */
 export function getSummary(items: CartItem[], couponPercent = 0): OrderSummaryData {
+
     const rawSubtotal = items.reduce(
         (sum, item) => sum + item.price * item.quantity, 0
     );
@@ -43,29 +44,29 @@ export function getSummary(items: CartItem[], couponPercent = 0): OrderSummaryDa
         return sum + (item.price * (item.discount ?? 0) / 100) * item.quantity;
     }, 0);
 
-    const subtotal       = +(rawSubtotal   - itemDiscount).toFixed(2);
+    const subtotal = +(rawSubtotal - itemDiscount).toFixed(2);
     const couponDiscount = +(subtotal * couponPercent / 100).toFixed(2);
-    const afterCoupon    = Math.max(0, subtotal - couponDiscount);
-    const tax            = +(afterCoupon * TAX_RATE).toFixed(2);
-    const total          = +(afterCoupon + SERVICE_FEE + tax).toFixed(2);
+    const afterCoupon = Math.max(0, subtotal - couponDiscount);
+    const tax = +(afterCoupon * TAX_RATE).toFixed(2);
+    const total = +(afterCoupon + SERVICE_FEE + tax).toFixed(2);
 
     return {
         subtotal,
-        itemDiscount:   +itemDiscount.toFixed(2),
+        itemDiscount: +itemDiscount.toFixed(2),
         couponDiscount,
-        serviceFee: SERVICE_FEE,
+        serviceFee: items.length ? SERVICE_FEE : 0,
         tax,
-        total,
+        total: items.length ? total : 0,
     };
 }
 
 @Injectable({ providedIn: 'root' })
 export class CartService {
-    private cartSubject   = new BehaviorSubject<CartItem[]>([]);
+    private cartSubject = new BehaviorSubject<CartItem[]>([]);
     private couponSubject = new BehaviorSubject<AppliedCoupon | null>(null);
 
     cartItems$ = this.cartSubject.asObservable();
-    coupon$    = this.couponSubject.asObservable();
+    coupon$ = this.couponSubject.asObservable();
 
     // ─── Derived streams ─────────────────────────────────────────────────────
 

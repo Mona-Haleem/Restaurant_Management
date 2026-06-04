@@ -3,9 +3,9 @@
 <div class="container">
     <section>
         @if(currentStep === 0) {
-            <app-customer-data-form (submit)="onCustomerData($event)"/>
+            <app-customer-data-form (submit)="onCustomerData($event)" [form]="customerForm"/>
         } @else if(currentStep === 1) {
-            <app-payment-form (methodChange)="onPaymentMethodChange($event)"/>
+            <app-payment-form (submit)="onPaymentMethodSubmit($event)" [form]="paymentForm"/>
         } 
 
         <app-section-card title="items" subtitle="review selections">
@@ -24,23 +24,23 @@
                 <div class="review-grid">
                     <div class="review-item">
                         <label>CUSTOMER</label>
-                        <p>{{ customerData?.fullName }}</p>
+                        <p>{{ customerForm.value?.fullName }}</p>
                     </div>
                     <div class="review-item">
                         <label>PHONE</label>
-                        <p>{{ customerData?.phone }}</p>
+                        <p>{{ customerForm.value?.phone }}</p>
                     </div>
                     <div class="review-item">
                         <label>ORDER TYPE</label>
-                        <p>{{ customerData?.type  }}</p>
+                        <p>{{ customerForm.value?.type  }}</p>
                     </div>
                     <div class="review-item">
                         <label>LOCATION</label>
-                        <p>{{ customerData?.type === 'dine-in' ? 'TABLE ' + customerData?.table_number : (customerData?.type === 'delivery' ? customerData?.delivery_address : 'PICKUP') }}</p>
+                        <p>{{ customerForm.value?.type === 'dine-in' ? 'TABLE ' + customerForm.value?.location : (customerForm.value?.type === 'delivery' ? customerForm.value?.location : 'PICKUP') }}</p>
                     </div>
                     <div class="review-item">
                         <label>PAYMENT METHOD</label>
-                        <p>{{ paymentMethod  }}</p>
+                        <p>{{ paymentForm.value?.type }}</p>
                     </div>
                 </div>
             </app-section-card>
@@ -49,6 +49,7 @@
 
     <aside>
         <app-order-summary
+            [isNextStepAllowed]="isNextStepAllowed"
             [(currentStep)]="currentStep"
             (currentStepChange)="onStepChange($event)"
             (placeOrder)="onPlaceOrder()"/>

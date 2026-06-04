@@ -1,9 +1,10 @@
 import { Component, EventEmitter, HostBinding, Input, Output } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
+import { OrderStatusPipe } from '../../pipes/order-status/order-status.pipe';
 
 @Component({
   selector: 'app-steps-tracker',
-  imports: [MatIconModule],
+  imports: [MatIconModule, OrderStatusPipe],
   templateUrl: './steps-tracker.html',
   styleUrl: './steps-tracker.scss',
 })

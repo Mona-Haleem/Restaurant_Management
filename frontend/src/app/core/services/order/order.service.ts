@@ -1,16 +1,18 @@
 import { Injectable } from '@angular/core';
 import { CartItem, Order, OrderType } from '../../models';
 import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
+import { DUMMY_ORDERS } from '../../DummyData/item';
 
 @Injectable({
   providedIn: 'root',
 })
 export class OrderService {
-  private orders: BehaviorSubject<Order[]> = new BehaviorSubject<Order[]>([]);
+  private orders: BehaviorSubject<Order[]> = new BehaviorSubject<Order[]>(DUMMY_ORDERS);
 
   placeOrder(items: CartItem[], type: OrderType, location: number | string): Observable<Order> {
     const order: Order = {
       _id: crypto.randomUUID(),
+      userId: 'customer-123',
       type,
       location,
       items: items.map(item => ({ ...item })),
@@ -26,7 +28,7 @@ export class OrderService {
   }
 
   getOrders(): Observable<Order[]> {
-    return this.orders.asObservable();
+    return this.orders;
 
   }
 

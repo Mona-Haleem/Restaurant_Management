@@ -1,6 +1,8 @@
 // Core models — shared type definitions
 // These interfaces are used across services and components
 
+import { OrderSummaryData } from "../services/cart/cart.service";
+
 export type UserRole = 'customer' | 'worker' | 'manager';
 
 export interface User {
@@ -9,9 +11,16 @@ export interface User {
   email: string;
   role: UserRole;
 }
+export const OrderStatusList = ['PENDING', 'IN_PREPARATION', 'READY', 'DELIVERED', 'CANCELED'] as const;
+export type OrderStatus = typeof OrderStatusList[number];
 
-export type OrderStatus = 'PENDING' | 'IN_PREPARATION' | 'READY' | 'DELIVERED' | 'CANCELED';
-
+export const statusIcons: { [key in OrderStatus]: string } = {
+  'PENDING': 'schedule',
+  'IN_PREPARATION': 'restaurant',
+  'READY': 'check_circle',
+  'DELIVERED': 'home',
+  'CANCELED': 'cancel',
+}
 export interface MenuItem {
   _id: string;
   name: string;
@@ -37,6 +46,7 @@ export interface CartItem extends MenuItem {
 export type OrderType = 'delivery' | 'pickup' | 'dine-in';
 export interface Order {
   _id: string;
+  userId: string;
   type: OrderType;
   location: string | number;
   items: CartItem[];
@@ -46,6 +56,28 @@ export interface Order {
   createdAt: string;
   updatedAt: string;
   cancelReason?: string;
+}
+
+export interface CustomerData {
+  fullName: string;
+  phone: string;
+  location: string | null;
+  type: OrderType;
+  paymentMethod?: string;
+  pricing?: OrderSummaryData
+}
+export type PaymentData = {
+  coupons?: string;
+  type: "cash"
+} | {
+  coupons?: string;
+  type: "card";
+  cardData: {
+    name: string;
+    number: string;
+    expiry_date: string;
+    cvv: string;
+  }
 }
 
 export interface InventoryItem {

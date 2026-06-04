@@ -1,14 +1,32 @@
-<header>
-    <div>
-        <p>TRACKING ORDER</p>
-        <h2>#{{orderId}}</h2>
-    </div>
-    <div>
-        <p>EST. ARRIVAL</p>
-        <h2>{{estimatedTimeOfArrival}}</h2>
-    </div>
-</header>
 
+    <header>
+        <div id="order-id" data-testid="order-id">
+            <p>Tracking Order</p>
+            <h3>#{{order._id}}</h3>
+        </div>
+        <div id="est-arrival" data-testid="est-arrival">
+            <p>EST.ARRIVAL</p>
+            <h3>{{estimatedTimeOfArrival}}</h3>
+        </div>
+    </header>
+    <app-steps-tracker [steps]="steps" [currentStep]="currentStep" data-testid="steps-tracker"/>
+
+    <div id="order-details">
+        <div>
+
+            <h3>Order Details</h3>
+            <p data-testid="order-items">{{ orderItems | summeryItems }}</p>
+        </div>
+        <div>
+            <h3>Total Price</h3>
+            <p data-testid="total-price">{{ order.totalPrice | currency:'EGP' }}</p>
+        </div>
+
+    </div>
+
+    @if(order.status === 'PENDING' ) {
+        <button class="btn-primary" (click)="cancelOrder()" data-testid="cancel-btn">Cancel Order</button>
+    }
 @if(user !== 'customer' ){
     <div id ="updates">
         <div>

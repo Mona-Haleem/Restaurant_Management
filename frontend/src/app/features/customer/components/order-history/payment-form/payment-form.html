@@ -1,48 +1,23 @@
 <app-section-card title="PAYMENT METHOD" subtitle="BILLING & SECURITY">
-    <form (ngSubmit)="onSubmit()">
-        <section>
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">        
+        <fieldset>
             <div>
                 <label>Payment Type</label>
                 <div class="payment-type">
-                    <div (click)="setPaymentMethod('cash')" class="payment-box" [class.selected]="paymentMethod === 'cash'">
+                    <div (click)="setPaymentMethod('cash')" class="payment-box" [class.selected]="form.value.type === 'cash'">
                         <mat-icon fontSet="material-symbols-outlined">payments</mat-icon>
                         <p>Cash</p>
                     </div>
-                    <div (click)="setPaymentMethod('card')" class="payment-box" [class.selected]="paymentMethod === 'card'">
+                    <div (click)="setPaymentMethod('card')" class="payment-box" [class.selected]="form.value.type === 'card'">
                         <mat-icon fontSet="material-symbols-outlined">credit_card</mat-icon>
                         <p>Card</p>
                     </div>
                 </div>
             </div>
-        </section>
-
-        @if(paymentMethod === 'card') {
-        <section>
-            <div>
-                <label>CARDHOLDER NAME</label>
-                <input type="text" name="cardHolder" placeholder="Name on card" required [(ngModel)]="cardHolder">
-            </div>
-            <div>
-                <label>CARD NUMBER</label>
-                <input type="text" name="cardNumber" placeholder="0000 0000 0000 0000" maxlength="19" required [(ngModel)]="cardNumber">
-            </div>
-            <div class="card-meta">
-                <div>
-                    <label>EXPIRY DATE</label>
-                    <input type="text" name="expiry" placeholder="MM / YY" maxlength="7" required [(ngModel)]="expiry">
-                </div>
-                <div>
-                    <label>CVV</label>
-                    <input type="text" name="cvv" placeholder="•••" maxlength="3" required [(ngModel)]="cvv">
-                </div>
-            </div>
-        </section>
-        }
-
-        <section class="coupon-section">
+             <fieldset class="coupon-section">
             <label>HAVE A COUPON CODE ?</label>
             <div class="coupon-input">
-                <input type="text" name="couponCode" placeholder="coupon code" [(ngModel)]="couponCode">
+                <input type="text" name="couponCode" placeholder="coupon code" formControlName="couponCode">
                 <button type="button" class="btn-primary btn-sm" (click)="applyCoupon()">APPLY</button>
             </div>
             @if(couponError) {
@@ -55,6 +30,32 @@
                     <button type="button" class="btn-text-tertiary btn-sm" (click)="removeCoupon()">REMOVE</button>
                 </div>
             }
-        </section>
+        </fieldset>
+        </fieldset>
+
+        @if(form.value.type === 'card') {
+        <fieldset>
+            <div>
+                <label>CARDHOLDER NAME</label>
+                <input type="text" name="cardHolder" placeholder="Name on card" required formControlName="cardHolder">
+            </div>
+            <div>
+                <label>CARD NUMBER</label>
+                <input type="text" name="cardNumber" placeholder="0000 0000 0000 0000" maxlength="19" required formControlName="cardNumber">
+            </div>
+            <div class="card-meta">
+                <div>
+                    <label>EXPIRY DATE</label>
+                    <input type="text" name="expiry" placeholder="MM / YY" maxlength="7" required formControlName="expiry">
+                </div>
+                <div>
+                    <label>CVV</label>
+                    <input type="text" name="cvv" placeholder="•••" maxlength="3" required formControlName="cvv">
+                </div>
+            </div>
+        </fieldset>
+        }
+
+       
     </form>
 </app-section-card>

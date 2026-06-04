@@ -19,6 +19,9 @@ export class OrderCard {
   @Input({ required: true }) order!: Order;
   expected_time = '30 minutes';
 
+  get orderItems():string[]{
+    return this.order.items.map(item => `${item.name} x${item.quantity}`);
+  }
   get typeIcon(): string {
     return TYPE_ICON[this.order.type] ?? 'receipt';
   }

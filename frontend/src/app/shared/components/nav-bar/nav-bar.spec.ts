@@ -46,7 +46,7 @@ describe('NavBar', () => {
   it('should have a navigation link to the Menu page', () => {
     const menuLink = fixture.debugElement.query(By.css('[data-testid="nav-menu"]'));
     expect(menuLink).toBeTruthy();
-    expect(menuLink.attributes['routerLink']).toBe('/menu');
+    expect(menuLink.attributes['routerLink']).toEqual(['customer', 'menu']);
   });
 
   it('should have a navigation link to the Order Tracking/History page', () => {

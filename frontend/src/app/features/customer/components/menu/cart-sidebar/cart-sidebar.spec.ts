@@ -23,7 +23,8 @@ describe('CartSidebar', () => {
       get total() { return of(15); },
       removeFromCart: vi.fn(),
       clearCart: vi.fn(),
-      getCart: vi.fn().mockReturnValue([]) // Add getCart since we might need it for checkout
+      getCart: vi.fn().mockReturnValue([]),
+      getCartSummary: vi.fn().mockReturnValue({ subtotal: 50, itemDiscount: 0, couponDiscount: 0, serviceFee: 10, tax: 10, total: 66 })
     };
 
     orderServiceStub = {

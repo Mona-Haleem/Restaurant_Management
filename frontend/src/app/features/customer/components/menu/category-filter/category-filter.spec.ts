@@ -21,6 +21,7 @@ describe('CategoryFilter', () => {
 
     fixture = TestBed.createComponent(CategoryFilter);
     component = fixture.componentInstance;
+    component.categories = categories;
     fixture.detectChanges();
   }
 
@@ -39,10 +40,11 @@ describe('CategoryFilter', () => {
   });
 
   it('should render a button for each category including "All"', () => {
-    createComponent(['Pizza', 'Dessert']);
+    const categories = ['Pizza', 'Dessert'];
+    createComponent(categories);
 
     const buttons = fixture.debugElement.queryAll(By.css('button'));
-    expect(buttons.length).toBe(3); // All + Pizza + Dessert
+    expect(buttons.length).toBe(categories.length + 1); // All + Pizza + Dessert
     expect(buttons[0].nativeElement.textContent.trim()).toBe('All');
     expect(buttons[1].nativeElement.textContent.trim()).toBe('Pizza');
     expect(buttons[2].nativeElement.textContent.trim()).toBe('Dessert');

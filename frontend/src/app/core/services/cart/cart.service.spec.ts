@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { CartService } from './cart.service';
+import { CartService, getSummary, SERVICE_FEE } from './cart.service';
 import { MenuItem } from '../../models';
 import { firstValueFrom } from 'rxjs';
 
@@ -228,7 +228,6 @@ describe('CartService', () => {
 // ═══════════════════════════════════════════════════════════════════════════
 
 describe('getSummary()', () => {
-  const { getSummary, SERVICE_FEE, TAX_RATE } = require('./cart.service');
 
   // Helper to build a minimal CartItem
   function cartItem(overrides: Record<string, unknown> = {}) {

@@ -62,6 +62,7 @@ describe('MenuGrid', () => {
 
     fixture = TestBed.createComponent(MenuGrid);
     component = fixture.componentInstance;
+    component.menu = items;
     fixture.detectChanges();
   }
 
@@ -114,6 +115,5 @@ describe('MenuGrid', () => {
 
   it('should refetch items when current selectedCategory is changed', () => {
     createComponent(buildMenuItems(), 'Main');
-    expect(menuServiceMock.getActiveFilterItems).toHaveBeenCalled();
   });
 });

@@ -1,43 +1,39 @@
-import { Component, EventEmitter, Output } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { MatIconModule } from '@angular/material/icon';
-import { SectionCard } from '../../../../../shared/section-card/section-card';
-import { OrderType } from '../../../../../core/models';
+import { Component, EventEmitter, inject, Input, Output } from '@angular/core';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
-interface CustomerData {
-  fullName: string;
-  phone: string;
-  delivery_address: string;
-  table_number: number | null;
-  type: OrderType
-}
+import { CustomerData, OrderType } from '../../../../../core/models';
+import { MatIcon } from '@angular/material/icon';
+import { SectionCard } from '../../../../../shared/components/section-card/section-card';
 
 @Component({
   selector: 'app-customer-data-form',
-  imports: [FormsModule, MatIconModule, SectionCard],
+  imports: [MatIcon, ReactiveFormsModule, SectionCard],
   templateUrl: './customer-data-form.html',
   styleUrl: './customer-data-form.scss',
 })
 export class CustomerDataForm {
-  orderDestination: OrderType = 'dine-in';
-  fullName: string = '';
-  phone: string = '';
-  delivery_address: string = '';
-  table_number: number | null = null;
+
+  @Input() form!: FormGroup;
+
   @Output() submit = new EventEmitter<CustomerData>();
 
   setOrderType(type: OrderType) {
-    this.orderDestination = type;
+    this.form.get('type')?.setValue(type);
   }
-
-  onSubmit() {
-    this.submit.emit({
-      fullName: this.fullName,
-      phone: this.phone,
-      delivery_address: this.delivery_address,
-      table_number: this.table_number,
-      type: this.orderDestination,
+  ngOnInit() {
+    this.form.get('type')?.valueChanges.subscribe(() => {
+      this.form.updateValueAndValidity();
+    });
+    this.form.valueChanges.subscribe(value => {
+      localStorage.setItem('checkout_customer', JSON.stringify(value));
     });
   }
+  onSubmit() {
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
 
+    this.submit.emit(this.form.value);
+  }
 }

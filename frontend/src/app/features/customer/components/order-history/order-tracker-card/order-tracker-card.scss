@@ -1,41 +1,72 @@
 :host {
     display: block;
-    background-color: var(--mat-sys-on-surface);
-    border-top: 6px solid var(--mat-sys-secondary);
-    color: color-mix(in srgb, var(--mat-sys-surface) 60%, transparent);
+    padding: 1.5rem;
+    background-color: var(--mat-sys-surface-container-lowest);
+    color: color-mix(in srgb, var(--mat-sys-on-surface) 60%, transparent);
     text-transform: uppercase;
-
+    box-shadow: 5px 5px 10px color-mix(in srgb, var(--mat-sys-on-surface) 10%, transparent);
     header {
         display: flex;
         justify-content: space-between;
         align-items: stretch;
-        padding: 1.5rem 2rem;
-        border-bottom: 1px solid color-mix(in srgb, var(--mat-sys-surface) 15%, transparent);
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid color-mix(in srgb, var(--mat-sys-on-surface) 15%, transparent);
 
         div {
             display: flex;
             flex-direction: column;
-            gap: 0.25rem;
-
+            align-items: flex-start;
+            
             &:last-child {
-                text-align: right;
+                align-items: flex-end;
+            }
+            p {
+                font-size: 0.70rem;
+                font-weight: 500;
+                padding: 0.25rem 0;
+            }
+        
+        }
+        #order-id h3{
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: var(--mat-sys-on-surface);
+        }
+
+        #est-arrival h3{
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--mat-sys-tertiary);
+        }
+
+
+
+
+    }
+    
+    #order-details{
+        display: flex;
+        justify-content: space-between;
+        h3{
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--mat-sys-on-surface);
+            padding: 1rem 0 0.25rem;
+        }
+        p{
+            font-size: 0.9rem;
+            color: color-mix(in srgb, var(--mat-sys-on-surface) 80%, transparent);
+        }
+
+        div:last-child{
+            text-align: right;
+            p{
+                color: var(--mat-sys-primary);
+                font-weight: 600;
             }
         }
-
-        p {
-            font-size: 0.7rem;
-            font-weight: 600;
-            letter-spacing: 0.08em;
-            color: color-mix(in srgb, var(--mat-sys-surface) 50%, transparent);
-        }
-
-        h2 {
-            font-size: 1.6rem;
-            font-weight: 800;
-            color: var(--mat-sys-surface);
-        }
     }
-
     #updates {
         padding: 1rem 2rem;
 
@@ -44,7 +75,7 @@
             align-items: center;
             gap: 0.75rem;
             padding: 0.6rem 0;
-            border-bottom: 1px solid color-mix(in srgb, var(--mat-sys-surface) 10%, transparent);
+            border-bottom: 1px solid color-mix(in srgb, var(--mat-sys-surface-container-lowest) 10%, transparent);
 
             mat-icon {
                 font-size: 1rem;

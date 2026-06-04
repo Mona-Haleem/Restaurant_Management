@@ -1,60 +1,71 @@
-import { Component, EventEmitter, inject, OnInit, Output } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { MatIconModule } from '@angular/material/icon';
-import { AsyncPipe } from '@angular/common';
-import { SectionCard } from '../../../../../shared/section-card/section-card';
+import { Component, EventEmitter, inject, Input, OnInit, Output } from '@angular/core';
+import { FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+
 import { CartService } from '../../../../../core/services/cart/cart.service';
-
-export type PaymentMethod = 'cash' | 'card';
-
-export interface PaymentData {
-  method: PaymentMethod;
-  cardNumber?: string;
-  cardHolder?: string;
-  expiry?: string;
-  cvv?: string;
-}
+import { PaymentData } from '../../../../../core/models';
+import { MatIcon } from '@angular/material/icon';
+import { AsyncPipe } from '@angular/common';
+import { SectionCard } from '../../../../../shared/components/section-card/section-card';
 
 @Component({
   selector: 'app-payment-form',
-  imports: [FormsModule, MatIconModule, SectionCard, AsyncPipe],
+  imports: [MatIcon, AsyncPipe, ReactiveFormsModule, SectionCard],
   templateUrl: './payment-form.html',
   styleUrl: './payment-form.scss',
 })
 export class PaymentForm implements OnInit {
   private cartService = inject(CartService);
 
-  paymentMethod: PaymentMethod = 'cash';
-  cardNumber: string = '';
-  cardHolder: string = '';
-  expiry: string = '';
-  cvv: string = '';
-  
-  couponCode: string = '';
-  couponError: string = '';
-  appliedCoupon$ = this.cartService.coupon$;
+  @Input({ required: true }) form!: FormGroup;
 
   @Output() submit = new EventEmitter<PaymentData>();
-  @Output() methodChange = new EventEmitter<PaymentMethod>();
+
+  couponError = '';
+
+  appliedCoupon$ = this.cartService.coupon$;
 
   ngOnInit() {
-    this.methodChange.emit(this.paymentMethod);
+    this.form.get('type')?.valueChanges.subscribe(method => {
+      this.updateValidators(method);
+    });
+
+    this.updateValidators(this.form.get('type')?.value);
   }
 
-  setPaymentMethod(method: PaymentMethod) {
-    this.paymentMethod = method;
-    this.methodChange.emit(this.paymentMethod);
+  get isValid(): boolean {
+    return this.form.valid;
+  }
+
+  setPaymentMethod(method: 'cash' | 'card') {
+    this.form.get('type')?.setValue(method);
+  }
+
+  private updateValidators(method: string) {
+    const fields = ['cardHolder', 'cardNumber', 'expiry', 'cvv'];
+
+    if (method === 'card') {
+      this.form.get('cardHolder')?.setValidators([Validators.required]);
+      this.form.get('cardNumber')?.setValidators([Validators.required, Validators.minLength(16)]);
+      this.form.get('expiry')?.setValidators([Validators.required]);
+      this.form.get('cvv')?.setValidators([Validators.required, Validators.minLength(3)]);
+    } else {
+      fields.forEach(f => this.form.get(f)?.clearValidators());
+    }
+
+    fields.forEach(f => this.form.get(f)?.updateValueAndValidity());
   }
 
   applyCoupon() {
-    this.couponError = '';
-    if (!this.couponCode.trim()) return;
-    
-    const success = this.cartService.applyCoupon(this.couponCode);
+    const code = this.form.value.couponCode?.trim();
+    if (!code) return;
+
+    const success = this.cartService.applyCoupon(code);
+
     if (!success) {
       this.couponError = 'Invalid coupon code';
     } else {
-      this.couponCode = '';
+      this.form.get('couponCode')?.setValue('');
+      this.couponError = '';
     }
   }
 
@@ -63,14 +74,30 @@ export class PaymentForm implements OnInit {
   }
 
   onSubmit() {
-    this.submit.emit({
-      method: this.paymentMethod,
-      ...(this.paymentMethod === 'card' && {
-        cardNumber: this.cardNumber,
-        cardHolder: this.cardHolder,
-        expiry: this.expiry,
-        cvv: this.cvv,
-      }),
-    });
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
+
+    const v = this.form.value;
+
+    const data: PaymentData =
+      v.type === 'cash'
+        ? {
+          type: 'cash',
+          coupons: v.couponCode,
+        }
+        : {
+          type: 'card',
+          coupons: v.couponCode,
+          cardData: {
+            number: v.cardNumber,
+            name: v.cardHolder,
+            expiry_date: v.expiry,
+            cvv: v.cvv,
+          }
+        };
+
+    this.submit.emit(data);
   }
 }

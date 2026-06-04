@@ -1,17 +1,37 @@
-import { Component, Input } from '@angular/core';
+import { Component, inject, Input, OnInit } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
-import { Order } from '../../../../../core/models';
+import { Order, OrderStatusList } from '../../../../../core/models';
+import { SectionCard } from "../../../../../shared/components/section-card/section-card";
+import { StepsTracker } from "../../../../../shared/components/steps-tracker/steps-tracker";
+import { SummeryItemsPipe } from '../../../../../shared/pipes/summery-items/summery-items.pipe';
+import { CurrencyPipe } from '@angular/common';
+import { OrderService } from '../../../../../core/services/order/order.service';
 
 @Component({
   selector: 'app-order-tracker-card',
-  imports: [MatIconModule],
+  imports: [MatIconModule, SummeryItemsPipe, StepsTracker, CurrencyPipe],
   templateUrl: './order-tracker-card.html',
   styleUrl: './order-tracker-card.scss',
 })
-export class OrderTrackerCard {
+export class OrderTrackerCard implements OnInit {
   user?: 'customer' | 'worker' | 'manager' = 'customer'
   update?: { time: string, status: string } = undefined
   estimatedTimeOfArrival?: string = '30 minutes'
   orderId?: string = '123'
-  @Input() order?: Order;
+  @Input({ required: true }) order!: Order;
+  private orderService = inject(OrderService);
+  steps = OrderStatusList.filter(status => status !== 'CANCELED').map(status => 
+    ({ isIcon:true,label: status.split('_').join(' '), value: status,icon: status }
+  ));
+  currentStep = 0;
+  get orderItems() {
+    return this.order.items.map(item => `${item.name} x${item.quantity}`);
+  }
+  ngOnInit() {
+    this.currentStep = OrderStatusList.indexOf(this.order.status);
+  }
+
+  cancelOrder() {
+    this.orderService.cancelOrder(this.order._id)
+  }
 }

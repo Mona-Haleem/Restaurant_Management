@@ -3,11 +3,12 @@ form {
     justify-content: space-between;
     gap: 3rem;
 
-    section {
+    fieldset {
+        border: 0;
         flex: 1
     }
 
-    section>div {
+    fieldset>div {
         margin: 0.5rem 0 0.25rem
     }
 

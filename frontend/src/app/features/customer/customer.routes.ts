@@ -31,14 +31,14 @@ export const customerRoutes: Routes = [
     resolve: { cartData: cartResolver }
   },
   {
-    path: 'orders',
+    path: 'order/:id',
     component: NotFound,
     resolve: { orders: ordersHistoryResolver }
   },
   {
-    path: 'order',
+    path: 'orders',
     component: OrderTrackingPage,
-    resolve: { order: orderTrackingResolver },
+    resolve: { orders: orderTrackingResolver },
   },
   {
     path: 'profile',
