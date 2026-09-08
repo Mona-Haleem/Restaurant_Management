@@ -1,4 +1,10 @@
-   {
-     "*.{ts,html}": ["eslint --fix", "prettier --write"],
-     "*.scss": ["stylelint --fix", "prettier --write"]
-   }
+{
+  "frontend/**/*.{ts,html}": [
+    "npm --prefix frontend exec -- eslint --fix",
+    "npm --prefix frontend exec -- prettier --write"
+  ],
+  "frontend/**/*.scss": [
+    "npm --prefix frontend exec -- stylelint --fix",
+    "npm --prefix frontend exec -- prettier --write"
+  ]
+}

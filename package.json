@@ -1,0 +1,17 @@
+{
+  "private": true,
+  "scripts": {
+    "frontend:lint": "npm --prefix frontend run lint",
+    "frontend:test": "npm --prefix frontend test",
+    "frontend:build": "npm --prefix frontend run build",
+    "lint": "npm run frontend:lint",
+    "test": "npm run frontend:test",
+    "build": "npm run frontend:build"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "file:...",
+    "@commitlint/config-conventional": "file:...",
+    "husky": "file:...",
+    "lint-staged": "file:..."
+  }
+}
