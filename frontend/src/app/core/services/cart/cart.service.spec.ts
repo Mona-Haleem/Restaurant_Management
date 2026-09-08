@@ -1,7 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { CartService, getSummary, SERVICE_FEE } from './cart.service';
 import { MenuItem } from '../../models';
-import { firstValueFrom } from 'rxjs';
 
 describe('CartService', () => {
   let service: CartService;
@@ -35,103 +34,93 @@ describe('CartService', () => {
     expect(service).toBeTruthy();
   });
 
-  it('should initialize with an empty cart', async () => {
-    const items = await firstValueFrom(service.cartItems$);
-    expect(items).toEqual([]);
-
-    const count = await firstValueFrom(service.count);
-    expect(count).toBe(0);
-
-    const total = await firstValueFrom(service.total);
-    expect(total).toBe(0);
+  it('should initialize with an empty cart', () => {
+    expect(service.cartItems()).toEqual([]);
+    expect(service.cartCount()).toBe(0);
+    expect(service.cartTotal()).toBe(0);
   });
 
-  it('should add an item to the cart', async () => {
+  it('should add an item to the cart', () => {
     service.addToCart(mockMenuItem);
 
-    const items = await firstValueFrom(service.cartItems$);
+    const items = service.cartItems();
     expect(items.length).toBe(1);
     expect(items[0]._id).toBe('1');
     expect(items[0].quantity).toBe(1);
   });
 
-  it('should increment quantity if the same item is added again', async () => {
+  it('should increment quantity if the same item is added again', () => {
     service.addToCart(mockMenuItem);
     service.addToCart(mockMenuItem);
 
-    const items = await firstValueFrom(service.cartItems$);
+    const items = service.cartItems();
     expect(items.length).toBe(1);
     expect(items[0].quantity).toBe(2);
   });
 
-  it('should correctly calculate total price and item count', async () => {
+  it('should correctly calculate total price and item count', () => {
     service.addToCart(mockMenuItem); // $10, qty 1
     service.addToCart(mockMenuItem); // $10, qty 2 -> $20
     service.addToCart(mockMenuItem2); // $5, qty 1 -> $5
     // Total should be $25. Item count should be 3.
 
-    const count = await firstValueFrom(service.count);
-    expect(count).toBe(3);
-
-    const total = await firstValueFrom(service.total);
-    expect(total).toBe(25);
+    expect(service.cartCount()).toBe(3);
+    expect(service.cartTotal()).toBe(25);
   });
 
-  it('should remove an item from the cart', async () => {
+  it('should remove an item from the cart', () => {
     service.addToCart(mockMenuItem);
     service.addToCart(mockMenuItem2);
 
     service.removeFromCart('1');
 
-    const items = await firstValueFrom(service.cartItems$);
+    const items = service.cartItems();
     expect(items.length).toBe(1);
     expect(items[0]._id).toBe('2');
   });
 
-  it('should decrease quantity if removeOne is called on an item with qty > 1', async () => {
+  it('should decrease quantity if removeOne is called on an item with qty > 1', () => {
     service.addToCart(mockMenuItem);
     service.addToCart(mockMenuItem);
 
     service.removeFromCart(mockMenuItem._id);
 
-    const items = await firstValueFrom(service.cartItems$);
+    const items = service.cartItems();
     expect(items.length).toBe(1);
     expect(items[0].quantity).toBe(1);
   });
 
-  it('should completely remove the item if removeOne is called and qty is 1', async () => {
+  it('should completely remove the item if removeOne is called and qty is 1', () => {
     service.addToCart(mockMenuItem);
     service.removeFromCart(mockMenuItem._id);
 
-    const items = await firstValueFrom(service.cartItems$);
-    expect(items).toEqual([]);
+    expect(service.cartItems()).toEqual([]);
   });
 
-  it('should clear the cart entirely', async () => {
+  it('should clear the cart entirely', () => {
     service.addToCart(mockMenuItem);
     service.addToCart(mockMenuItem2);
     service.clearCart();
 
-    const items = await firstValueFrom(service.cartItems$);
-    expect(items).toEqual([]);
+    expect(service.cartItems()).toEqual([]);
   });
+
   // ── removeItem ─────────────────────────────────────────────────────────
 
-  it('should completely remove an item regardless of quantity when removeItem is called', async () => {
+  it('should completely remove an item regardless of quantity when removeItem is called', () => {
     service.addToCart(mockMenuItem);
     service.addToCart(mockMenuItem); // qty = 2
     service.removeItem(mockMenuItem._id);
 
-    const items = await firstValueFrom(service.cartItems$);
-    expect(items).toEqual([]);
+    expect(service.cartItems()).toEqual([]);
   });
 
-  it('should not affect other items when removeItem is called for a specific item', async () => {
+  it('should not affect other items when removeItem is called for a specific item', () => {
     service.addToCart(mockMenuItem);
     service.addToCart(mockMenuItem2);
     service.removeItem(mockMenuItem._id);
 
-    const items = await firstValueFrom(service.cartItems$);
+    const items = service.cartItems();
     expect(items.length).toBe(1);
     expect(items[0]._id).toBe('2');
   });
@@ -166,40 +155,37 @@ describe('CartService', () => {
     expect(service.appliedCoupon?.discountPercent).toBe(20);
   });
 
-  it('should emit the coupon via coupon$ when a valid coupon is applied', async () => {
+  it('should set the coupon signal when a valid coupon is applied', () => {
     service.applyCoupon('FEAST15');
-    const coupon = await firstValueFrom(service.coupon$);
-    expect(coupon).toEqual({ code: 'FEAST15', discountPercent: 15 });
+    expect(service.coupon()).toEqual({ code: 'FEAST15', discountPercent: 15 });
   });
 
-  it('should remove a coupon and emit null via coupon$', async () => {
+  it('should remove a coupon and clear the coupon signal', () => {
     service.applyCoupon('WELCOME10');
     service.removeCoupon();
 
     expect(service.appliedCoupon).toBeNull();
-    const coupon = await firstValueFrom(service.coupon$);
-    expect(coupon).toBeNull();
+    expect(service.coupon()).toBeNull();
   });
 
-  it('should clear the coupon when the cart is cleared', async () => {
+  it('should clear the coupon when the cart is cleared', () => {
     service.addToCart(mockMenuItem);
     service.applyCoupon('WELCOME10');
     service.clearCart();
 
     expect(service.appliedCoupon).toBeNull();
-    const coupon = await firstValueFrom(service.coupon$);
-    expect(coupon).toBeNull();
+    expect(service.coupon()).toBeNull();
   });
 
-  // ── getCartSummary() integration ──────────────────────────────────────
+  // ── cartSummary computed signal integration ───────────────────────────
 
-  it('should return a summary stream that reflects cart + coupon state', async () => {
-    service.addToCart(mockMenuItem);  // $10 × 1
+  it('should return a summary that reflects cart + coupon state', () => {
+    service.addToCart(mockMenuItem); // $10 × 1
     service.addToCart(mockMenuItem2); // $5 × 1
     // subtotal = 15, no item discounts, no coupon
     // tax = 15 * 0.05 = 0.75, service fee = 10, total = 15 + 10 + 0.75 = 25.75
 
-    const summary = await firstValueFrom(service.getCartSummary());
+    const summary = service.cartSummary();
     expect(summary.subtotal).toBe(15);
     expect(summary.itemDiscount).toBe(0);
     expect(summary.couponDiscount).toBe(0);
@@ -208,14 +194,14 @@ describe('CartService', () => {
     expect(summary.total).toBe(25.75);
   });
 
-  it('should update summary when a coupon is applied', async () => {
-    service.addToCart(mockMenuItem);  // $10 × 1
+  it('should update summary when a coupon is applied', () => {
+    service.addToCart(mockMenuItem); // $10 × 1
     service.addToCart(mockMenuItem2); // $5 × 1
     service.applyCoupon('WELCOME10'); // 10% off subtotal
 
     // subtotal = 15, couponDiscount = 1.5, afterCoupon = 13.5
     // tax = 13.5 * 0.05 = 0.675 → 0.68, total = 13.5 + 10 + 0.68 = 24.18
-    const summary = await firstValueFrom(service.getCartSummary());
+    const summary = service.cartSummary();
     expect(summary.subtotal).toBe(15);
     expect(summary.couponDiscount).toBe(1.5);
     expect(summary.tax).toBe(0.68);
@@ -228,7 +214,6 @@ describe('CartService', () => {
 // ═══════════════════════════════════════════════════════════════════════════
 
 describe('getSummary()', () => {
-
   // Helper to build a minimal CartItem
   function cartItem(overrides: Record<string, unknown> = {}) {
     return {
@@ -267,7 +252,7 @@ describe('getSummary()', () => {
   it('should apply coupon discount on the post-item-discount subtotal', () => {
     const result = getSummary(
       [cartItem({ price: 100, quantity: 1 })],
-      20 // 20% coupon
+      20, // 20% coupon
     );
     // subtotal = 100, couponDiscount = 20, afterCoupon = 80
     expect(result.couponDiscount).toBe(20);
@@ -276,7 +261,7 @@ describe('getSummary()', () => {
   it('should calculate tax as 5% on the amount after coupon discount', () => {
     const result = getSummary(
       [cartItem({ price: 100, quantity: 1 })],
-      0  // no coupon
+      0, // no coupon
     );
     // afterCoupon = 100, tax = 100 * 0.05 = 5
     expect(result.tax).toBe(5);
@@ -291,7 +276,7 @@ describe('getSummary()', () => {
   it('should calculate total as afterCoupon + serviceFee + tax', () => {
     const result = getSummary(
       [cartItem({ price: 50, quantity: 2 })], // subtotal = 100
-      10 // 10% coupon → couponDiscount = 10, afterCoupon = 90
+      10, // 10% coupon → couponDiscount = 10, afterCoupon = 90
     );
     // tax = 90 * 0.05 = 4.5, total = 90 + 10 + 4.5 = 104.5
     expect(result.total).toBe(104.5);
@@ -321,22 +306,19 @@ describe('getSummary()', () => {
 
   // ── Edge cases ────────────────────────────────────────────────────────
 
-  it('should return zeroes (except service fee) for an empty cart', () => {
+  it('should return zeroes for an empty cart', () => {
     const result = getSummary([]);
     expect(result.subtotal).toBe(0);
     expect(result.itemDiscount).toBe(0);
     expect(result.couponDiscount).toBe(0);
     expect(result.tax).toBe(0);
-    expect(result.serviceFee).toBe(SERVICE_FEE);
-    expect(result.total).toBe(SERVICE_FEE);
+    expect(result.serviceFee).toBe(0);
+    expect(result.total).toBe(0);
   });
 
   it('should not produce a negative afterCoupon amount (floor at 0)', () => {
     // 100% coupon on a $10 cart → afterCoupon should be 0, not negative
-    const result = getSummary(
-      [cartItem({ price: 10, quantity: 1 })],
-      100
-    );
+    const result = getSummary([cartItem({ price: 10, quantity: 1 })], 100);
     expect(result.couponDiscount).toBe(10);
     expect(result.tax).toBe(0);
     expect(result.total).toBe(SERVICE_FEE); // only service fee remains
@@ -354,10 +336,7 @@ describe('getSummary()', () => {
     // 7% item discount → itemDiscount = 9.99 * 0.07 * 3 = 2.0979
     // subtotal = 29.97 - 2.0979 = 27.8721
     // With 15% coupon → couponDiscount = 27.8721 * 0.15 = 4.180815
-    const result = getSummary(
-      [cartItem({ price: 9.99, quantity: 3, discount: 7 })],
-      15
-    );
+    const result = getSummary([cartItem({ price: 9.99, quantity: 3, discount: 7 })], 15);
     // Every value should have at most 2 decimal places
     expect(result.subtotal).toBe(Number(result.subtotal.toFixed(2)));
     expect(result.itemDiscount).toBe(Number(result.itemDiscount.toFixed(2)));
@@ -371,7 +350,7 @@ describe('getSummary()', () => {
   it('should correctly compute a full checkout scenario with item discounts + coupon', () => {
     const items = [
       cartItem({ _id: '1', price: 25, quantity: 2, discount: 10 }), // raw=50, save 5 → 45
-      cartItem({ _id: '2', price: 15, quantity: 1 }),                // raw=15, save 0 → 15
+      cartItem({ _id: '2', price: 15, quantity: 1 }), // raw=15, save 0 → 15
     ];
     const result = getSummary(items, 20); // 20% coupon
 

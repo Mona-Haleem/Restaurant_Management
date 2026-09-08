@@ -1,7 +1,7 @@
 // Core models — shared type definitions
 // These interfaces are used across services and components
 
-import { OrderSummaryData } from "../services/cart/cart.service";
+import { OrderSummaryData } from '../services/cart/cart.service';
 
 export type UserRole = 'customer' | 'worker' | 'manager';
 
@@ -11,22 +11,28 @@ export interface User {
   email: string;
   role: UserRole;
 }
-export const OrderStatusList = ['PENDING', 'IN_PREPARATION', 'READY', 'DELIVERED', 'CANCELED'] as const;
-export type OrderStatus = typeof OrderStatusList[number];
+export const OrderStatusList = [
+  'PENDING',
+  'IN_PREPARATION',
+  'READY',
+  'DELIVERED',
+  'CANCELED',
+] as const;
+export type OrderStatus = (typeof OrderStatusList)[number];
 
-export const statusIcons: { [key in OrderStatus]: string } = {
-  'PENDING': 'schedule',
-  'IN_PREPARATION': 'restaurant',
-  'READY': 'check_circle',
-  'DELIVERED': 'home',
-  'CANCELED': 'cancel',
-}
+export const statusIcons: Record<OrderStatus, string> = {
+  PENDING: 'schedule',
+  IN_PREPARATION: 'restaurant',
+  READY: 'check_circle',
+  DELIVERED: 'home',
+  CANCELED: 'cancel',
+};
 export interface MenuItem {
   _id: string;
   name: string;
   description: string;
   price: number;
-  discount?: number;  // item-level discount percentage (0–100), e.g. 10 = 10% off
+  discount?: number; // item-level discount percentage (0–100), e.g. 10 = 10% off
   category: string;
   imageUrl?: string;
   isAvailable: boolean;
@@ -41,7 +47,7 @@ export interface MenuFilter {
 
 export interface CartItem extends MenuItem {
   quantity: number;
-  addtions?: string[]
+  addtions?: string[];
 }
 export type OrderType = 'delivery' | 'pickup' | 'dine-in';
 export interface Order {
@@ -64,21 +70,23 @@ export interface CustomerData {
   location: string | null;
   type: OrderType;
   paymentMethod?: string;
-  pricing?: OrderSummaryData
+  pricing?: OrderSummaryData;
 }
-export type PaymentData = {
-  coupons?: string;
-  type: "cash"
-} | {
-  coupons?: string;
-  type: "card";
-  cardData: {
-    name: string;
-    number: string;
-    expiry_date: string;
-    cvv: string;
-  }
-}
+export type PaymentData =
+  | {
+      coupons?: string;
+      type: 'cash';
+    }
+  | {
+      coupons?: string;
+      type: 'card';
+      cardData: {
+        name: string;
+        number: string;
+        expiry_date: string;
+        cvv: string;
+      };
+    };
 
 export interface InventoryItem {
   _id: string;

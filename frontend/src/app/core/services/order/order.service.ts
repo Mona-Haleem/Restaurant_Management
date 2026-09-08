@@ -1,13 +1,14 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { CartItem, Order, OrderType } from '../../models';
-import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 import { DUMMY_ORDERS } from '../../DummyData/item';
 
 @Injectable({
   providedIn: 'root',
 })
 export class OrderService {
-  private orders: BehaviorSubject<Order[]> = new BehaviorSubject<Order[]>(DUMMY_ORDERS);
+  // ─── State signal ────────────────────────────────────────────────────────
+  orders = signal<Order[]>(DUMMY_ORDERS);
 
   placeOrder(items: CartItem[], type: OrderType, location: number | string): Observable<Order> {
     const order: Order = {
@@ -15,47 +16,37 @@ export class OrderService {
       userId: 'customer-123',
       type,
       location,
-      items: items.map(item => ({ ...item })),
+      items: items.map((item) => ({ ...item })),
       status: 'PENDING',
       totalPrice: items.reduce((sum, item) => sum + item.price * item.quantity, 0),
-      createdBy: 'worker 1', //TODO replaced with logged in user id for tables usally is the cashier 
+      createdBy: 'worker 1', //TODO replaced with logged in user id for tables usally is the cashier
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-    }
+    };
 
-    this.orders.next([...this.orders.value, order]);
-    return of(order)
-  }
-
-  getOrders(): Observable<Order[]> {
-    return this.orders;
-
+    this.orders.update((list) => [...list, order]);
+    return of(order);
   }
 
   getOrderById(id: string): Observable<Order | undefined> {
-    return of(this.orders.value.find(o => o._id === id));
+    return of(this.orders().find((o) => o._id === id));
   }
 
   updateStatus(id: string, status: Order['status']): Observable<Order> {
-    const order = this.orders.value.find(o => o._id === id);
+    const order = this.orders().find((o) => o._id === id);
     if (order) {
       if (status === 'CANCELED' && order.status !== 'PENDING') {
         return throwError(() => new Error('Only PENDING orders can be canceled'));
       }
-      order.status = status;
-      order.updatedAt = new Date().toString();
-      this.orders.next([...this.orders.value, order]);
+      const updated = { ...order, status, updatedAt: new Date().toString() };
+      this.orders.update((list) => list.map((o) => (o._id === id ? updated : o)));
+      return of(updated);
     } else {
       return throwError(() => new Error('Order not found'));
     }
-
-    return of(order);
   }
 
   cancelOrder(id: string): Observable<Order> {
-    const order = this.updateStatus(id, 'CANCELED');
-    return order;
+    return this.updateStatus(id, 'CANCELED');
   }
-
-
 }

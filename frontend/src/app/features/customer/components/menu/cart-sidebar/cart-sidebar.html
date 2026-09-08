@@ -7,67 +7,65 @@
     <h5>QTY</h5>
   </header>
 
-  @if (cartItems$ | async; as items) {
-    @if (items.length === 0) {
-      <p class="empty-cart" data-testid="empty-cart-msg">Your cart is empty</p>
-    } @else {
-      <div class="cart-items">
-        @for (item of items; track item._id) {
-          <app-cart-item [item]="item" />
-        }
+  @if (cartItems().length === 0) {
+    <p class="empty-cart" data-testid="empty-cart-msg">Your cart is empty</p>
+  } @else {
+    <div class="cart-items">
+      @for (item of cartItems(); track item._id) {
+        <app-cart-item [item]="item" />
+      }
+    </div>
+
+    @if (summary(); as s) {
+      <div class="cart-summary">
+        <div class="summary-details">
+          <div class="summary-row">
+            <span>Total Items:</span>
+            <span>{{ count() }}</span>
+          </div>
+          <div class="summary-row">
+            <span>Subtotal:</span>
+            <span data-testid="cart-total">{{ s.subtotal | currency: 'EGP ' }}</span>
+          </div>
+          @if (s.itemDiscount > 0) {
+            <div class="summary-row">
+              <span>Item Savings:</span>
+              <span class="discount">- {{ s.itemDiscount | currency: 'EGP ' }}</span>
+            </div>
+          }
+          @if (s.couponDiscount > 0) {
+            <div class="summary-row">
+              <span>Coupon Discount:</span>
+              <span class="discount">- {{ s.couponDiscount | currency: 'EGP ' }}</span>
+            </div>
+          }
+          @if (s.serviceFee > 0) {
+            <div class="summary-row">
+              <span>Service Fee:</span>
+              <span data-testid="cart-service-fee">{{ s.serviceFee | currency: 'EGP ' }}</span>
+            </div>
+          }
+          @if (s.tax > 0) {
+            <div class="summary-row">
+              <span>Tax (5%):</span>
+              <span data-testid="cart-tax">{{ s.tax | currency: 'EGP ' }}</span>
+            </div>
+          }
+        </div>
+        <div class="summary-total">
+          <span>Total:</span>
+          <span data-testid="cart-total-payment">{{ s.total | currency: 'EGP' }}</span>
+        </div>
       </div>
 
-      @if (summary$ | async; as s) {
-        <div class="cart-summary">
-          <div class="summary-details">
-            <div class="summary-row">
-              <span>Total Items:</span>
-              <span>{{ count$ | async }}</span>
-            </div>
-            <div class="summary-row">
-              <span>Subtotal:</span>
-              <span data-testid="cart-total">{{ s.subtotal | currency : 'EGP ' }}</span>
-            </div>
-            @if (s.itemDiscount > 0) {
-              <div class="summary-row">
-                <span>Item Savings:</span>
-                <span class="discount">- {{ s.itemDiscount | currency : 'EGP ' }}</span>
-              </div>
-            }
-            @if (s.couponDiscount > 0) {
-              <div class="summary-row">
-                <span>Coupon Discount:</span>
-                <span class="discount">- {{ s.couponDiscount | currency : 'EGP ' }}</span>
-              </div>
-            }
-            @if (s.serviceFee > 0) {
-              <div class="summary-row">
-                <span>Service Fee:</span>
-                <span data-testid="cart-service-fee">{{ s.serviceFee | currency : 'EGP ' }}</span>
-              </div>
-            }
-            @if (s.tax > 0) {
-              <div class="summary-row">
-                <span>Tax (5%):</span>
-                <span data-testid="cart-tax">{{ s.tax | currency : 'EGP ' }}</span>
-              </div>
-            }
-          </div>
-          <div class="summary-total">
-            <span>Total:</span>
-            <span data-testid="cart-total-payment">{{ s.total | currency : 'EGP' }}</span>
-          </div>
-        </div>
-
-        <div class="actions">
-          <button class="btn-secondary" (click)="clearCart()" data-testid="clear-cart-btn">
-            Clear Cart
-          </button>
-          <button class="btn-primary checkout" data-testid="checkout-btn" (click)="checkout()">
-            Checkout
-          </button>
-        </div>
-      }
+      <div class="actions">
+        <button class="btn-secondary" (click)="clearCart()" data-testid="clear-cart-btn">
+          Clear Cart
+        </button>
+        <button class="btn-primary checkout" data-testid="checkout-btn" (click)="checkout()">
+          Checkout
+        </button>
+      </div>
     }
   }
 </aside>

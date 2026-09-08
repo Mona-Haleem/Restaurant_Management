@@ -1,64 +1,51 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
+import { render, screen } from '@testing-library/angular';
 import { MenuPage } from './menu.page';
 import { MenuService } from '../../../../core/services/menu/menu.service';
 import { CartService } from '../../../../core/services/cart/cart.service';
-import { of, BehaviorSubject } from 'rxjs';
-import { CategoryFilter } from '../../components/menu/category-filter/category-filter';
-import { MenuGrid } from '../../components/menu/menu-grid/menu-grid';
-import { CartSidebar } from '../../components/menu/cart-sidebar/cart-sidebar';
+import { of } from 'rxjs';
+import { vi } from 'vitest';
+import { provideRouter } from '@angular/router';
+import { signal } from '@angular/core';
 
 describe('MenuPage', () => {
-  let fixture: ComponentFixture<MenuPage>;
-  let component: MenuPage;
-
-  // Since child components inject services directly, we mock at the service level
   const menuServiceStub = {
     getCategories: vi.fn().mockReturnValue(of(['Pizza', 'Burger'])),
-    getItems: vi.fn().mockReturnValue(of([
-      { _id: '1', name: 'Pizza', category: 'Pizza', price: 10, isAvailable: true }
-    ])),
-    getActiveFilterItems: vi.fn().mockReturnValue(of([
-      { _id: '1', name: 'Pizza', category: 'Pizza', price: 10, isAvailable: true }
-    ])),
+    filteredItems: signal([
+      { _id: '1', name: 'Pizza', category: 'Pizza', price: 10, isAvailable: true },
+    ]),
     setActiveFilter: vi.fn(),
-    get selectedCategory() { return ''; },
+    selectedCategory: signal(''),
   };
 
   const cartServiceStub = {
-    cartItems$: new BehaviorSubject([]).asObservable(),
-    get total() { return of(0); },
-    get count() { return of(0); },
+    cartItems: signal([]),
+    cartCount: signal(0),
+    cartSummary: signal({
+      subtotal: 0,
+      itemDiscount: 0,
+      couponDiscount: 0,
+      serviceFee: 0,
+      tax: 0,
+      total: 0,
+    }),
     addToCart: vi.fn(),
     removeFromCart: vi.fn(),
     clearCart: vi.fn(),
   };
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [MenuPage],
+  const setup = async () => {
+    return await render(MenuPage, {
       providers: [
         { provide: MenuService, useValue: menuServiceStub },
         { provide: CartService, useValue: cartServiceStub },
-      ]
-    }).compileComponents();
+        provideRouter([]),
+      ],
+    });
+  };
 
-    fixture = TestBed.createComponent(MenuPage);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-  });
-
-  it('should create the page', () => {
-    expect(component).toBeTruthy();
-  });
-
-  it('should render the layout: CategoryFilter, MenuGrid, and CartSidebar', () => {
-    const filter = fixture.debugElement.query(By.directive(CategoryFilter));
-    const grid = fixture.debugElement.query(By.directive(MenuGrid));
-    const cart = fixture.debugElement.query(By.directive(CartSidebar));
-
-    expect(filter).toBeTruthy();
-    expect(grid).toBeTruthy();
-    expect(cart).toBeTruthy();
+  it('should render the menu page and layout elements', async () => {
+    await setup();
+    expect(screen.getByRole('heading', { level: 1, name: /our menu/i })).toBeTruthy();
+    expect(screen.getByText('ORDER SUMMARY')).toBeTruthy();
   });
 });

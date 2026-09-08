@@ -15,16 +15,12 @@ export class SearchBar {
   menuService = inject(MenuService);
 
   constructor() {
-    this.searchSubject.pipe(
-      debounceTime(300),
-      distinctUntilChanged()
-    ).subscribe(query => {
-      this.menuService.setActiveFilter({ search: query })
+    this.searchSubject.pipe(debounceTime(300), distinctUntilChanged()).subscribe((query) => {
+      this.menuService.setActiveFilter({ search: query });
     });
   }
 
   onSearch(value: string) {
     this.searchSubject.next(value);
   }
-
 }

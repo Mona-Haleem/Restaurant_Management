@@ -1,37 +1,37 @@
 <h3>ORDER SUMMARY</h3>
 
-@if(summary$ | async; as s) {
+@if (summary(); as s) {
+  <p>
+    SUBTOTAL
+    <span class="amount">{{ s.subtotal | currency: 'EGP' }}</span>
+  </p>
+  @if (s.itemDiscount > 0) {
     <p>
-        SUBTOTAL
-        <span class="amount">{{ s.subtotal | currency:'EGP' }}</span>
+      ITEM SAVINGS
+      <span class="amount discount">- {{ s.itemDiscount | currency: 'EGP' }}</span>
     </p>
-    @if(s.itemDiscount > 0) {
-        <p>
-            ITEM SAVINGS
-            <span class="amount discount">- {{ s.itemDiscount | currency:'EGP' }}</span>
-        </p>
-    }
-    @if(s.couponDiscount > 0) {
-        <p>
-            COUPON DISCOUNT
-            <span class="amount discount">- {{ s.couponDiscount | currency:'EGP' }}</span>
-        </p>
-    }
+  }
+  @if (s.couponDiscount > 0) {
     <p>
-        SERVICE FEE
-        <span class="amount">{{ s.serviceFee | currency:'EGP' }}</span>
+      COUPON DISCOUNT
+      <span class="amount discount">- {{ s.couponDiscount | currency: 'EGP' }}</span>
     </p>
-    <p>
-        TAX (5%)
-        <span class="amount">{{ s.tax | currency:'EGP' }}</span>
-    </p>
-    <hr>
-    <section>
-        <h4>TOTAL AMOUNT</h4>
-        <p>{{ s.total | currency:'EGP' }}</p>
-        <button class="btn-primary" (click)="onPress()">
-            {{ buttonLabel }}
-            <mat-icon fontSet="material-symbols-outlined">arrow_forward</mat-icon>
-        </button>
-    </section>
+  }
+  <p>
+    SERVICE FEE
+    <span class="amount">{{ s.serviceFee | currency: 'EGP' }}</span>
+  </p>
+  <p>
+    TAX (5%)
+    <span class="amount">{{ s.tax | currency: 'EGP' }}</span>
+  </p>
+  <hr />
+  <section>
+    <h4>TOTAL AMOUNT</h4>
+    <p>{{ s.total | currency: 'EGP' }}</p>
+    <button class="btn-primary" (click)="onPress()">
+      {{ buttonLabel() }}
+      <mat-icon fontSet="material-symbols-outlined">arrow_forward</mat-icon>
+    </button>
+  </section>
 }

@@ -9,10 +9,10 @@ export interface MenuResolvedData {
   categories: string[];
 }
 
-export const menuResolver: ResolveFn<MenuResolvedData> = (route, state): Observable<MenuResolvedData> => {
+export const menuResolver: ResolveFn<MenuResolvedData> = (route, state): MenuResolvedData => {
   const menuService = inject(MenuService);
-  return forkJoin({
-    items: menuService.getActiveFilterItems().pipe(take(1)),
-    categories: menuService.getCategories().pipe(take(1))
-  });
+  return {
+    items: menuService.filteredItems(),
+    categories: menuService.getCategories(),
+  };
 };

@@ -52,10 +52,12 @@ describe('MenuGrid', () => {
   let component: MenuGrid;
   let menuServiceMock: Partial<MenuService>;
 
-  function createComponent(items: MenuItem[], activeCategory: string = '') {
+  function createComponent(items: MenuItem[], activeCategory = '') {
     menuServiceMock = {
       getActiveFilterItems: vi.fn().mockReturnValue(of(items)),
-      get selectedCategory() { return activeCategory; },
+      get selectedCategory() {
+        return activeCategory;
+      },
     };
 
     TestBed.overrideProvider(MenuService, { useValue: menuServiceMock });
@@ -104,9 +106,7 @@ describe('MenuGrid', () => {
   it('should display a "No items found" message when the service returns an empty array', () => {
     createComponent([]);
 
-    const emptyMessage = fixture.debugElement.query(
-      By.css('[data-testid="empty-grid-msg"]')
-    );
+    const emptyMessage = fixture.debugElement.query(By.css('[data-testid="empty-grid-msg"]'));
     expect(emptyMessage).toBeTruthy();
     expect(emptyMessage.nativeElement.textContent).toContain('No items found');
   });

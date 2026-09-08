@@ -10,9 +10,9 @@ import { CartService } from '../../../../../../core/services/cart/cart.service';
   styleUrl: './cart-item.scss',
 })
 export class CartItemComponent {
-  @Input({ required: true }) item!: CartItem
+  @Input({ required: true }) item!: CartItem;
 
-  constructor(private cartService: CartService) { }
+  constructor(private cartService: CartService) {}
 
   addToCart() {
     this.cartService.addToCart(this.item);
@@ -21,5 +21,4 @@ export class CartItemComponent {
   removeFromCart() {
     this.cartService.removeFromCart(this.item._id);
   }
-
 }

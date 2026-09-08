@@ -1,21 +1,21 @@
 <div class="order-type">
-    <mat-icon fontSet="material-symbols-outlined" data-testid="type-icon">{{ typeIcon }}</mat-icon>
-    @if(order.type === 'dine-in') {
-        <p data-testid="order-type">TABLE {{order.location}}</p>
-    } @else {
-        <p data-testid="order-type">{{ order.type }}</p>
-    }
+  <mat-icon fontSet="material-symbols-outlined" data-testid="type-icon">{{ typeIcon() }}</mat-icon>
+  @if (order().type === 'dine-in') {
+    <p data-testid="order-type">TABLE {{ order().location }}</p>
+  } @else {
+    <p data-testid="order-type">{{ order().type }}</p>
+  }
 </div>
 
 <div class="order-info">
-    <p class="order-id" data-testid="order-id">#{{ order._id }}</p>
-    <p class="order-items" data-testid="order-items">{{ orderItems | summeryItems }}</p>
+  <p class="order-id" data-testid="order-id">#{{ order()._id }}</p>
+  <p class="order-items" data-testid="order-items">{{ orderItems() | summeryItems }}</p>
 </div>
 
 <div class="order-meta">
-    <span class="order-eta" data-testid="order-eta">
-        <mat-icon fontSet="material-symbols-outlined">timer</mat-icon>
-        {{ expected_time }}
-    </span>
-    <span class="order-status" data-testid="order-status">{{ order.status }}</span>
+  <span class="order-eta" data-testid="order-eta">
+    <mat-icon fontSet="material-symbols-outlined">timer</mat-icon>
+    {{ expected_time }}
+  </span>
+  <span class="order-status" data-testid="order-status">{{ order().status }}</span>
 </div>

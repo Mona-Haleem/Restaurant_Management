@@ -1,61 +1,80 @@
 <header>
-    <nav>
-        <a id="logo" routerLink="/" data-testid="brand-logo">
-            <mat-icon fontSet="material-symbols-outlined">restaurant</mat-icon>
-            <h2>Resto</h2>
-        </a>
-        @if(!isMobile()){
-            <a [routerLink]="['customer','menu']" routerLinkActive="selected" data-testid="nav-menu">Menu</a>
-            <a [routerLink]="['customer','orders']" routerLinkActive="selected" data-testid="nav-orders">Order</a>
-        } 
-    </nav>
-    <div id="actions">
-        @if(isMobile()){
-            <app-search-bar />
-            <a class="relative" [routerLink]="['customer','cart']" routerLinkActive="selected" data-testid="nav-cart">
-                <mat-icon fontSet="material-symbols-outlined">shopping_cart</mat-icon>
-                @if(count | async ;as c){
-                    <span class="badge" data-testid="cart-badge">
-                        {{c}}
-                    </span>
-                }
-            </a>
-            
-            <mat-icon fontSet="material-symbols-outlined" [routerLink]="['customer','profile']">account_circle</mat-icon>
-            <mat-icon fontSet="material-symbols-outlined" (click)="onMenuClick()">menu</mat-icon>
-        }@else {
-            <app-search-bar />
-            <a class="relative" [routerLink]="['customer','cart']" routerLinkActive="selected" data-testid="nav-cart">
-                <mat-icon fontSet="material-symbols-outlined">shopping_cart</mat-icon>
-                @if(count | async ;as c){
-                    <span class="badge" data-testid="cart-badge">
-                        {{c}}
-                    </span>
-                }
-            </a>
-
-            <mat-icon fontSet="material-symbols-outlined">settings</mat-icon>
-            <mat-icon fontSet="material-symbols-outlined">notifications</mat-icon>
-            <mat-icon fontSet="material-symbols-outlined" [routerLink]="['customer','profile']">account_circle</mat-icon>
-        }
-        </div>
-    @if(isOpen() && isMobile()){
-        <nav id="menu">
-            <a [routerLink]="['customer','menu']" routerLinkActive="selected" data-testid="nav-menu">
-                <mat-icon fontSet="material-symbols-outlined">menu</mat-icon>
-                <span>Menu</span></a>
-            <a [routerLink]="['customer','order']" routerLinkActive="selected" data-testid="nav-orders">
-                <mat-icon fontSet="material-symbols-outlined">history_toggle_off</mat-icon>
-                <span>Order</span></a>
-            <a>
-                <mat-icon fontSet="material-symbols-outlined">settings</mat-icon>
-                <span>Settings</span>
-            </a>
-            <a>
-                <mat-icon fontSet="material-symbols-outlined">notifications</mat-icon>
-                <span>Notifications</span>
-            </a>
-         
-        </nav>
+  <nav>
+    <a id="logo" routerLink="/" data-testid="brand-logo">
+      <mat-icon fontSet="material-symbols-outlined">restaurant</mat-icon>
+      <h2>Resto</h2>
+    </a>
+    @if (!isMobile()) {
+      <a [routerLink]="['customer', 'menu']" routerLinkActive="selected" data-testid="nav-menu"
+        >Menu</a
+      >
+      <a [routerLink]="['customer', 'orders']" routerLinkActive="selected" data-testid="nav-orders"
+        >Order</a
+      >
     }
+  </nav>
+  <div id="actions">
+    @if (isMobile()) {
+      <app-search-bar />
+      <a
+        class="relative"
+        [routerLink]="['customer', 'cart']"
+        routerLinkActive="selected"
+        data-testid="nav-cart"
+      >
+        <mat-icon fontSet="material-symbols-outlined">shopping_cart</mat-icon>
+        @if (count(); as c) {
+          <span class="badge" data-testid="cart-badge">
+            {{ c }}
+          </span>
+        }
+      </a>
+
+      <mat-icon fontSet="material-symbols-outlined" [routerLink]="['customer', 'profile']"
+        >account_circle</mat-icon
+      >
+      <mat-icon fontSet="material-symbols-outlined" (click)="onMenuClick()">menu</mat-icon>
+    } @else {
+      <app-search-bar />
+      <a
+        class="relative"
+        [routerLink]="['customer', 'cart']"
+        routerLinkActive="selected"
+        data-testid="nav-cart"
+      >
+        <mat-icon fontSet="material-symbols-outlined">shopping_cart</mat-icon>
+        @if (count(); as c) {
+          <span class="badge" data-testid="cart-badge">
+            {{ c }}
+          </span>
+        }
+      </a>
+
+      <mat-icon fontSet="material-symbols-outlined">settings</mat-icon>
+      <mat-icon fontSet="material-symbols-outlined">notifications</mat-icon>
+      <mat-icon fontSet="material-symbols-outlined" [routerLink]="['customer', 'profile']"
+        >account_circle</mat-icon
+      >
+    }
+  </div>
+  @if (isOpen() && isMobile()) {
+    <nav id="menu">
+      <a [routerLink]="['customer', 'menu']" routerLinkActive="selected" data-testid="nav-menu">
+        <mat-icon fontSet="material-symbols-outlined">menu</mat-icon>
+        <span>Menu</span></a
+      >
+      <a [routerLink]="['customer', 'order']" routerLinkActive="selected" data-testid="nav-orders">
+        <mat-icon fontSet="material-symbols-outlined">history_toggle_off</mat-icon>
+        <span>Order</span></a
+      >
+      <a>
+        <mat-icon fontSet="material-symbols-outlined">settings</mat-icon>
+        <span>Settings</span>
+      </a>
+      <a>
+        <mat-icon fontSet="material-symbols-outlined">notifications</mat-icon>
+        <span>Notifications</span>
+      </a>
+    </nav>
+  }
 </header>

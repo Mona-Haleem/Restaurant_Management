@@ -1,25 +1,25 @@
-<app-category-filter [categories]="(categories$ | async) ?? []" />
+<app-category-filter [categories]="categories" />
 <header>
-    <div class="title">
-        <p>station 01 - grill</p>
-        <h1>Our Menu</h1>
+  <div class="title">
+    <p>station 01 - grill</p>
+    <h1>Our Menu</h1>
+  </div>
+  <div class="info">
+    <div>
+      <p class="label">avg prep time</p>
+      <p class="value avg-time">15-20 min</p>
     </div>
-    <div class="info">
-        <div>
-            <p class="label">avg prep time</p>
-            <p class="value avg-time">15-20 min</p>
-        </div>
-        <div class="divider"></div>
-        <div >
-            <p class="label">rush status</p>
-            <div class="value">
-                <div class="status"></div>
-                <p>moderate</p>
-            </div>
-        </div>
+    <div class="divider"></div>
+    <div>
+      <p class="label">rush status</p>
+      <div class="value">
+        <div class="status"></div>
+        <p>moderate</p>
+      </div>
     </div>
+  </div>
 </header>
 <main>
-    <app-menu-grid [menu]="(items$ | async) ?? []"  />
-    <app-cart-sidebar />
+  <app-menu-grid [menu]="items()" />
+  <app-cart-sidebar />
 </main>

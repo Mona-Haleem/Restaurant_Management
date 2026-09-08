@@ -1,29 +1,33 @@
-    <div class="item-details">
-        <img src="{{ item.imageUrl }}" alt="{{ item.name }}" [class.lg]="view === 'default'">
-        <div class="item-info">
-            <span class="item-name">{{ item.name }}</span>
-            <span class="item-content">{{ item.addtions | summeryItems }}</span>
-            @if(view === "default") { 
-            <div class="item-quantity">
-                <button class="btn-outline-primary btn-sm" (click)="removeFromCart()" data-testid="remove-item-btn">
-                -
-                </button>
-                    <span class="item-quantity">{{ item.quantity }}x</span>
-                <button class="btn-outline-primary btn-sm" (click)="addToCart()" data-testid="add-item-btn">
-                +
-                </button>
-        </div>}
-        </div>
-    </div>
-    <div class="item-total" [class.lg]="view === 'default'">
-        <span class="item-price">{{ item.price * item.quantity | currency : "EGP " }}</span>
-        @if(view === "default") { 
-            <button class="btn-text-primary btn-sm" (click)="removeItem()" data-testid="remove-item-btn">
-                <mat-icon fontSet="material-symbols-outlined">delete</mat-icon>
-                REMEVOE ITEM
-            </button>
-        }@else{
-            <p class="item-qty">QTY:{{  item.quantity }}</p>
-            
-        } 
-    </div>
+<div class="item-details">
+  <img src="{{ item().imageUrl }}" alt="{{ item().name }}" [class.lg]="view() === 'default'" />
+  <div class="item-info">
+    <span class="item-name">{{ item().name }}</span>
+    <span class="item-content">{{ item().addtions | summeryItems }}</span>
+    @if (view() === 'default') {
+      <div class="item-quantity">
+        <button
+          class="btn-outline-primary btn-sm"
+          (click)="removeFromCart()"
+          data-testid="remove-item-btn-minus"
+        >
+          -
+        </button>
+        <span class="item-quantity">{{ item().quantity }}x</span>
+        <button class="btn-outline-primary btn-sm" (click)="addToCart()" data-testid="add-item-btn">
+          +
+        </button>
+      </div>
+    }
+  </div>
+</div>
+<div class="item-total" [class.lg]="view() === 'default'">
+  <span class="item-price">{{ item().price * item().quantity | currency: 'EGP ' }}</span>
+  @if (view() === 'default') {
+    <button class="btn-text-primary btn-sm" (click)="removeItem()" data-testid="remove-item-btn">
+      <mat-icon fontSet="material-symbols-outlined">delete</mat-icon>
+      REMEVOE ITEM
+    </button>
+  } @else {
+    <p class="item-qty">QTY:{{ item().quantity }}</p>
+  }
+</div>

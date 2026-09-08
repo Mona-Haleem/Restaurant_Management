@@ -15,9 +15,9 @@ describe('LandingPage', () => {
         provideRouter([
           { path: 'customer', children: [] },
           { path: 'worker', children: [] },
-          { path: 'manager', children: [] }
-        ])
-      ]
+          { path: 'manager', children: [] },
+        ]),
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(LandingPage);
@@ -34,11 +34,11 @@ describe('LandingPage', () => {
     const links = fixture.debugElement.queryAll(By.css('a'));
     expect(links.length).toBeGreaterThanOrEqual(3);
 
-    const hrefs = links.map(l => l.nativeElement.getAttribute('href'));
+    const hrefs = links.map((l) => l.nativeElement.getAttribute('href'));
 
     // Angular routerLink generates href attributes automatically
-    expect(hrefs.some(h => h.includes('/customer'))).toBe(true);
-    expect(hrefs.some(h => h.includes('/worker'))).toBe(true);
-    expect(hrefs.some(h => h.includes('/manager'))).toBe(true);
+    expect(hrefs.some((h) => h.includes('/customer'))).toBe(true);
+    expect(hrefs.some((h) => h.includes('/worker'))).toBe(true);
+    expect(hrefs.some((h) => h.includes('/manager'))).toBe(true);
   });
 });

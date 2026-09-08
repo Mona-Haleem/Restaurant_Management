@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, input } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 
 @Component({
@@ -8,6 +8,6 @@ import { MatIconModule } from '@angular/material/icon';
   styleUrl: './eta-status.scss',
 })
 export class EtaStatus {
-  @Input() expectedPrepTime: number = 10;
-  @Input() currentLoad: number = 12;
+  expectedPrepTime = input<number>(10);
+  currentLoad = input<number>(12);
 }

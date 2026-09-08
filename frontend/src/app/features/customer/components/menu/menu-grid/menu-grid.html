@@ -1,11 +1,11 @@
 @if (menu && menu.length > 0) {
   <div class="container">
-      @for (item of menu; track item._id) {
-          <app-menu-card [item]="item" />
-      }    
+    @for (item of menu; track item._id) {
+      <app-menu-card [item]="item" />
+    }
   </div>
 } @else {
-  <div class="empty-grid" >
-      <p data-testid="empty-grid-msg">No items found</p>
+  <div class="empty-grid">
+    <p data-testid="empty-grid-msg">No items found</p>
   </div>
 }

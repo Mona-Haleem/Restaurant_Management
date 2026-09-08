@@ -1,49 +1,79 @@
-<app-section-card title='CUSTOMER LOGISTICS' subtitle='IDENTITY & LOCATIONS' >
-
-    
-        <form [formGroup]="form" (ngSubmit)="onSubmit()">
-          <fieldset>
-            <div>
-                <label>CUSTOMER NAME</label>
-                <input type="text" name="username" placeholder="full name" required formControlName="fullName">
-            </div>
-            <div>
-                <label>CONTACT NUMBER</label>
-                <input type="text" name="phone" placeholder="+2 01xxxxxxxxx" required formControlName="phone">
-            </div>
-        </fieldset>
-        <fieldset>
-            <div>
-                <label>
-                    Order Destination
-                </label>
-                <div class="order-type">
-                    <div (click)="setOrderType('dine-in')" class="destination-box" [class.selected]="form.value.type == 'dine-in'" >
-                        <mat-icon fontSet="material-symbols-outlined">table_restaurant</mat-icon>
-                        <p>Dine-in</p>
-                    </div>
-                    <div (click)="setOrderType('pickup')" class="destination-box" [class.selected]="form.value.type == 'pickup'" >
-                        <mat-icon fontSet="material-symbols-outlined">takeout_dining</mat-icon>
-                        <p>Pickup</p>
-                    </div>
-                    <div (click)="setOrderType('delivery')" class="destination-box" [class.selected]="form.value.type == 'delivery'" >
-                        <mat-icon fontSet="material-symbols-outlined">local_shipping</mat-icon>
-                        <p>Delivery</p>
-                    </div>
-                </div>
-            </div>
-            @if(form.value.type === 'delivery') {
-            <div>
-                <label>DELIVERY ADDRESS</label>
-                <input type="text" name="delivery_address" placeholder="delivery address"  formControlName="location">
-            </div>
-            }
-            @if(form.value.type === 'dine-in') {
-            <div>
-                <label>TABLE NUMBER</label>
-                <input type="number" name="table_number" placeholder="table number"  formControlName="location">
-            </div>
-            }
-        </fieldset>    
-        </form>
+<app-section-card title="CUSTOMER LOGISTICS" subtitle="IDENTITY & LOCATIONS">
+  <form [formGroup]="form()" (ngSubmit)="onSubmit()">
+    <fieldset>
+      <div>
+        <label>CUSTOMER NAME</label>
+        <input
+          type="text"
+          name="username"
+          placeholder="full name"
+          required
+          formControlName="fullName"
+        />
+      </div>
+      <div>
+        <label>CONTACT NUMBER</label>
+        <input
+          type="text"
+          name="phone"
+          placeholder="+2 01xxxxxxxxx"
+          required
+          formControlName="phone"
+        />
+      </div>
+    </fieldset>
+    <fieldset>
+      <div>
+        <label> Order Destination </label>
+        <div class="order-type">
+          <div
+            (click)="setOrderType('dine-in')"
+            class="destination-box"
+            [class.selected]="form().value.type === 'dine-in'"
+          >
+            <mat-icon fontSet="material-symbols-outlined">table_restaurant</mat-icon>
+            <p>Dine-in</p>
+          </div>
+          <div
+            (click)="setOrderType('pickup')"
+            class="destination-box"
+            [class.selected]="form().value.type === 'pickup'"
+          >
+            <mat-icon fontSet="material-symbols-outlined">takeout_dining</mat-icon>
+            <p>Pickup</p>
+          </div>
+          <div
+            (click)="setOrderType('delivery')"
+            class="destination-box"
+            [class.selected]="form().value.type === 'delivery'"
+          >
+            <mat-icon fontSet="material-symbols-outlined">local_shipping</mat-icon>
+            <p>Delivery</p>
+          </div>
+        </div>
+      </div>
+      @if (form().value.type === 'delivery') {
+        <div>
+          <label>DELIVERY ADDRESS</label>
+          <input
+            type="text"
+            name="delivery_address"
+            placeholder="delivery address"
+            formControlName="location"
+          />
+        </div>
+      }
+      @if (form().value.type === 'dine-in') {
+        <div>
+          <label>TABLE NUMBER</label>
+          <input
+            type="number"
+            name="table_number"
+            placeholder="table number"
+            formControlName="location"
+          />
+        </div>
+      }
+    </fieldset>
+  </form>
 </app-section-card>

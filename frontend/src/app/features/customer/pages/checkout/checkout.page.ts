@@ -12,7 +12,6 @@ import { OrderSummary } from '../../components/order-history/order-summary/order
 import { CustomerDataForm } from '../../components/order-history/customer-data-form/customer-data-form';
 import { SectionCard } from '../../../../shared/components/section-card/section-card';
 import { OrderSummeryItem } from '../../components/order-history/order-summery-item/order-summery-item';
-import { AsyncPipe } from '@angular/common';
 import { StepsTracker } from '../../../../shared/components/steps-tracker/steps-tracker';
 import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 
@@ -22,10 +21,12 @@ export function orderTypeValidator(): ValidatorFn {
 
     const location = control.get('location')?.value;
 
-    if ((type === 'delivery' || type === 'dine-in') && (location === undefined || location === null)) {
+    if (
+      (type === 'delivery' || type === 'dine-in') &&
+      (location === undefined || location === null)
+    ) {
       return { locationRequired: true };
     }
-
 
     return null;
   };
@@ -55,15 +56,23 @@ export function paymentValidator(): ValidatorFn {
   };
 }
 
-const storedCustomerDate = localStorage.getItem('checkout_customer')
-let parsedData: | CustomerData;
+const storedCustomerDate = localStorage.getItem('checkout_customer');
+let parsedData: CustomerData;
 if (storedCustomerDate) {
-  parsedData = JSON.parse(storedCustomerDate)
+  parsedData = JSON.parse(storedCustomerDate);
   console.log(parsedData);
 }
 @Component({
   selector: 'app-checkout',
-  imports: [EtaStatus, PaymentForm, OrderSummary, StepsTracker, CustomerDataForm, SectionCard, OrderSummeryItem, AsyncPipe],
+  imports: [
+    EtaStatus,
+    PaymentForm,
+    OrderSummary,
+    StepsTracker,
+    CustomerDataForm,
+    SectionCard,
+    OrderSummeryItem,
+  ],
   templateUrl: './checkout.page.html',
   styleUrl: './checkout.page.scss',
 })
@@ -72,33 +81,42 @@ export class CheckoutPage {
   private cartService = inject(CartService);
   private orderService = inject(OrderService);
   private router = inject(Router);
-  cartItems$ = this.cartService.cartItems$
+  cartItems = this.cartService.cartItems;
   @Input() cartData?: CartResolvedData;
 
   currentStep = 0;
 
-  steps = [{ isIcon: false, label: 'info', icon: '1', isLocked: false }, { isIcon: false, label: 'payment', icon: '2', isLocked: true }, { isIcon: false, label: 'review', icon: '3', isLocked: true },];
+  steps = [
+    { isIcon: false, label: 'info', icon: '1', isLocked: false },
+    { isIcon: false, label: 'payment', icon: '2', isLocked: true },
+    { isIcon: false, label: 'review', icon: '3', isLocked: true },
+  ];
 
-  customerForm: FormGroup = this.fb.group({
-    fullName: [parsedData?.fullName ?? '', [Validators.required, Validators.minLength(3)]],
-    phone: [parsedData?.phone ?? '', [Validators.required, Validators.minLength(3)]],
-    type: [parsedData?.type ?? 'dine-in'],
-    location: [parsedData?.location],
-  }, {
-    validators: [orderTypeValidator()]
-  }
+  customerForm: FormGroup = this.fb.group(
+    {
+      fullName: [parsedData?.fullName ?? '', [Validators.required, Validators.minLength(3)]],
+      phone: [parsedData?.phone ?? '', [Validators.required, Validators.minLength(3)]],
+      type: [parsedData?.type ?? 'dine-in'],
+      location: [parsedData?.location],
+    },
+    {
+      validators: [orderTypeValidator()],
+    },
   );
 
-  paymentForm: FormGroup = this.fb.group({
-    type: ['cash'],
-    cardHolder: [''],
-    cardNumber: [''],
-    expiry: [''],
-    cvv: [''],
-    couponCode: ['']
-  }, {
-    validators: [paymentValidator()]
-  });
+  paymentForm: FormGroup = this.fb.group(
+    {
+      type: ['cash'],
+      cardHolder: [''],
+      cardNumber: [''],
+      expiry: [''],
+      cvv: [''],
+      couponCode: [''],
+    },
+    {
+      validators: [paymentValidator()],
+    },
+  );
 
   get isNextStepAllowed(): boolean {
     if (this.currentStep === 0) return this.customerForm.valid;
@@ -111,7 +129,7 @@ export class CheckoutPage {
 
     this.steps = this.steps.map((s, i) => ({
       ...s,
-      isLocked: i > step
+      isLocked: i > step,
     }));
   }
 
@@ -126,27 +144,27 @@ export class CheckoutPage {
 
     const location =
       type === 'dine-in'
-        ? customer.table_number ?? 1
+        ? (customer.location ?? customer.table_number ?? 1)
         : type === 'delivery'
-          ? customer.delivery_address
+          ? (customer.location ?? customer.delivery_address)
           : 'pickup';
 
     const paymentData: PaymentData =
       payment.paymentMethod === 'cash'
         ? {
-          type: 'cash',
-          coupons: payment.couponCode,
-        }
-        : {
-          type: 'card',
-          coupons: payment.couponCode,
-          cardData: {
-            number: payment.cardNumber,
-            name: payment.cardHolder,
-            expiry_date: payment.expiry,
-            cvv: payment.cvv,
+            type: 'cash',
+            coupons: payment.couponCode,
           }
-        };
+        : {
+            type: 'card',
+            coupons: payment.couponCode,
+            cardData: {
+              number: payment.cardNumber,
+              name: payment.cardHolder,
+              expiry_date: payment.expiry,
+              cvv: payment.cvv,
+            },
+          };
 
     this.orderService.placeOrder(items, type, location).subscribe(() => {
       this.cartService.clearCart();
@@ -154,10 +172,6 @@ export class CheckoutPage {
     });
   }
 
-  onCustomerData(data: CustomerData) {
-
-  }
-  onPaymentMethodSubmit(data: PaymentData) {
-
-  }
+  onCustomerData(data: CustomerData) {}
+  onPaymentMethodSubmit(data: PaymentData) {}
 }

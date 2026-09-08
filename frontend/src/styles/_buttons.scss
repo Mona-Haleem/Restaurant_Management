@@ -2,105 +2,93 @@
 
 // Utility Mixin for shared button logic
 @mixin custom-btn-base {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 8px 16px;
-    border-radius: 8px;
-    font: var(--mat-sys-label-large);
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease-in-out;
-    border: none;
-    gap: 8px;
-    text-decoration: none;
-    outline: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font: var(--mat-sys-label-large);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  border: none;
+  gap: 8px;
+  text-decoration: none;
+  outline: none;
 
-    &:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 }
 
 @mixin btn-size($py, $px, $font, $radius) {
-    padding: $py $px;
-    font: $font;
-    border-radius: $radius;
+  padding: $py $px;
+  font: $font;
+  border-radius: $radius;
 }
-
 
 $variants: primary, secondary, tertiary;
 
 @mixin btn-filled-variant($variant) {
-    @include custom-btn-base;
-    background-color: var(--mat-sys-#{$variant});
-    color: var(--mat-sys-on-#{$variant});
+  @include custom-btn-base;
+  background-color: var(--mat-sys-#{$variant});
+  color: var(--mat-sys-on-#{$variant});
 
-    &:hover:not(:disabled) {
-        background-color: color-mix(in srgb,
-            var(--mat-sys-#{$variant}) 80%,
-            black);
-    }
+  &:hover:not(:disabled) {
+    background-color: color-mix(in srgb, var(--mat-sys-#{$variant}) 80%, black);
+  }
 }
 
 @mixin btn-outline-variant($color-var) {
-    @include custom-btn-base;
-    background: transparent;
-    border: 1px solid var(--mat-sys-outline);
-    color: var(#{$color-var});
+  @include custom-btn-base;
+  background: transparent;
+  border: 1px solid var(--mat-sys-outline);
+  color: var(#{$color-var});
 
-    &:hover:not(:disabled) {
-        background-color: color-mix(in srgb, var(#{$color-var}) 8%, transparent);
-        border-color: var(#{$color-var});
-    }
+  &:hover:not(:disabled) {
+    background-color: color-mix(in srgb, var(#{$color-var}) 8%, transparent);
+    border-color: var(#{$color-var});
+  }
 }
 
 @mixin btn-text-variant($color-var) {
-    @include custom-btn-base;
-    background: transparent;
-    color: var(#{$color-var});
-    padding-left: 8px;
-    padding-right: 8px;
+  @include custom-btn-base;
+  background: transparent;
+  color: var(#{$color-var});
+  padding-left: 8px;
+  padding-right: 8px;
 
-    &:hover:not(:disabled) {
-        background-color: color-mix(in srgb, var(#{$color-var}) 8%, transparent);
-    }
+  &:hover:not(:disabled) {
+    background-color: color-mix(in srgb, var(#{$color-var}) 8%, transparent);
+  }
 }
 
 @each $variant in $variants {
+  // Filled buttons
+  .btn-#{$variant} {
+    @include btn-filled-variant($variant);
+  }
 
-    // Filled buttons
-    .btn-#{$variant} {
-        @include btn-filled-variant($variant);
+  // Outline buttons
+  .btn-outline-#{$variant} {
+    @include btn-outline-variant(--mat-sys-#{$variant});
+  }
+
+  // Text buttons
+  .btn-text-#{$variant} {
+    @include btn-text-variant(--mat-sys-#{$variant});
+  }
+
+  .btn-#{$variant},
+  .btn-outline-#{$variant},
+  .btn-text-#{$variant} {
+    &.btn-sm {
+      @include btn-size(4px, 12px, var(--mat-sys-label-medium), 6px);
     }
 
-    // Outline buttons
-    .btn-outline-#{$variant} {
-        @include btn-outline-variant(--mat-sys-#{$variant});
+    &.btn-lg {
+      @include btn-size(12px, 20px, var(--mat-sys-label-large), 10px);
     }
-
-    // Text buttons
-    .btn-text-#{$variant} {
-        @include btn-text-variant(--mat-sys-#{$variant});
-    }
-
-    .btn-#{$variant},
-    .btn-outline-#{$variant},
-    .btn-text-#{$variant} {
-
-        &.btn-sm {
-            @include btn-size(4px,
-                12px,
-                var(--mat-sys-label-medium),
-                6px);
-        }
-
-        &.btn-lg {
-            @include btn-size(12px,
-                20px,
-                var(--mat-sys-label-large),
-                10px);
-        }
-    }
-
+  }
 }

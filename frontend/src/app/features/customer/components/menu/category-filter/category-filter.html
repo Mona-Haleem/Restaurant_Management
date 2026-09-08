@@ -1,8 +1,14 @@
-    <button [class]="activeCategory === '' ? 'btn-primary' : 'btn-text-primary'" (click)="onCategoryClick('')">
-        All
-    </button>
-    @for (category of categories; track category){
-    <button [class]="activeCategory === category ? 'btn-primary' : 'btn-text-primary'" (click)="onCategoryClick(category)">
-        {{ category }}
-    </button>
-    }
+<button
+  [class]="activeCategory() === '' ? 'btn-primary' : 'btn-text-primary'"
+  (click)="onCategoryClick('')"
+>
+  All
+</button>
+@for (category of categories(); track category) {
+  <button
+    [class]="activeCategory() === category ? 'btn-primary' : 'btn-text-primary'"
+    (click)="onCategoryClick(category)"
+  >
+    {{ category }}
+  </button>
+}

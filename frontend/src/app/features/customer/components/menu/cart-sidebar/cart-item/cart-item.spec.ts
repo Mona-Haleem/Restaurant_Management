@@ -22,7 +22,7 @@ describe('CartItemComponent', () => {
       category: 'Test',
       isAvailable: true,
       ingredients: [],
-      quantity: 1
+      quantity: 1,
     };
     await fixture.whenStable();
   });

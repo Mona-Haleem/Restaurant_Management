@@ -1,18 +1,22 @@
 <div class="cart-item" data-testid="cart-item-row">
-    <div class="item-details">
-        <img src="{{ item.imageUrl }}" alt="{{ item.name }}">
-        <div class="item-info">
-            <span class="item-name">{{ item.name }}</span>
-            <span class="item-price">{{ item.price  | currency : "EGP " }}</span>
-        </div>
+  <div class="item-details">
+    <img src="{{ item.imageUrl }}" alt="{{ item.name }}" />
+    <div class="item-info">
+      <span class="item-name">{{ item.name }}</span>
+      <span class="item-price">{{ item.price | currency: 'EGP ' }}</span>
     </div>
-    <div class="item-quantity">
-        <button class="btn-outline-primary btn-sm" (click)="removeFromCart()" data-testid="remove-item-btn">
-        -
-        </button>
-            <span class="item-quantity">{{ item.quantity }}x</span>
-        <button class="btn-outline-primary btn-sm" (click)="addToCart()" data-testid="add-item-btn">
-        +
-        </button>
-</div>
+  </div>
+  <div class="item-quantity">
+    <button
+      class="btn-outline-primary btn-sm"
+      (click)="removeFromCart()"
+      data-testid="remove-item-btn"
+    >
+      -
+    </button>
+    <span class="item-quantity">{{ item.quantity }}x</span>
+    <button class="btn-outline-primary btn-sm" (click)="addToCart()" data-testid="add-item-btn">
+      +
+    </button>
+  </div>
 </div>

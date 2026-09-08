@@ -40,9 +40,7 @@ describe('OrderStatusPipe', () => {
   // ── All known statuses covered ──────────────────────────────────────────
 
   it('should return a non-empty string for every known OrderStatus', () => {
-    const statuses: OrderStatus[] = [
-      'PENDING', 'IN_PREPARATION', 'READY', 'DELIVERED', 'CANCELED',
-    ];
+    const statuses: OrderStatus[] = ['PENDING', 'IN_PREPARATION', 'READY', 'DELIVERED', 'CANCELED'];
 
     for (const status of statuses) {
       const result = pipe.transform(status);
@@ -53,8 +51,6 @@ describe('OrderStatusPipe', () => {
   });
 
   // ── Edge cases / Defensive handling ─────────────────────────────────────
-
-
 
   it('should return an empty string for an empty string input', () => {
     expect(pipe.transform('')).toBe('');
@@ -77,14 +73,11 @@ describe('OrderStatusPipe', () => {
     expect(pipe.transform('CANCELED', 'css')).toBe('status-canceled');
   });
 
-
   // ── Accessibility ─────────────────────────────────────────────────────
   // Display labels should be screen-reader friendly (no abbreviations, no jargon)
 
   it('should produce labels that are plain English (no underscores, no ALL_CAPS)', () => {
-    const statuses: OrderStatus[] = [
-      'PENDING', 'IN_PREPARATION', 'READY', 'DELIVERED', 'CANCELED',
-    ];
+    const statuses: OrderStatus[] = ['PENDING', 'IN_PREPARATION', 'READY', 'DELIVERED', 'CANCELED'];
 
     for (const status of statuses) {
       const label = pipe.transform(status) as string;

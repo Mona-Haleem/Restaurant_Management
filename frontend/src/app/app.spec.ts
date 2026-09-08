@@ -1,23 +1,19 @@
-import { TestBed } from '@angular/core/testing';
+import { render } from '@testing-library/angular';
 import { App } from './app';
+import { provideRouter } from '@angular/router';
+import { CartService } from './core/services/cart/cart.service';
+import { signal } from '@angular/core';
 
 describe('App', () => {
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [App],
-    }).compileComponents();
-  });
+  it('should create the app', async () => {
+    const mockCartService = {
+      cartCount: signal(0),
+    };
 
-  it('should create the app', () => {
-    const fixture = TestBed.createComponent(App);
-    const app = fixture.componentInstance;
-    expect(app).toBeTruthy();
-  });
+    const { container } = await render(App, {
+      providers: [provideRouter([]), { provide: CartService, useValue: mockCartService }],
+    });
 
-  // it('should render title', async () => {
-  //   const fixture = TestBed.createComponent(App);
-  //   await fixture.whenStable();
-  //   const compiled = fixture.nativeElement as HTMLElement;
-  //   expect(compiled.querySelector('h1')?.textContent).toContain('Hello, frontend');
-  // });
+    expect(container).toBeTruthy();
+  });
 });

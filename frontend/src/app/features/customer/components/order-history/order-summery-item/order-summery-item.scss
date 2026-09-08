@@ -1,71 +1,69 @@
 :host {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-direction: row;
+  background-color: #f7f7f7;
+  padding: 0.8rem;
+
+  .item-details {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    flex-direction: row;
-    background-color: #f7f7f7;
-    padding: 0.8rem;
+    gap: 1rem;
+  }
 
-    .item-details {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-    }
+  img {
+    width: 60px;
+    height: 60px;
+    border: 1px solid #e0e0e0;
+  }
 
-    img {
-        width: 60px;
-        height: 60px;
-        border: 1px solid #E0E0E0;
-    }
+  img.lg {
+    width: 80px;
+    height: 80px;
+  }
 
-    img.lg {
-        width: 80px;
-        height: 80px;
-    }
+  .item-name {
+    color: #000;
+    font-size: 1rem;
+    font-weight: bold;
+    text-transform: uppercase;
+  }
 
-    .item-name {
-        color: #000;
-        font-size: 1rem;
-        font-weight: bold;
-        text-transform: uppercase;
-    }
+  .item-content {
+    color: #6e6c6c;
+    font-size: 0.75rem;
+    display: block;
+    font-weight: 400;
+    text-transform: uppercase;
+  }
 
-    .item-content {
-        color: #6e6c6c;
-        font-size: 0.75rem;
-        display: block;
-        font-weight: 400;
-        text-transform: uppercase;
-    }
+  .item-total {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: space-between;
+    height: 60px;
+  }
 
-    .item-total {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        justify-content: space-between;
-        height: 60px;
-    }
+  .item-price {
+    color: var(--mat-sys-primary);
+    font-size: 1rem;
+    font-weight: 700;
+  }
 
-    .item-price {
-        color: var(--mat-sys-primary);
-        font-size: 1rem;
-        font-weight: 700;
+  .item-total.lg {
+    height: 80px;
+  }
 
-    }
+  .item-qty {
+    color: #a3a3a3;
+    font-size: 0.75rem;
+  }
 
-    .item-total.lg {
-        height: 80px;
-    }
-
-    .item-qty {
-        color: #a3a3a3;
-        font-size: 0.75rem;
-
-    }
-
-    span.item-quantity {
-        width: 2rem;
-        text-align: center;
-        display: inline-block;
-    }
+  span.item-quantity {
+    width: 2rem;
+    text-align: center;
+    display: inline-block;
+  }
 }

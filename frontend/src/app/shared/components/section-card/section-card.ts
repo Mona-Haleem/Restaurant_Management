@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, input } from '@angular/core';
 
 @Component({
   selector: 'app-section-card',
@@ -7,6 +7,6 @@ import { Component, Input } from '@angular/core';
   styleUrl: './section-card.scss',
 })
 export class SectionCard {
-  @Input({ required: true }) title!: string;
-  @Input() subtitle?: string;
+  title = input.required<string>();
+  subtitle = input<string>();
 }

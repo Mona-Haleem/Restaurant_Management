@@ -1,4 +1,4 @@
-import { Component, EventEmitter, inject, Input, Output } from '@angular/core';
+import { Component, effect, inject, input, output } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { CustomerData, OrderType } from '../../../../../core/models';
@@ -12,28 +12,37 @@ import { SectionCard } from '../../../../../shared/components/section-card/secti
   styleUrl: './customer-data-form.scss',
 })
 export class CustomerDataForm {
+  form = input.required<FormGroup>();
 
-  @Input() form!: FormGroup;
+  submit = output<CustomerData>();
 
-  @Output() submit = new EventEmitter<CustomerData>();
+  constructor() {
+    effect((onCleanup) => {
+      const typeSub = this.form()
+        .get('type')
+        ?.valueChanges.subscribe(() => {
+          this.form().updateValueAndValidity();
+        });
+      const valSub = this.form().valueChanges.subscribe((value) => {
+        localStorage.setItem('checkout_customer', JSON.stringify(value));
+      });
+      onCleanup(() => {
+        typeSub?.unsubscribe();
+        valSub?.unsubscribe();
+      });
+    });
+  }
 
   setOrderType(type: OrderType) {
-    this.form.get('type')?.setValue(type);
+    this.form().get('type')?.setValue(type);
   }
-  ngOnInit() {
-    this.form.get('type')?.valueChanges.subscribe(() => {
-      this.form.updateValueAndValidity();
-    });
-    this.form.valueChanges.subscribe(value => {
-      localStorage.setItem('checkout_customer', JSON.stringify(value));
-    });
-  }
+
   onSubmit() {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
+    if (this.form().invalid) {
+      this.form().markAllAsTouched();
       return;
     }
 
-    this.submit.emit(this.form.value);
+    this.submit.emit(this.form().value);
   }
 }

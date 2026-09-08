@@ -1,17 +1,25 @@
 <div class="stepper">
-    <div class="bar" [style.width.%]="100"></div>
-    <div class="bar progress" [style.width.%]="width" data-testid="progress-bar"></div>
-    @for (step of steps; track $index) {
-        <div class="step" [class]="{
-            passed: $index <= currentStep,
-            active: $index === currentStep
-        }" (click)="onStepClick($index)" [attr.data-testid]="'step-' + $index" [attr.data-locked]="steps[$index].isLocked || false">
-            @if (step.isIcon) {
-                <mat-icon fontSet="material-symbols-outlined">{{ step.icon | orderStatus:'icon'}}</mat-icon>
-            } @else {
-                <span>{{ step.icon  }}</span>
-            }
-            <label>{{step.label}}</label>
-        </div>
-    }
+  <div class="bar" [style.width.%]="100"></div>
+  <div class="bar progress" [style.width.%]="width()" data-testid="progress-bar"></div>
+  @for (step of steps(); track $index) {
+    <div
+      class="step"
+      [class]="{
+        passed: $index <= currentStep(),
+        active: $index === currentStep(),
+      }"
+      (click)="onStepClick($index)"
+      [attr.data-testid]="'step-' + $index"
+      [attr.data-locked]="steps()[$index].isLocked || false"
+    >
+      @if (step.isIcon) {
+        <mat-icon fontSet="material-symbols-outlined">{{
+          step.icon | orderStatus: 'icon'
+        }}</mat-icon>
+      } @else {
+        <span>{{ step.icon }}</span>
+      }
+      <label>{{ step.label }}</label>
+    </div>
+  }
 </div>

@@ -1,126 +1,99 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { FormsModule } from '@angular/forms';
-import { By } from '@angular/platform-browser';
+import { render, screen, fireEvent } from '@testing-library/angular';
 import { CustomerDataForm } from './customer-data-form';
+import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
+import { FormBuilder, Validators } from '@angular/forms';
 
 describe('CustomerDataForm', () => {
-  let component: CustomerDataForm;
-  let fixture: ComponentFixture<CustomerDataForm>;
+  const fb = new FormBuilder();
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [CustomerDataForm, FormsModule],
-    }).compileComponents();
-
-    fixture = TestBed.createComponent(CustomerDataForm);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-  });
-
-  // ── Creation & Defaults ──────────────────────────────────────────────────
-
-  it('should create', () => {
-    expect(component).toBeTruthy();
-  });
-
-  it('should default to "dine-in" order destination', () => {
-    expect(component.orderDestination).toBe('dine-in');
-    
-    const dineInBox = fixture.debugElement.query(By.css('.destination-box:nth-child(1)'));
-    expect(dineInBox.classes['selected']).toBeTruthy();
-    
-    // Should show table number input initially
-    const tableInput = fixture.debugElement.query(By.css('input[name="table_number"]'));
-    expect(tableInput).toBeTruthy();
-    
-    // Should NOT show delivery address
-    const deliveryInput = fixture.debugElement.query(By.css('input[name="delivery_address"]'));
-    expect(deliveryInput).toBeFalsy();
-  });
-
-  // ── Interaction: Order Destination ──────────────────────────────────────
-
-  it('should update order destination to "pickup" when clicked', () => {
-    const pickupBox = fixture.debugElement.query(By.css('.destination-box:nth-child(2)'));
-    pickupBox.nativeElement.click();
-    fixture.detectChanges();
-
-    expect(component.orderDestination).toBe('pickup');
-    expect(pickupBox.classes['selected']).toBeTruthy();
-
-    // Both table and delivery address inputs should be hidden
-    const tableInput = fixture.debugElement.query(By.css('input[name="table_number"]'));
-    const deliveryInput = fixture.debugElement.query(By.css('input[name="delivery_address"]'));
-    
-    expect(tableInput).toBeFalsy();
-    expect(deliveryInput).toBeFalsy();
-  });
-
-  it('should update order destination to "delivery" when clicked and show address input', () => {
-    const deliveryBox = fixture.debugElement.query(By.css('.destination-box:nth-child(3)'));
-    deliveryBox.nativeElement.click();
-    fixture.detectChanges();
-
-    expect(component.orderDestination).toBe('delivery');
-    expect(deliveryBox.classes['selected']).toBeTruthy();
-
-    // Should hide table number, show delivery address
-    const tableInput = fixture.debugElement.query(By.css('input[name="table_number"]'));
-    const deliveryInput = fixture.debugElement.query(By.css('input[name="delivery_address"]'));
-    
-    expect(tableInput).toBeFalsy();
-    expect(deliveryInput).toBeTruthy();
-  });
-
-  // ── Form Binding ───────────────────────────────────────────────────────
-
-  it('should bind inputs to component properties via ngModel', async () => {
-    const nameInput = fixture.debugElement.query(By.css('input[name="username"]')).nativeElement;
-    const phoneInput = fixture.debugElement.query(By.css('input[name="phone"]')).nativeElement;
-    
-    nameInput.value = 'John Doe';
-    nameInput.dispatchEvent(new Event('input'));
-    
-    phoneInput.value = '+123456789';
-    phoneInput.dispatchEvent(new Event('input'));
-
-    fixture.detectChanges();
-    await fixture.whenStable();
-
-    expect(component.fullName).toBe('John Doe');
-    expect(component.phone).toBe('+123456789');
-  });
-
-  // ── Emitting Data ──────────────────────────────────────────────────────
-
-  it('should emit the correct payload when onSubmit is called', () => {
-    const emitSpy = vi.spyOn(component.submit, 'emit');
-    
-    component.fullName = 'Alice';
-    component.phone = '987654321';
-    component.orderDestination = 'delivery';
-    component.delivery_address = '123 Main St';
-    component.table_number = null;
-
-    component.onSubmit();
-
-    expect(emitSpy).toHaveBeenCalledTimes(1);
-    expect(emitSpy).toHaveBeenCalledWith({
-      fullName: 'Alice',
-      phone: '987654321',
-      delivery_address: '123 Main St',
-      table_number: null,
-      type: 'delivery'
+  function createForm() {
+    return fb.group({
+      fullName: ['', Validators.required],
+      phone: ['', Validators.required],
+      type: ['dine-in', Validators.required],
+      location: [''],
     });
+  }
+
+  it('should render and default to "dine-in" showing table number', async () => {
+    await render(CustomerDataForm, {
+      inputs: { form: createForm() },
+    });
+
+    expect(screen.getByPlaceholderText(/full name/i)).toBeTruthy();
+    expect(screen.getByPlaceholderText(/\+2 01xxxxxxxxx/i)).toBeTruthy();
+    expect(screen.getByPlaceholderText(/table number/i)).toBeTruthy();
+    expect(screen.queryByPlaceholderText(/delivery address/i)).toBeFalsy();
   });
 
-  it('should trigger onSubmit when the form is submitted', () => {
-    const submitSpy = vi.spyOn(component, 'onSubmit');
-    
-    const formElement = fixture.debugElement.query(By.css('form'));
-    formElement.triggerEventHandler('ngSubmit', null);
-    
+  it('should switch to delivery and show delivery address', async () => {
+    const user = userEvent.setup();
+    await render(CustomerDataForm, {
+      inputs: { form: createForm() },
+    });
+
+    const deliveryBox = screen.getByText('Delivery');
+    await user.click(deliveryBox);
+
+    expect(screen.queryByPlaceholderText(/table number/i)).toBeFalsy();
+    expect(screen.getByPlaceholderText(/delivery address/i)).toBeTruthy();
+  });
+
+  it('should switch to pickup and hide both location inputs', async () => {
+    const user = userEvent.setup();
+    await render(CustomerDataForm, {
+      inputs: { form: createForm() },
+    });
+
+    const pickupBox = screen.getByText('Pickup');
+    await user.click(pickupBox);
+
+    expect(screen.queryByPlaceholderText(/table number/i)).toBeFalsy();
+    expect(screen.queryByPlaceholderText(/delivery address/i)).toBeFalsy();
+  });
+
+  it('should emit form data on submit when valid', async () => {
+    const user = userEvent.setup();
+    const submitSpy = vi.fn();
+    const form = createForm();
+
+    const { container } = await render(CustomerDataForm, {
+      inputs: { form },
+      on: { submit: submitSpy },
+    });
+
+    await user.type(screen.getByPlaceholderText(/full name/i), 'John Doe');
+    await user.type(screen.getByPlaceholderText(/\+2 01xxxxxxxxx/i), '1234567890');
+
+    await user.click(screen.getByText('Delivery'));
+    await user.type(screen.getByPlaceholderText(/delivery address/i), '123 Main St');
+
+    // Submit form
+    fireEvent.submit(container.querySelector('form')!);
+
     expect(submitSpy).toHaveBeenCalledTimes(1);
+    expect(submitSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fullName: 'John Doe',
+        phone: '1234567890',
+        type: 'delivery',
+        location: '123 Main St',
+      }),
+    );
+  });
+
+  it('should not emit if form is invalid', async () => {
+    const submitSpy = vi.fn();
+    const form = createForm();
+
+    const { container } = await render(CustomerDataForm, {
+      inputs: { form },
+      on: { submit: submitSpy },
+    });
+
+    fireEvent.submit(container.querySelector('form')!);
+
+    expect(submitSpy).not.toHaveBeenCalled();
   });
 });

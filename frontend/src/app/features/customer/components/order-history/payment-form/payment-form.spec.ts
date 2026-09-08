@@ -1,194 +1,138 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { FormsModule } from '@angular/forms';
-import { By } from '@angular/platform-browser';
+import { render, screen } from '@testing-library/angular';
 import { PaymentForm } from './payment-form';
+import userEvent from '@testing-library/user-event';
+import { vi } from 'vitest';
+import { FormBuilder } from '@angular/forms';
 import { CartService } from '../../../../../core/services/cart/cart.service';
 import { BehaviorSubject } from 'rxjs';
-import { vi } from 'vitest';
 
 describe('PaymentForm', () => {
-  let component: PaymentForm;
-  let fixture: ComponentFixture<PaymentForm>;
-  let cartServiceStub: Partial<CartService>;
-  let couponSubject: BehaviorSubject<any>;
+  const fb = new FormBuilder();
 
-  beforeEach(async () => {
-    couponSubject = new BehaviorSubject(null);
-    cartServiceStub = {
+  function createForm() {
+    return fb.group({
+      type: ['cash'],
+      couponCode: [''],
+      cardHolder: [''],
+      cardNumber: [''],
+      expiry: [''],
+      cvv: [''],
+    });
+  }
+
+  function setupCartService(initialCoupon: any = null) {
+    const couponSubject = new BehaviorSubject(initialCoupon);
+    return {
+      coupon$: couponSubject.asObservable(),
       applyCoupon: vi.fn(),
       removeCoupon: vi.fn(),
-      get coupon$() { return couponSubject.asObservable(); }
+      _couponSubject: couponSubject,
     };
+  }
 
-    await TestBed.configureTestingModule({
-      imports: [PaymentForm, FormsModule],
-      providers: [
-        { provide: CartService, useValue: cartServiceStub }
-      ]
-    }).compileComponents();
-
-    fixture = TestBed.createComponent(PaymentForm);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-  });
-
-  // ── Defaults & Initialization ──────────────────────────────────────────
-
-  it('should create', () => {
-    expect(component).toBeTruthy();
-  });
-
-  it('should default to "cash" payment method', () => {
-    expect(component.paymentMethod).toBe('cash');
-    
-    // Should NOT show card inputs initially
-    const cardNumberInput = fixture.debugElement.query(By.css('input[name="cardNumber"]'));
-    expect(cardNumberInput).toBeFalsy();
-  });
-
-  it('should emit methodChange on init with default payment method', () => {
-    const emitSpy = vi.spyOn(component.methodChange, 'emit');
-    // Call ngOnInit explicitly because it might have run before spy was attached
-    component.ngOnInit();
-    expect(emitSpy).toHaveBeenCalledWith('cash');
-  });
-
-  // ── Interaction: Payment Method ────────────────────────────────────────
-
-  it('should update payment method to "card" and show card inputs', () => {
-    const cardBox = fixture.debugElement.query(By.css('.payment-box:nth-child(2)'));
-    const emitSpy = vi.spyOn(component.methodChange, 'emit');
-    
-    cardBox.nativeElement.click();
-    fixture.detectChanges();
-
-    expect(component.paymentMethod).toBe('card');
-    expect(emitSpy).toHaveBeenCalledWith('card');
-    
-    // Should show card inputs
-    const cardNumberInput = fixture.debugElement.query(By.css('input[name="cardNumber"]'));
-    expect(cardNumberInput).toBeTruthy();
-  });
-
-  it('should update payment method back to "cash" and hide card inputs', () => {
-    component.paymentMethod = 'card';
-    fixture.detectChanges();
-    
-    const cashBox = fixture.debugElement.query(By.css('.payment-box:nth-child(1)'));
-    cashBox.nativeElement.click();
-    fixture.detectChanges();
-
-    expect(component.paymentMethod).toBe('cash');
-    const cardNumberInput = fixture.debugElement.query(By.css('input[name="cardNumber"]'));
-    expect(cardNumberInput).toBeFalsy();
-  });
-
-  // ── Coupon Logic ───────────────────────────────────────────────────────
-
-  it('should not call CartService if applyCoupon is triggered with empty/whitespace code', () => {
-    component.couponCode = '   ';
-    component.applyCoupon();
-    expect(cartServiceStub.applyCoupon).not.toHaveBeenCalled();
-  });
-
-  it('should show an error if CartService rejects the coupon code', () => {
-    (cartServiceStub.applyCoupon as any).mockReturnValue(false);
-    
-    component.couponCode = 'INVALID';
-    component.applyCoupon();
-    fixture.detectChanges();
-
-    expect(cartServiceStub.applyCoupon).toHaveBeenCalledWith('INVALID');
-    expect(component.couponError).toBe('Invalid coupon code');
-    
-    // Code should remain in input so user can fix it
-    expect(component.couponCode).toBe('INVALID');
-    
-    // Error should be displayed in the template
-    const errorEl = fixture.debugElement.query(By.css('.error-text'));
-    expect(errorEl.nativeElement.textContent).toContain('Invalid coupon');
-  });
-
-  it('should clear error and input if CartService accepts the coupon', () => {
-    (cartServiceStub.applyCoupon as any).mockReturnValue(true);
-    component.couponError = 'Some old error';
-    component.couponCode = 'VALIDCODE';
-    
-    component.applyCoupon();
-    
-    expect(cartServiceStub.applyCoupon).toHaveBeenCalledWith('VALIDCODE');
-    expect(component.couponError).toBe('');
-    expect(component.couponCode).toBe(''); // Clear input after success
-  });
-
-  it('should display the applied coupon and a remove button', () => {
-    couponSubject.next({ code: 'SAVE20', discountPercent: 20 });
-    fixture.detectChanges();
-
-    const appliedEl = fixture.debugElement.query(By.css('.applied-coupon'));
-    expect(appliedEl).toBeTruthy();
-    expect(appliedEl.nativeElement.textContent).toContain('SAVE20');
-    expect(appliedEl.nativeElement.textContent).toContain('20% OFF');
-  });
-
-  it('should call CartService.removeCoupon when the remove button is clicked', () => {
-    couponSubject.next({ code: 'SAVE20', discountPercent: 20 });
-    fixture.detectChanges();
-
-    const removeBtn = fixture.debugElement.query(By.css('.applied-coupon button'));
-    removeBtn.nativeElement.click();
-
-    expect(cartServiceStub.removeCoupon).toHaveBeenCalledTimes(1);
-  });
-
-  // ── Emitting Data ──────────────────────────────────────────────────────
-
-  it('should emit only the method when submitting as "cash"', () => {
-    const submitSpy = vi.spyOn(component.submit, 'emit');
-    component.paymentMethod = 'cash';
-    
-    component.onSubmit();
-
-    expect(submitSpy).toHaveBeenCalledWith({ method: 'cash' });
-  });
-
-  it('should emit method and card details when submitting as "card"', async () => {
-    const submitSpy = vi.spyOn(component.submit, 'emit');
-    
-    // Set method to card so inputs are rendered
-    component.paymentMethod = 'card';
-    fixture.detectChanges();
-    await fixture.whenStable();
-
-    // Fill the inputs via UI to test bindings too
-    const holderInput = fixture.debugElement.query(By.css('input[name="cardHolder"]')).nativeElement;
-    const numberInput = fixture.debugElement.query(By.css('input[name="cardNumber"]')).nativeElement;
-    const expiryInput = fixture.debugElement.query(By.css('input[name="expiry"]')).nativeElement;
-    const cvvInput = fixture.debugElement.query(By.css('input[name="cvv"]')).nativeElement;
-
-    holderInput.value = 'Jane Doe';
-    holderInput.dispatchEvent(new Event('input'));
-    
-    numberInput.value = '4111222233334444';
-    numberInput.dispatchEvent(new Event('input'));
-
-    expiryInput.value = '12/25';
-    expiryInput.dispatchEvent(new Event('input'));
-
-    cvvInput.value = '123';
-    cvvInput.dispatchEvent(new Event('input'));
-
-    fixture.detectChanges();
-    
-    const formElement = fixture.debugElement.query(By.css('form'));
-    formElement.triggerEventHandler('ngSubmit', null);
-
-    expect(submitSpy).toHaveBeenCalledWith({
-      method: 'card',
-      cardHolder: 'Jane Doe',
-      cardNumber: '4111222233334444',
-      expiry: '12/25',
-      cvv: '123'
+  it('should render and default to cash payment', async () => {
+    const cartServiceStub = setupCartService();
+    await render(PaymentForm, {
+      inputs: { form: createForm() },
+      providers: [{ provide: CartService, useValue: cartServiceStub }],
     });
+
+    expect(screen.queryByPlaceholderText('0000 0000 0000 0000')).toBeFalsy();
+  });
+
+  it('should toggle between cash and card and show/hide card fields', async () => {
+    const user = userEvent.setup();
+    const cartServiceStub = setupCartService();
+    await render(PaymentForm, {
+      inputs: { form: createForm() },
+      providers: [{ provide: CartService, useValue: cartServiceStub }],
+    });
+
+    expect(screen.queryByPlaceholderText('0000 0000 0000 0000')).toBeFalsy();
+
+    await user.click(screen.getByText('Card'));
+    expect(screen.getByPlaceholderText('0000 0000 0000 0000')).toBeTruthy();
+
+    await user.click(screen.getByText('Cash'));
+    expect(screen.queryByPlaceholderText('0000 0000 0000 0000')).toBeFalsy();
+  });
+
+  it('should apply valid coupon and show coupon block', async () => {
+    const user = userEvent.setup();
+    const cartServiceStub = setupCartService();
+    cartServiceStub.applyCoupon.mockReturnValue(true);
+
+    const { detectChanges } = await render(PaymentForm, {
+      inputs: { form: createForm() },
+      providers: [{ provide: CartService, useValue: cartServiceStub }],
+    });
+
+    const couponInput = screen.getByPlaceholderText('coupon code');
+    await user.type(couponInput, 'SAVE20');
+    await user.click(screen.getByRole('button', { name: /APPLY/i }));
+
+    expect(cartServiceStub.applyCoupon).toHaveBeenCalledWith('SAVE20');
+
+    // Simulate cart service emitting the new coupon state
+    cartServiceStub._couponSubject.next({ code: 'SAVE20', discountPercent: 20 } as any);
+    detectChanges();
+
+    expect(screen.getByText(/SAVE20.*20% OFF/i)).toBeTruthy();
+  });
+
+  it('should show error on invalid coupon', async () => {
+    const user = userEvent.setup();
+    const cartServiceStub = setupCartService();
+    cartServiceStub.applyCoupon.mockReturnValue(false);
+
+    await render(PaymentForm, {
+      inputs: { form: createForm() },
+      providers: [{ provide: CartService, useValue: cartServiceStub }],
+    });
+
+    const couponInput = screen.getByPlaceholderText('coupon code');
+    await user.type(couponInput, 'INVALID');
+    await user.click(screen.getByRole('button', { name: /APPLY/i }));
+
+    expect(screen.getByText('Invalid coupon code')).toBeTruthy();
+  });
+
+  it('should call CartService.removeCoupon when remove button is clicked', async () => {
+    const user = userEvent.setup();
+    const cartServiceStub = setupCartService({ code: 'SAVE20', discountPercent: 20 });
+
+    await render(PaymentForm, {
+      inputs: { form: createForm() },
+      providers: [{ provide: CartService, useValue: cartServiceStub }],
+    });
+
+    await user.click(screen.getByRole('button', { name: /REMOVE/i }));
+    expect(cartServiceStub.removeCoupon).toHaveBeenCalled();
+  });
+
+  it('should emit form data on submit', async () => {
+    const user = userEvent.setup();
+    const cartServiceStub = setupCartService();
+    const submitSpy = vi.fn();
+    const form = createForm();
+
+    await render(PaymentForm, {
+      inputs: { form },
+      providers: [{ provide: CartService, useValue: cartServiceStub }],
+      on: { submit: submitSpy },
+    });
+
+    const couponInput = screen.getByPlaceholderText('coupon code');
+    await user.type(couponInput, 'COUPON123');
+
+    await user.type(couponInput, '{Enter}'); // trigger form submit
+
+    expect(submitSpy).toHaveBeenCalledTimes(1);
+    expect(submitSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'cash',
+        coupons: 'COUPON123',
+      }),
+    );
   });
 });

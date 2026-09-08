@@ -9,8 +9,8 @@ export class SummeryItemsPipe implements PipeTransform {
     value = value.filter((v) => v && v.trim().length > 0);
     let trailing = '';
     if (value.length > 3) {
-      trailing = ` and ${value.length - 3} more.`
-      value = value.slice(0, 3)
+      trailing = ` and ${value.length - 3} more.`;
+      value = value.slice(0, 3);
     }
     return value.join(', ') + trailing;
   }

@@ -1,106 +1,103 @@
-
-
 header {
-    margin-bottom: 2rem;
+  margin-bottom: 2rem;
 
-    h1 {
-        font-size: 2.5rem;
-        margin: 0;
-        font-weight: 800;
-        letter-spacing: -0.02em;
-    }
+  h1 {
+    font-size: 2.5rem;
+    margin: 0;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
 
-    .order-id {
-        color: #888;
-        font-size: 0.9rem;
-        font-weight: 600;
-        margin-top: 0.5rem;
-    }
+  .order-id {
+    color: #888;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-top: 0.5rem;
+  }
 }
 
 #container {
-   display: flex;
-   padding: 2rem;
-   gap:2rem
+  display: flex;
+  padding: 2rem;
+  gap: 2rem;
 }
 
-section{
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    flex:3;
+section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  flex: 3;
 }
 
-aside{
-    max-width: 300px;
-    flex:1;
+aside {
+  max-width: 300px;
+  flex: 1;
 }
 
 @media screen and (max-width: 756px) {
-    #container {
-        flex-direction: column;
-    }
+  #container {
+    flex-direction: column;
+  }
 
-    aside {
-        max-width: none;
-        width: 100%;
-    }
-    
+  aside {
+    max-width: none;
+    width: 100%;
+  }
 }
 .main-content {
-    display: flex;
-    flex-direction: column;
-    gap: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
 }
 
 .side-content {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    position: sticky;
-    top: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  position: sticky;
+  top: 2rem;
 }
 
 .info-row {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
 
-    label {
-        font-size: 0.7rem;
-        color: #888;
-        font-weight: 700;
-        letter-spacing: 0.05em;
-    }
+  label {
+    font-size: 0.7rem;
+    color: #888;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
 
-    span {
-        font-weight: 600;
-        color: var(--mat-sys-on-surface);
-    }
+  span {
+    font-weight: 600;
+    color: var(--mat-sys-on-surface);
+  }
 }
 
 .not-found-container {
-    text-align: center;
-    padding: 5rem 2rem;
+  text-align: center;
+  padding: 5rem 2rem;
 
-    h2 {
-        font-size: 2rem;
-        margin-bottom: 1rem;
-    }
+  h2 {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+  }
 
-    p {
-        color: #666;
-        margin-bottom: 2rem;
-    }
+  p {
+    color: #666;
+    margin-bottom: 2rem;
+  }
 }
 
 @media (max-width: 992px) {
-    .tracking-layout {
-        grid-template-columns: 1fr;
-    }
+  .tracking-layout {
+    grid-template-columns: 1fr;
+  }
 
-    .side-content {
-        position: static;
-    }
+  .side-content {
+    position: static;
+  }
 }

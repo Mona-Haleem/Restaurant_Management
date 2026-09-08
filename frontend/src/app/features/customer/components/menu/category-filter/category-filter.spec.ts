@@ -10,11 +10,13 @@ describe('CategoryFilter', () => {
   let component: CategoryFilter;
   let menuServiceMock: Partial<MenuService>;
 
-  function createComponent(categories: string[], activeCategory: string = '') {
+  function createComponent(categories: string[], activeCategory = '') {
     menuServiceMock = {
       getCategories: vi.fn().mockReturnValue(of(categories)),
       setActiveFilter: vi.fn(),
-      get selectedCategory() { return activeCategory; },
+      get selectedCategory() {
+        return activeCategory;
+      },
     };
 
     TestBed.overrideProvider(MenuService, { useValue: menuServiceMock });

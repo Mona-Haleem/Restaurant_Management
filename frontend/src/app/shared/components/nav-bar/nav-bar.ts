@@ -14,20 +14,18 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
   styleUrl: './nav-bar.scss',
 })
 export class NavBar implements OnInit {
-  private cartService = inject(CartService)
+  private cartService = inject(CartService);
   isMobile = signal(window.innerWidth <= 768);
   isOpen = signal(false);
   private resizeTimeout?: ReturnType<typeof setTimeout>;
   private destroyRef = inject(DestroyRef);
   @HostListener('window:resize')
-
   onResize() {
     clearTimeout(this.resizeTimeout);
 
     this.resizeTimeout = setTimeout(() => {
       this.isMobile.set(window.innerWidth <= 768);
     }, 200);
-
   }
 
   ngOnInit(): void {
@@ -37,12 +35,10 @@ export class NavBar implements OnInit {
   }
 
   get count() {
-    return this.cartService.count.pipe(map(c => c > 9 ? '9+' : c == 0 ? '' : c));
+    return this.cartService.cartCount;
   }
 
   onMenuClick() {
     this.isOpen.set(!this.isOpen());
   }
-
-
 }

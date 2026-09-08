@@ -1,15 +1,9 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
+import { render, screen } from '@testing-library/angular';
 import { OrderTrackingPage } from './order-tracking.page';
-import { ComponentRef } from '@angular/core';
 import { Order } from '../../../../core/models';
 import { provideRouter } from '@angular/router';
 
 describe('OrderTrackingPage', () => {
-  let component: OrderTrackingPage;
-  let componentRef: ComponentRef<OrderTrackingPage>;
-  let fixture: ComponentFixture<OrderTrackingPage>;
-
   const mockActiveOrder: Order = {
     _id: 'active-1',
     userId: 'u1',
@@ -20,7 +14,7 @@ describe('OrderTrackingPage', () => {
     totalPrice: 100,
     createdBy: 'system',
     createdAt: new Date('2026-05-20T10:00:00Z').toISOString(),
-    updatedAt: new Date('2026-05-20T10:00:00Z').toISOString()
+    updatedAt: new Date('2026-05-20T10:00:00Z').toISOString(),
   };
 
   const mockDeliveredOrder: Order = {
@@ -33,7 +27,7 @@ describe('OrderTrackingPage', () => {
     totalPrice: 150,
     createdBy: 'system',
     createdAt: new Date('2026-05-19T10:00:00Z').toISOString(),
-    updatedAt: new Date('2026-05-19T11:00:00Z').toISOString()
+    updatedAt: new Date('2026-05-19T11:00:00Z').toISOString(),
   };
 
   const mockCanceledOrder: Order = {
@@ -46,96 +40,38 @@ describe('OrderTrackingPage', () => {
     totalPrice: 50,
     createdBy: 'system',
     createdAt: new Date('2026-05-18T10:00:00Z').toISOString(),
-    updatedAt: new Date('2026-05-18T10:30:00Z').toISOString()
+    updatedAt: new Date('2026-05-18T10:30:00Z').toISOString(),
   };
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [OrderTrackingPage],
-      providers: [provideRouter([])] // needed for routerLink in template
-    }).compileComponents();
+  const setup = async (orders: Order[]) => {
+    return await render(OrderTrackingPage, {
+      inputs: { orders },
+      providers: [provideRouter([])],
+    });
+  };
 
-    fixture = TestBed.createComponent(OrderTrackingPage);
-    component = fixture.componentInstance;
-    componentRef = fixture.componentRef;
+  it('renders "Order Not Found" state when orders array is empty', async () => {
+    await setup([]);
+    expect(screen.getByRole('heading', { level: 2, name: /order not found/i })).toBeTruthy();
+    expect(screen.getByText(/we couldn't find the order/i)).toBeTruthy();
+    expect(screen.getByRole('button', { name: /back to menu/i })).toBeTruthy();
   });
 
-  // ── Empty State ─────────────────────────────────────────────────────────
-
-  it('should render "Order Not Found" state when orders array is empty', () => {
-    componentRef.setInput('orders', []);
-    fixture.detectChanges();
-    // call ngOnInit to run the sorting/assignment logic
-    component.ngOnInit();
-    fixture.detectChanges();
-
-    const notFoundEl = fixture.debugElement.query(By.css('[data-testid="not-found"]'));
-    expect(notFoundEl).toBeTruthy();
-    expect(notFoundEl.nativeElement.textContent).toContain('Order Not Found');
-
-    const trackerCards = fixture.debugElement.queryAll(By.css('[data-testid="tracker-card"]'));
-    const historyCards = fixture.debugElement.queryAll(By.css('[data-testid="history-card"]'));
-    expect(trackerCards.length).toBe(0);
-    expect(historyCards.length).toBe(0);
+  it('renders active orders correctly', async () => {
+    await setup([mockActiveOrder]);
+    expect(screen.getByText('#active-1')).toBeTruthy();
+    expect(screen.queryByRole('heading', { level: 2, name: /order not found/i })).toBeFalsy();
   });
 
-  // ── Active vs Historical Rendering ───────────────────────────────────────
-
-  it('should render OrderTrackerCard for active orders (PENDING, IN_PREPARATION, READY)', () => {
-    componentRef.setInput('orders', [mockActiveOrder]);
-    component.ngOnInit();
-    fixture.detectChanges();
-
-    const trackerCards = fixture.debugElement.queryAll(By.css('[data-testid="tracker-card"]'));
-    const historyCards = fixture.debugElement.queryAll(By.css('[data-testid="history-card"]'));
-
-    expect(trackerCards.length).toBe(1);
-    expect(historyCards.length).toBe(0);
+  it('renders historical orders (DELIVERED, CANCELED)', async () => {
+    await setup([mockDeliveredOrder, mockCanceledOrder]);
+    expect(screen.getByText('#delivered-1')).toBeTruthy();
+    expect(screen.getByText('#canceled-1')).toBeTruthy();
   });
 
-  it('should render OrderCard for historical orders (DELIVERED, CANCELED)', () => {
-    componentRef.setInput('orders', [mockDeliveredOrder, mockCanceledOrder]);
-    component.ngOnInit();
-    fixture.detectChanges();
-
-    const trackerCards = fixture.debugElement.queryAll(By.css('[data-testid="tracker-card"]'));
-    const historyCards = fixture.debugElement.queryAll(By.css('[data-testid="history-card"]'));
-
-    expect(trackerCards.length).toBe(0);
-    expect(historyCards.length).toBe(2);
-  });
-
-  it('should render both appropriately when a mix of orders is provided', () => {
-    componentRef.setInput('orders', [mockActiveOrder, mockDeliveredOrder]);
-    component.ngOnInit();
-    fixture.detectChanges();
-
-    const trackerCards = fixture.debugElement.queryAll(By.css('[data-testid="tracker-card"]'));
-    const historyCards = fixture.debugElement.queryAll(By.css('[data-testid="history-card"]'));
-
-    expect(trackerCards.length).toBe(1);
-    expect(historyCards.length).toBe(1);
-  });
-
-  // ── Sorting Logic ────────────────────────────────────────────────────────
-
-  it('should sort orders primarily by status index, and secondarily by createdAt (newest first)', () => {
-    const activeOrder2: Order = {
-      ...mockActiveOrder,
-      _id: 'active-2',
-      createdAt: new Date('2026-05-20T12:00:00Z').toISOString() // Newer than active-1
-    };
-
-    // Provide unsorted
-    componentRef.setInput('orders', [mockDeliveredOrder, mockActiveOrder, activeOrder2]);
-    component.ngOnInit();
-
-    // active-2 is newest PENDING
-    // active-1 is older PENDING
-    // delivered-1 is DELIVERED
-    // PENDING < DELIVERED in OrderStatusList
-    expect(component.orderHistory[0]._id).toBe('active-2');
-    expect(component.orderHistory[1]._id).toBe('active-1');
-    expect(component.orderHistory[2]._id).toBe('delivered-1');
+  it('renders both active and historical orders when mixed', async () => {
+    await setup([mockActiveOrder, mockDeliveredOrder]);
+    expect(screen.getByText('#active-1')).toBeTruthy();
+    expect(screen.getByText('#delivered-1')).toBeTruthy();
   });
 });

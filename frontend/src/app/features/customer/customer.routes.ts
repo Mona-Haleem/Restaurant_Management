@@ -13,7 +13,7 @@ export const customerRoutes: Routes = [
   {
     path: '',
     redirectTo: 'menu',
-    pathMatch: 'full'
+    pathMatch: 'full',
   },
   {
     path: 'menu',
@@ -23,17 +23,17 @@ export const customerRoutes: Routes = [
   {
     path: 'cart',
     component: CartPage,
-    resolve: { cartData: cartResolver }
+    resolve: { cartData: cartResolver },
   },
   {
     path: 'checkout',
     component: CheckoutPage,
-    resolve: { cartData: cartResolver }
+    resolve: { cartData: cartResolver },
   },
   {
     path: 'order/:id',
     component: NotFound,
-    resolve: { orders: ordersHistoryResolver }
+    resolve: { orders: ordersHistoryResolver },
   },
   {
     path: 'orders',

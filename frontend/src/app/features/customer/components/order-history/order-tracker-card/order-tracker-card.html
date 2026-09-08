@@ -1,38 +1,35 @@
+<header>
+  <div id="order-id" data-testid="order-id">
+    <p>Tracking Order</p>
+    <h3>#{{ order()._id }}</h3>
+  </div>
+  <div id="est-arrival" data-testid="est-arrival">
+    <p>EST.ARRIVAL</p>
+    <h3>{{ estimatedTimeOfArrival }}</h3>
+  </div>
+</header>
+<app-steps-tracker [steps]="steps" [currentStep]="currentStep()" data-testid="steps-tracker" />
 
-    <header>
-        <div id="order-id" data-testid="order-id">
-            <p>Tracking Order</p>
-            <h3>#{{order._id}}</h3>
-        </div>
-        <div id="est-arrival" data-testid="est-arrival">
-            <p>EST.ARRIVAL</p>
-            <h3>{{estimatedTimeOfArrival}}</h3>
-        </div>
-    </header>
-    <app-steps-tracker [steps]="steps" [currentStep]="currentStep" data-testid="steps-tracker"/>
+<div id="order-details">
+  <div>
+    <h3>Order Details</h3>
+    <p data-testid="order-items">{{ orderItems() | summeryItems }}</p>
+  </div>
+  <div>
+    <h3>Total Price</h3>
+    <p data-testid="total-price">{{ order().totalPrice | currency: 'EGP' }}</p>
+  </div>
+</div>
 
-    <div id="order-details">
-        <div>
-
-            <h3>Order Details</h3>
-            <p data-testid="order-items">{{ orderItems | summeryItems }}</p>
-        </div>
-        <div>
-            <h3>Total Price</h3>
-            <p data-testid="total-price">{{ order.totalPrice | currency:'EGP' }}</p>
-        </div>
-
+@if (order().status === 'PENDING') {
+  <button class="btn-primary" (click)="cancelOrder()" data-testid="cancel-btn">Cancel Order</button>
+}
+@if (user !== 'customer') {
+  <div id="updates">
+    <div>
+      <mat-icon fontSet="material-symbols-outlined">arrow_forward</mat-icon>
+      <p>{{ update?.time }}</p>
+      <p>{{ update?.status }}</p>
     </div>
-
-    @if(order.status === 'PENDING' ) {
-        <button class="btn-primary" (click)="cancelOrder()" data-testid="cancel-btn">Cancel Order</button>
-    }
-@if(user !== 'customer' ){
-    <div id ="updates">
-        <div>
-            <mat-icon fontSet="material-symbols-outlined">arrow_forward</mat-icon>
-            <p>{{update?.time}}</p>
-            <p>{{update?.status}}</p>
-        </div>
-    </div>
+  </div>
 }

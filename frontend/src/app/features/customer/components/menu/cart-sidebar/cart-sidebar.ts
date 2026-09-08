@@ -1,14 +1,13 @@
 import { Component, inject } from '@angular/core';
 import { CartService } from '../../../../../core/services/cart/cart.service';
-import { AsyncPipe, CurrencyPipe } from '@angular/common';
-import { map } from 'rxjs';
+import { CurrencyPipe } from '@angular/common';
 import { CartItemComponent } from './cart-item/cart-item';
 import { MatIconModule } from '@angular/material/icon';
 import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-cart-sidebar',
-  imports: [AsyncPipe, CartItemComponent, CurrencyPipe, MatIconModule],
+  imports: [CartItemComponent, CurrencyPipe, MatIconModule],
   templateUrl: './cart-sidebar.html',
   styleUrl: './cart-sidebar.scss',
 })
@@ -16,9 +15,9 @@ export class CartSidebar {
   private cartService = inject(CartService);
   private router = inject(Router);
 
-  cartItems$ = this.cartService.cartItems$;
-  count$ = this.cartService.count;
-  summary$ = this.cartService.getCartSummary();
+  cartItems = this.cartService.cartItems;
+  count = this.cartService.cartCount;
+  summary = this.cartService.cartSummary;
 
   clearCart() {
     this.cartService.clearCart();

@@ -1,14 +1,12 @@
 <mat-icon class="material-symbols-outlined filled">timer</mat-icon>
 <div>
-    <p class="header">
-        Live ETA STATUS
-    </p>
-    <p>
-        <span class="label">Current LOAD: </span>
-        <span class="value" data-testid="current-load">{{currentLoad}}</span>
-    </p>
-    <p>
-        <span class="label">EXPECTED PREP TIME: </span>
-        <span class="value" data-testid="expected-time">{{expectedPrepTime}}</span>
-    </p>
+  <p class="header">Live ETA STATUS</p>
+  <p>
+    <span class="label">Current LOAD: </span>
+    <span class="value" data-testid="current-load">{{ currentLoad() }}</span>
+  </p>
+  <p>
+    <span class="label">EXPECTED PREP TIME: </span>
+    <span class="value" data-testid="expected-time">{{ expectedPrepTime() }}</span>
+  </p>
 </div>

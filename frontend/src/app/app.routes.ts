@@ -9,24 +9,18 @@ export const routes: Routes = [
   },
   {
     path: 'customer',
-    loadChildren: () =>
-      import('./features/customer/customer.routes').then((m) => m.customerRoutes),
+    loadChildren: () => import('./features/customer/customer.routes').then((m) => m.customerRoutes),
   },
   {
     path: 'worker',
-    loadChildren: () =>
-      import('./features/worker/worker.routes').then((m) => m.workerRoutes),
+    loadChildren: () => import('./features/worker/worker.routes').then((m) => m.workerRoutes),
   },
   {
     path: 'manager',
-    loadChildren: () =>
-      import('./features/manager/manager.routes').then((m) => m.managerRoutes),
+    loadChildren: () => import('./features/manager/manager.routes').then((m) => m.managerRoutes),
   },
   {
     path: '**',
-    loadComponent: () =>
-      import('./shared/components/not-found/not-found').then(
-        (m) => m.NotFound
-      ),
+    loadComponent: () => import('./shared/components/not-found/not-found').then((m) => m.NotFound),
   },
 ];

@@ -1,12 +1,12 @@
-import { Component, Input } from '@angular/core';
+import { Component, input, computed } from '@angular/core';
 import { Order } from '../../../../../core/models';
 import { MatIconModule } from '@angular/material/icon';
 import { SummeryItemsPipe } from '../../../../../shared/pipes/summery-items/summery-items.pipe';
 
 const TYPE_ICON: Record<string, string> = {
-  'dine-in':  'table_restaurant',
-  'pickup':   'takeout_dining',
-  'delivery': 'local_shipping',
+  'dine-in': 'table_restaurant',
+  pickup: 'takeout_dining',
+  delivery: 'local_shipping',
 };
 
 @Component({
@@ -16,13 +16,14 @@ const TYPE_ICON: Record<string, string> = {
   styleUrl: './order-card.scss',
 })
 export class OrderCard {
-  @Input({ required: true }) order!: Order;
+  order = input.required<Order>();
   expected_time = '30 minutes';
 
-  get orderItems():string[]{
-    return this.order.items.map(item => `${item.name} x${item.quantity}`);
-  }
-  get typeIcon(): string {
-    return TYPE_ICON[this.order.type] ?? 'receipt';
-  }
+  orderItems = computed(() => {
+    return this.order().items.map((item) => `${item.name} x${item.quantity}`);
+  });
+
+  typeIcon = computed(() => {
+    return TYPE_ICON[this.order().type] ?? 'receipt';
+  });
 }

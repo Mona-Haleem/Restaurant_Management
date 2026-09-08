@@ -6,8 +6,12 @@ import { routes } from './app.routes';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
-    provideRouter(routes, withComponentInputBinding(), withRouterConfig({
-      paramsInheritanceStrategy: 'always'
-    }))
-  ]
+    provideRouter(
+      routes,
+      withComponentInputBinding(),
+      withRouterConfig({
+        paramsInheritanceStrategy: 'always',
+      }),
+    ),
+  ],
 };

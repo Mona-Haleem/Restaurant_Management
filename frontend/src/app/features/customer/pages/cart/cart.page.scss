@@ -1,28 +1,28 @@
 :host {
-    display: grid;
-    gap: 1.5rem;
-    grid-template-columns: 1fr 420px;
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: 1fr 420px;
 
-    .empty-cart {
-        text-align: center;
-        padding: 3rem 0;
-        color: #888;
-        font-style: italic;
-    }
+  .empty-cart {
+    text-align: center;
+    padding: 3rem 0;
+    color: #888;
+    font-style: italic;
+  }
 
-    app-order-summery-item {
-        margin-bottom: 1rem;
-    }
+  app-order-summery-item {
+    margin-bottom: 1rem;
+  }
 
-    app-order-summary {
-        position: sticky;
-        top: 1rem;
-        align-self: start;
-    }
+  app-order-summary {
+    position: sticky;
+    top: 1rem;
+    align-self: start;
+  }
 }
 
 @media screen and (max-width: 900px) {
-    :host {
-        grid-template-columns: 1fr;
-    }
+  :host {
+    grid-template-columns: 1fr;
+  }
 }

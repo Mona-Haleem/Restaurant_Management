@@ -6,7 +6,8 @@
 
 // Note: Color palettes are generated from primary: #bf4e30, secondary: #82937e, tertiary: #007d9e, neutral: #84736f
 $_palettes: (
-  primary: (0: #000000,
+  primary: (
+    0: #000000,
     10: #3c0800,
     20: #611300,
     25: #741900,
@@ -23,7 +24,8 @@ $_palettes: (
     99: #fffbff,
     100: #ffffff,
   ),
-  secondary: (0: #000000,
+  secondary: (
+    0: #000000,
     10: #111f10,
     20: #253424,
     25: #303f2e,
@@ -40,7 +42,8 @@ $_palettes: (
     99: #f6fff0,
     100: #ffffff,
   ),
-  tertiary: (0: #000000,
+  tertiary: (
+    0: #000000,
     10: #001f29,
     20: #003545,
     25: #004154,
@@ -57,7 +60,8 @@ $_palettes: (
     99: #fafcff,
     100: #ffffff,
   ),
-  neutral: (0: #000000,
+  neutral: (
+    0: #000000,
     10: #241916,
     20: #3a2d2a,
     25: #463835,
@@ -84,7 +88,8 @@ $_palettes: (
     94: #ffe9e4,
     96: #fff1ed,
   ),
-  neutral-variant: (0: #000000,
+  neutral-variant: (
+    0: #000000,
     10: #281713,
     20: #3f2c27,
     25: #4b3731,
@@ -101,7 +106,8 @@ $_palettes: (
     99: #fffbff,
     100: #ffffff,
   ),
-  error: (0: #000000,
+  error: (
+    0: #000000,
     10: #410002,
     20: #690005,
     25: #7e0007,
@@ -148,7 +154,9 @@ $secondary-palette: map.merge(map.get($_palettes, secondary), $_rest);
 }
 
 @mixin high-contrast-overrides($theme-type) {
-  @include mat.theme-overrides((primary: _high-contrast-value(#591100, #ffece7, $theme-type),
+  @include mat.theme-overrides(
+    (
+      primary: _high-contrast-value(#591100, #ffece7, $theme-type),
       on-primary: _high-contrast-value(#ffffff, #000000, $theme-type),
       primary-container: _high-contrast-value(#88270b, #ffaf9a, $theme-type),
       on-primary-container: _high-contrast-value(#ffffff, #1f0200, $theme-type),
@@ -197,5 +205,6 @@ $secondary-palette: map.merge(map.get($_palettes, secondary), $_rest);
       on-error-container: _high-contrast-value(#ffffff, #220001, $theme-type),
       surface-variant: _high-contrast-value(#fcdcd4, #57423c, $theme-type),
       on-surface-variant: _high-contrast-value(#000000, #ffffff, $theme-type),
-    ));
+    )
+  );
 }

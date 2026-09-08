@@ -34,8 +34,6 @@ describe('SummeryItemsPipe', () => {
     expect(pipe.transform([])).toBe('');
   });
 
-
-
   // ── Type safety ─────────────────────────────────────────────────────────
 
   it('should handle arrays with empty strings gracefully', () => {
@@ -47,7 +45,6 @@ describe('SummeryItemsPipe', () => {
   it('should always return a string type', () => {
     expect(typeof pipe.transform(['a'])).toBe('string');
     expect(typeof pipe.transform([])).toBe('string');
-
   });
 
   // ── Real-world usage: CartItem names ────────────────────────────────────
@@ -59,7 +56,7 @@ describe('SummeryItemsPipe', () => {
       { name: 'Caesar Salad' },
       { name: 'Sparkling Water' },
     ];
-    const names = items.map(i => i.name!);
+    const names = items.map((i) => i.name!);
     expect(pipe.transform(names)).toBe('Margherita Pizza, Caesar Salad, Sparkling Water');
   });
 });

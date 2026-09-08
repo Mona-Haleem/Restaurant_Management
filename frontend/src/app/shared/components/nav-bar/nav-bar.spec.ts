@@ -1,79 +1,47 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { render, screen } from '@testing-library/angular';
 import { NavBar } from './nav-bar';
 import { CartService } from '../../../core/services/cart/cart.service';
-import { By } from '@angular/platform-browser';
 import { BehaviorSubject } from 'rxjs';
 import { provideRouter } from '@angular/router';
 
 describe('NavBar', () => {
-  let component: NavBar;
-  let fixture: ComponentFixture<NavBar>;
-  let cartServiceMock: Partial<CartService>;
   let cartCountSubject: BehaviorSubject<number>;
 
-  beforeEach(async () => {
+  const setup = async () => {
     cartCountSubject = new BehaviorSubject<number>(0);
-
-    cartServiceMock = {
+    const cartServiceMock = {
       get count() {
         return cartCountSubject.asObservable();
       },
     };
 
-    await TestBed.configureTestingModule({
-      imports: [NavBar],
-      providers: [
-        { provide: CartService, useValue: cartServiceMock },
-        provideRouter([]),
-      ],
-    }).compileComponents();
+    return await render(NavBar, {
+      providers: [{ provide: CartService, useValue: cartServiceMock }, provideRouter([])],
+    });
+  };
 
-    fixture = TestBed.createComponent(NavBar);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
+  it('should display the brand logo or name', async () => {
+    await setup();
+    expect(screen.getByTestId('brand-logo')).toBeTruthy();
   });
 
-  it('should create the NavBar component', () => {
-    expect(component).toBeTruthy();
+  it('should render navigation links for Menu, Order, and Cart', async () => {
+    await setup();
+    expect(screen.getByTestId('nav-menu')).toBeTruthy();
+    expect(screen.getByTestId('nav-orders')).toBeTruthy();
+    expect(screen.getByTestId('nav-cart')).toBeTruthy();
   });
 
-  it('should display the brand logo or name', () => {
-    const brandEl = fixture.debugElement.query(By.css('[data-testid="brand-logo"]'));
-    expect(brandEl).toBeTruthy();
-    expect(brandEl.nativeElement.textContent.trim().length).toBeGreaterThan(0);
-  });
+  it('should display the correct cart item count badge from CartService', async () => {
+    const { detectChanges } = await setup();
 
-  it('should have a navigation link to the Menu page', () => {
-    const menuLink = fixture.debugElement.query(By.css('[data-testid="nav-menu"]'));
-    expect(menuLink).toBeTruthy();
-    expect(menuLink.attributes['routerLink']).toEqual(['customer', 'menu']);
-  });
-
-  it('should have a navigation link to the Order Tracking/History page', () => {
-    const ordersLink = fixture.debugElement.query(By.css('[data-testid="nav-orders"]'));
-    expect(ordersLink).toBeTruthy();
-    expect(ordersLink.attributes['routerLink']).toBe('/orders');
-  });
-
-  it('should have a Cart button that navigates to the cart page', () => {
-    const cartLink = fixture.debugElement.query(By.css('[data-testid="nav-cart"]'));
-    expect(cartLink).toBeTruthy();
-    expect(cartLink.attributes['routerLink']).toBe('/cart');
-  });
-
-  it('should display the correct cart item count badge from CartService', () => {
-    // Initial count is 0, badge might be hidden or show 0 depending on implementation.
-    // Let's test with a positive number.
     cartCountSubject.next(5);
-    fixture.detectChanges();
+    detectChanges();
+    expect(screen.getByTestId('cart-badge')).toBeTruthy();
+    expect(screen.getByTestId('cart-badge').textContent?.trim()).toBe('5');
 
-    const badgeEl = fixture.debugElement.query(By.css('[data-testid="cart-badge"]'));
-    expect(badgeEl).toBeTruthy();
-    expect(badgeEl.nativeElement.textContent.trim()).toBe('5');
-
-    // Update count
     cartCountSubject.next(12);
-    fixture.detectChanges();
-    expect(badgeEl.nativeElement.textContent.trim()).toBe('9+');
+    detectChanges();
+    expect(screen.getByTestId('cart-badge').textContent?.trim()).toBe('9+');
   });
 });

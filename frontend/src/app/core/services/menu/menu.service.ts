@@ -1,43 +1,36 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal, computed } from '@angular/core';
 import { DUMMY_CATEGORIES, DUMMY_ITEMS } from '../../DummyData/item';
-import { BehaviorSubject, map, Observable, of } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { MenuFilter, MenuItem } from '../../models';
-
 
 @Injectable({
   providedIn: 'root',
 })
 export class MenuService {
-  private items = DUMMY_ITEMS;
-  private categories = DUMMY_CATEGORIES;
+  private items = signal<MenuItem[]>(DUMMY_ITEMS);
+  private categories = signal<string[]>(DUMMY_CATEGORIES);
 
-  private activeFilterSubject = new BehaviorSubject<MenuFilter>({ category: '' });
-  activeFilter$ = this.activeFilterSubject.asObservable();
+  // ─── State signal ────────────────────────────────────────────────────────
+  activeFilter = signal<MenuFilter>({ category: '' });
 
-  getCategories(): Observable<string[]> {
-    return of(this.categories);
+  // ─── Derived computed signals ─────────────────────────────────────────────
+  filteredItems = computed(() => this.getItems(this.activeFilter()));
+  selectedCategory = computed(() => this.activeFilter().category);
+
+  getCategories(): string[] {
+    return this.categories();
   }
 
   private getItems(filter?: MenuFilter): MenuItem[] {
-    return this.items.filter(item =>
-      (!filter?.category || filter.category === 'all' || item.category === filter.category) &&
-      (!filter?.search || item.name.toLowerCase().includes(filter.search.trim().toLowerCase())) &&
-      (filter?.isAvailable === undefined || item.isAvailable === filter.isAvailable)
-    );
-  }
-
-  getActiveFilterItems(): Observable<MenuItem[]> {
-    return this.activeFilter$.pipe(
-      map(filter => this.getItems(filter))
+    return this.items().filter(
+      (item) =>
+        (!filter?.category || filter.category === 'all' || item.category === filter.category) &&
+        (!filter?.search || item.name.toLowerCase().includes(filter.search.trim().toLowerCase())) &&
+        (filter?.isAvailable === undefined || item.isAvailable === filter.isAvailable),
     );
   }
 
   setActiveFilter(filter: MenuFilter) {
-    const current = this.activeFilterSubject.value;
-    this.activeFilterSubject.next({ ...current, ...filter });
-  }
-
-  get selectedCategory() {
-    return this.activeFilterSubject.value.category;
+    this.activeFilter.update((current) => ({ ...current, ...filter }));
   }
 }
