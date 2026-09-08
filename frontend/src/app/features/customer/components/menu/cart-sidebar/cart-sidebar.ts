@@ -4,7 +4,7 @@ import { CurrencyPipe } from '@angular/common';
 import { CartItemComponent } from './cart-item/cart-item';
 import { MatIconModule } from '@angular/material/icon';
 import { Router } from '@angular/router';
-
+//test configs
 @Component({
   selector: 'app-cart-sidebar',
   imports: [CartItemComponent, CurrencyPipe, MatIconModule],

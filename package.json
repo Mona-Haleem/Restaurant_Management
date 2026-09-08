@@ -6,7 +6,8 @@
     "frontend:build": "npm --prefix frontend run build",
     "lint": "npm run frontend:lint",
     "test": "npm run frontend:test",
-    "build": "npm run frontend:build"
+    "build": "npm run frontend:build",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@commitlint/cli": "file:...",
