@@ -1,2 +1,5 @@
+echo "🔍 Running pre-commit checks..."
 npx lint-staged
+echo "🧪 Running tests..."
 npm test
+echo "✅ Pre-commit checks passed!"
