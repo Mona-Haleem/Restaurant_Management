@@ -5,6 +5,7 @@
     "frontend:test": "npm --prefix frontend test",
     "frontend:build": "npm --prefix frontend run build",
     "frontend:format:check": "npm --prefix frontend run format:check",
+    "frontend:test:ci": "npm --prefix frontend run test:ci",
     "lint": "npm run frontend:lint",
     "test": "npm run frontend:test",
     "build": "npm run frontend:build",
