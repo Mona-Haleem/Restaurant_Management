@@ -47,3 +47,5 @@ Thumbs.db
 design
 tasks
 ignore
+.vercel
+.env*
