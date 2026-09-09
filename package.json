@@ -4,15 +4,17 @@
     "frontend:lint": "npm --prefix frontend run lint",
     "frontend:test": "npm --prefix frontend test",
     "frontend:build": "npm --prefix frontend run build",
+    "frontend:format:check": "npm --prefix frontend run format:check",
+    "frontend:test:ci": "npm --prefix frontend run test:ci",
     "lint": "npm run frontend:lint",
     "test": "npm run frontend:test",
     "build": "npm run frontend:build",
     "prepare": "husky"
   },
   "devDependencies": {
-    "@commitlint/cli": "file:...",
-    "@commitlint/config-conventional": "file:...",
-    "husky": "file:...",
-    "lint-staged": "file:..."
+    "@commitlint/cli": "^21.2.2",
+    "@commitlint/config-conventional": "^21.2.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.5.0"
   }
 }
