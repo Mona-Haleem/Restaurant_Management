@@ -11,7 +11,7 @@
     "lint": "ng lint",
     "stylelint": "src/**/*.scss",
     "format": "prettier --write \"src/**/*.{ts,html,scss}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,html,scss}"
+    "format:check": "prettier --check \"src/**/*.{ts,html,scss}\""
   },
   "private": true,
   "packageManager": "npm@11.6.2",
