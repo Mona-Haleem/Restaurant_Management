@@ -1,4 +1,9 @@
 {
-  "extends": ["stylelint-config-standard-scss"]
+  "extends": ["stylelint-config-standard-scss"],
+  "rules": {
+    "scss/dollar-variable-pattern": "^_?[a-z0-9-]+$",
+    "scss/at-function-pattern": "^_?[a-z0-9-]+$",
+    "scss/at-mixin-pattern": "^_?[a-z0-9-]+$"
+  }
 }
 
