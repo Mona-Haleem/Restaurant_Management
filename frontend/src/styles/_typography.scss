@@ -1,0 +1,51 @@
+// _typography.scss
+@use 'variables' as v;
+
+html,
+body {
+  font-family: v.$font-family-base;
+}
+
+// Map existing variables directly without creating new structures
+$typography-styles: (
+  'h1': (
+    v.$font-size-h1,
+    v.$font-weight-bold,
+    1.3,
+  ),
+  'h2': (
+    v.$font-size-h2,
+    v.$font-weight-semibold,
+    1.35,
+  ),
+  'h3': (
+    v.$font-size-h3,
+    v.$font-weight-semibold,
+    1.4,
+  ),
+  'body': (
+    v.$font-size-body,
+    v.$font-weight-regular,
+    1.5,
+  ),
+  'caption': (
+    v.$font-size-caption,
+    v.$font-weight-regular,
+    1.4,
+  ),
+  'button': (
+    v.$font-size-body,
+    v.$font-weight-semibold,
+    1,
+  ),
+);
+
+@each $name, $specs in $typography-styles {
+  .text-#{$name},
+  %text-#{$name} {
+    font-family: v.$font-family-base;
+    font-size: list.nth($specs, 1);
+    font-weight: list.nth($specs, 2);
+    line-height: list.nth($specs, 3);
+  }
+}

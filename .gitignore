@@ -47,5 +47,6 @@ Thumbs.db
 design
 tasks
 ignore
+frontend/src/app/temp/
 .vercel
 .env*

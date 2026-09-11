@@ -4,11 +4,41 @@
 // Learn more about theming and how to use it for your application's
 // custom components at https://material.angular.dev/guide/theming
 @use '@angular/material' as mat;
-@use './_theme-colors' as custom;
-@use './styles/_buttons' as buttons;
+@use './styles/theme-colors' as custom;
+@use './styles/buttons' as buttons;
+@use './styles/typography' as typography;
+@use './styles/variables' as v;
+
+:root {
+  --color-primary: #{v.$primary};
+  --color-primary-highlight: #{v.$primary-highlight};
+  --color-secondary: #{v.$secondary};
+  --color-secondary-highlight: #{v.$secondary-highlight};
+  --color-bg: #{v.$bg-light};
+  --color-surface: #{v.$surface-light};
+  --color-text-primary: #{v.$text-primary};
+  --color-text-secondary: #{v.$text-secondary};
+  --color-border: #{v.$border-light};
+  --card-shadow: 0 2px 8px rgb(0 0 0 / 6%);
+}
+
+[data-theme='dark'] {
+  // Brand colors remain stable; highlight states preserve target contrast
+  --color-primary: #{v.$primary};
+  --color-primary-highlight: #{v.$primary-highlight};
+  --color-secondary: #{v.$secondary};
+  --color-secondary-highlight: #{v.$secondary-highlight};
+  --color-bg: #{v.$bg-dark};
+  --color-surface: #{v.$surface-dark};
+  --color-text-primary: #{v.$text-primary-dark};
+  --color-text-secondary: #{v.$text-secondary-dark};
+  --color-border: #{v.$border-dark};
+  --card-shadow: none;
+}
 
 html {
   height: 100%;
+  font-family: Cairo, sans-serif;
 
   @include mat.theme(
     (
@@ -18,8 +48,8 @@ html {
         tertiary: custom.$tertiary-palette,
       ),
       typography: (
-        brand-family: 'Manrope, sans-serif',
-        plain-family: 'Inter, sans-serif',
+        brand-family: 'Cairo, sans-serif',
+        plain-family: 'Cairo, sans-serif',
       ),
       density: 0,
     )

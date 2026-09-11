@@ -7,6 +7,15 @@
       "options": {
         "parser": "angular"
       }
+    },
+       {
+      "files": "*.scss",
+      "options": {
+        "singleQuote": true,
+        "parser": "scss"
+      }
     }
+
   ]
 }
+
