@@ -6,6 +6,7 @@
 @use '@angular/material' as mat;
 @use './styles/theme-colors' as custom;
 @use './styles/buttons' as buttons;
+@use './styles/inputs' as inputs;
 @use './styles/typography' as typography;
 @use './styles/variables' as v;
 
@@ -14,6 +15,7 @@
 
   --color-primary: #{v.$primary};
   --color-primary-highlight: #{v.$primary-highlight};
+  --color-primary-container: var(--mat-sys-primary-fixed);
   --color-secondary: #{v.$secondary};
   --color-secondary-highlight: #{v.$secondary-highlight};
   --color-bg: #{v.$bg-light};
@@ -28,6 +30,7 @@
   // Brand colors remain stable; highlight states preserve target contrast
   --color-primary: #{v.$primary};
   --color-primary-highlight: #{v.$primary-highlight};
+  --color-primary-container: var(--mat-sys-outline);
   --color-secondary: #{v.$secondary};
   --color-secondary-highlight: #{v.$secondary-highlight};
   --color-bg: #{v.$bg-dark};

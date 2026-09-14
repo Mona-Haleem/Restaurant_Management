@@ -1,0 +1,12 @@
+input {
+  background-color: transparent;
+  border: none;
+  outline: none;
+  height: 100%;
+  flex: 1;
+
+  &:focus,
+  &:active {
+    outline: none;
+  }
+}

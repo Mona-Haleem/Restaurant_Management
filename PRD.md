@@ -41,11 +41,12 @@ Small/mid-size restaurants often rely on paper tickets, WhatsApp, and manual sto
 3. Manager registers inventory for the branch
 4. Workers log in and begin receiving/updating orders
 5. Customer places an order
-6. Order status progresses: `PENDING → IN_PREPARATION → READY → DELIVERED`
-   - On `DELIVERED`: inventory is auto-deducted
-   - On `CANCELED`: no inventory change (customer can cancel only while `PENDING`)
-7. Workers log waste at any time — logged waste is deducted from inventory immediately on entry
-8. Manager performs end-of-day reconciliation (expected vs. physical stock), which surfaces only the waste that was **not** already logged
+6. Order status progresses through the tenant's configured **order workflow stages** (Phase 1–2 ship with one fixed default: `PENDING → IN_PREPARATION → READY → DELIVERED`; Phase 3 lets an admin rename stages or change how many exist — see §7.3)
+   - Each stage carries two flags the system actually reads: whether it's `cancellable` and whether reaching it `deductsInventory` — logic is written against these flags, never against a stage's display name
+   - On the stage flagged `deductsInventory` (`DELIVERED` by default): inventory is deducted by writing `InventoryTransaction` rows, not by overwriting a single stock number — see §7.4
+   - On `CANCELED`: no inventory change (customer can cancel only while the order is on a stage flagged `cancellable` — `PENDING` by default)
+7. Workers log waste at any time — logged waste is deducted from inventory immediately on entry, also via an `InventoryTransaction` row
+8. Manager performs end-of-day reconciliation (expected vs. physical stock), which surfaces only the waste that was **not** already logged; a completed reconciliation also becomes the new baseline checkpoint (`InventorySnapshot`) that future "expected stock" math is computed from — see §7.4
 9. Manager generates reports: revenue, orders, waste cost, anomalies/insights
 
 ---
@@ -71,8 +72,8 @@ Small/mid-size restaurants often rely on paper tickets, WhatsApp, and manual sto
 - **Platform:** theme + RTL support; basic UI to preview roles without auth; single-tenant in practice, tenant-scoped in schema
 
 ### Phase 2 — Multi-Tenant SaaS + Full Feature Set
-- **Multi-tenant conversion:** multiple restaurants run on one system; management access via login; customer UI gains a "choose your restaurant" home screen — this is what turns the project into a plausible SaaS revenue model. No single extra "differentiator" feature is needed on top of this — the complete, coherent product is the differentiator.
-- **Customer:** real payment integration, order management + history, search/filter by branch, branch viewing, shareable digital receipts (for self or family pickup — customer shares an image proving they're linked to the order)
+- **Multi-tenant conversion:** multiple restaurants run on one system; management access via login; each restaurant is reachable directly at its own stable path (`tablz.com/restaurant-name`), landing straight on its menu — this is what turns the project into a plausible SaaS revenue model. No single extra "differentiator" feature is needed on top of this — the complete, coherent product is the differentiator.
+- **Customer:** real payment integration, order management + history, search/filter by branch, branch viewing, a **pickup code** shown on the order (for self or family pickup — the collector states/enters the code rather than showing an image)
 - **Worker:** per-worker granular permissions (see §7), notifications
 - **Manager/Admin:** special offers, report generation, branch management, granular permission grants
 - **Platform:** full auth (only admin/manager can register employee accounts), combo orders (a distinct menu-item type, configured — including its own price — at menu-creation time, not computed live from parts), bulk ordering for events, reservations: customers can reserve a table for *n* people at time slot *x*, and — only where an admin has allowed it — a quick "reserve the whole branch" action
@@ -83,11 +84,13 @@ Small/mid-size restaurants often rely on paper tickets, WhatsApp, and manual sto
   - a chain with multiple branches, each with its own menu
   - a small single-outlet business that's pickup/delivery-only
   - a large restaurant supporting events and table/branch reservations
+- **Order workflow editor:** admin can rename stages, add/remove stages, and reorder them within `OrderWorkflowConfig` (§7.3); Phases 1–2's fixed 4-stage flow is simply the shipped default, not a separate system
 - Per-tenant branding: logo, color theme, fonts, background, layout adjustments (card shape, navbar style, etc.)
 - Customer notifications
 - Loyalty features: points, coupons, loyalty programs (admin/manager-configurable)
 - Alternate ordering channels: WhatsApp, Telegram, bots
-- Resilience for weak/no connectivity — see §7.1 Offline Support for scope
+- Resilience for weak/no connectivity — see §7.2 Offline Support for scope
+- **Per-tenant data export:** CSV/Excel export of a tenant's own orders/inventory/menu data, enabled by the tenant-scoping already built in from Phase 1 (every record carries a `tenantId`). Deliberately export-only — no "restore/import" path, since restoring a snapshot over live data risks silently clobbering orders/stock changes made since the export was taken.
 - *(Still undecided — see Open Questions)* voice support for kitchen staff to query/update the order queue hands-free
 - PWA support
 
@@ -116,6 +119,31 @@ The real-world failure mode this protects against: if a restaurant becomes fully
 - A manual order-entry screen lets a worker log a phone-called-in order locally, which syncs the same way as any other queued action.
 - Conflict resolution on reconnect (e.g. inventory already deducted twice) uses a simple last-write-wins-with-a-log strategy for this project, called out explicitly as a simplification versus a production system.
 
+### 7.3 Order Workflow Configuration
+Rather than a hardcoded status enum, the order lifecycle is a small, tenant-editable list of stages:
+```
+OrderWorkflowConfig (per tenant):
+  stages: [
+    { key: "pending",   label: "Pending",         cancellable: true,  deductsInventory: false },
+    { key: "preparing", label: "In Preparation",  cancellable: false, deductsInventory: false },
+    { key: "ready",     label: "Ready",           cancellable: false, deductsInventory: false },
+    { key: "completed", label: "Delivered",       cancellable: false, deductsInventory: true  }
+  ]
+```
+- Every tenant defaults to exactly the four stages above, worded and behaving exactly as in Phases 1–2.
+- Order/inventory/cancellation logic reads only `cancellable` and `deductsInventory` off the *current* stage — never a stage's key or label — so renaming a stage, changing how many exist, or reordering them (Phase 3, via Business Archetype Settings, §14.4) requires no logic changes, only config changes.
+- Because this is a schema decision, not a UI feature, the `Order` model is built against `OrderWorkflowConfig` from Phase 1 onward even though no admin-facing editor exists until Phase 3 — retrofitting a hardcoded enum into a configurable one later would touch every screen that reads order status.
+
+### 7.4 Inventory Ledger & Snapshots
+`InventoryItem.currentStock` stays as a fast, directly-readable cached number for every screen — but it's backed by an append-only ledger rather than being mutated in place, so reconciliation can explain *why* stock is off, not just *that* it is:
+```
+InventoryTransaction: { itemId, branchId, type, quantityDelta, timestamp, relatedOrderId?, actorId }
+type ∈ PURCHASE | CONSUMPTION | WASTE | TRANSFER | ADJUSTMENT
+```
+- An order reaching the `deductsInventory` stage, and every waste-log entry, each write a `CONSUMPTION`/`WASTE` transaction — `currentStock` is then just the running total, so nothing about how it's displayed changes.
+- **Storage/scale is handled by snapshotting, not infinite history.** Each manager reconciliation (§4 step 8) both flags unexplained loss *and* creates an `InventorySnapshot` — a checkpoint recording "as of this physical count, stock = X." Only transactions since the last snapshot need to stay queryable in full: `currentStock = last InventorySnapshot value + sum(transactions since)`.
+- Transactions older than the most recent snapshot (or older than a fixed window, e.g. 90 days) get compacted into a single periodic summary row per item (`+142 purchased, −138 consumed, −6 wasted`) and the detailed rows archived or dropped — table size stays bounded regardless of order volume, and the manager's real-world habit of periodically reconciling stock is exactly what produces the checkpoints that make this safe.
+
 ---
 
 ## 8. Module Detail
@@ -123,16 +151,16 @@ The real-world failure mode this protects against: if a restaurant becomes fully
 ### 8.1 Customer Module
 - **Menu:** search by name, filter by category, responsive grid
 - **Cart:** add/remove, adjust quantity, real-time total
-- **Order tracking:** real-time status (polling/RxJS), order history, cancel (PENDING only)
+- **Order tracking:** real-time status (polling/RxJS), order history, cancel (only while the current stage is flagged `cancellable` — `PENDING` by default)
 
 ### 8.2 Worker Module
-- **Orders board:** Kanban-style (`PENDING`, `IN_PREPARATION`, `READY`)
-- **Inventory actions:** mark `DELIVERED` (triggers auto-deduction), log waste (manual stock correction)
+- **Orders board:** Kanban-style, one column per active stage in `OrderWorkflowConfig` (defaults: `PENDING`, `IN_PREPARATION`, `READY`)
+- **Inventory actions:** advance the order to its `deductsInventory` stage — `DELIVERED` by default (writes `InventoryTransaction` rows, §7.4), log waste (writes its own `InventoryTransaction` row immediately)
 
 ### 8.3 Manager Module
 - **Menu management:** CRUD, archive, ingredients-per-item
-- **Inventory:** stock tracking, restock form, low-stock alerts; supports single or multiple inventories per branch; item types: raw material / ready-to-buy / mixed (prepared in-house, e.g., a sauce made from raw ingredients and reused across recipes, with auto deduction from raw stock and auto addition to the prepared-item stock)
-- **Reconciliation:** expected vs. physical stock; flags only waste that wasn't already manually logged (logged waste is deducted immediately on entry, so it's already accounted for)
+- **Inventory:** stock tracking (backed by the `InventoryTransaction` ledger, §7.4), restock form, low-stock alerts; supports single or multiple inventories per branch; item types: raw material / ready-to-buy / mixed (prepared in-house, e.g., a sauce made from raw ingredients and reused across recipes, with auto deduction from raw stock and auto addition to the prepared-item stock)
+- **Reconciliation:** expected (last `InventorySnapshot` + transactions since) vs. physical stock; flags only the *unexplained* difference — waste that wasn't already manually logged (logged waste is deducted immediately on entry, so it's already accounted for); submitting a reconciliation also writes the next `InventorySnapshot` checkpoint
 - **Reports:** revenue, orders, waste cost, anomalies (e.g., illogical deductions)
 - **Staff:** create/deactivate workers, assign permissions
 
@@ -154,7 +182,9 @@ The real-world failure mode this protects against: if a restaurant becomes fully
 
 **Key concepts used:** lazy loading, route guards, HTTP interceptors, reactive forms, RxJS (debounce, switchMap, interval), Angular Signals, OnPush change detection
 
-**Core data models:** `User`, `MenuItem`, `Order`, `InventoryItem`, `WasteEntry`, `ReconciliationEntry`
+**Core data models:** `User`, `MenuItem`, `Order` (status driven by `OrderWorkflowConfig`, §7.3; carries `placedBy: { actorType: STAFF | CUSTOMER | GUEST, actorId }` rather than a channel/source field — see below), `InventoryItem`, `InventoryTransaction`, `InventorySnapshot` (§7.4), `WasteEntry`, `ReconciliationEntry` (each reconciliation both flags anomalies and produces the next `InventorySnapshot`)
+
+**Order actor, not order source:** rather than recording *how* an order arrived (phone/WhatsApp/online), `Order.placedBy` records *who* placed it — a staff member entering it on a customer's behalf (`STAFF`), a logged-in customer account (`CUSTOMER`), or an unauthenticated guest checkout (`GUEST`, no account required). This is what permission checks, order history, and Phase 3 loyalty features actually need to key off of; a channel field would only ever have been descriptive metadata.
 
 **Screens:**
 - Customer: Menu, Cart, Checkout, Order Tracking
@@ -191,7 +221,7 @@ The real-world failure mode this protects against: if a restaurant becomes fully
 **Highlights:** multi-role architecture with lazy loading; inventory auto-deduction logic; RxJS for polling & filtering; reactive forms for complex workflows.
 
 **30-sec pitch:**
-> Tablz is a restaurant management system built with Angular that demonstrates multi-role architecture. It includes customer ordering, worker order handling, and manager inventory/reporting. The core logic revolves around inventory deduction on delivery, waste tracking, and reconciliation. I used RxJS for polling, reactive forms for workflows, and Angular Signals for state management.
+> Tablz connects a restaurant's ordering and day-to-day operations in one system. An order flows from the customer straight into staff workflows, and automatically connects to inventory deduction, waste tracking, and reporting — while each restaurant runs its own branded storefront and branches from the same platform. I built it in Angular, using RxJS for live order polling, reactive forms for the multi-step workflows, and Signals for state — but the interesting part is the business logic underneath: a real operational loop, not a CRUD demo with a menu and a form.
 
 ---
 
@@ -201,8 +231,12 @@ The real-world failure mode this protects against: if a restaurant becomes fully
 - **Combo items:** a distinct menu-item type configured entirely at menu-creation time (its required/optional choices and its own price are fixed then), not priced live per-part. See §14.3.
 - **Voice support:** deprioritized — last item to build in Phase 3, not worth detailed design now.
 - **SaaS differentiator:** no extra standalone feature is required — the complete, coherent product is the differentiator.
-- **Receipt/pickup proof:** sharing is done as an image (a receipt screenshot/snapshot) that proves the holder is linked to the placed order — not a link or QR code.
+- **Receipt/pickup proof:** a short pickup/verification code shown on the order and stated by whoever collects it — not an image, link, or QR code (an image can be edited, reused, or stale, and can't be verified).
 - **Waste vs. reconciliation:** logged waste is deducted from inventory immediately on entry; end-of-day reconciliation only flags waste that was *not* already logged.
+- **Order workflow is configurable, not hardcoded:** the order lifecycle is a tenant-editable list of stages (§7.3), each carrying `cancellable`/`deductsInventory` flags that logic reads instead of stage names/count. Phases 1–2 ship one fixed default (4 stages); Phase 3 exposes the editor. Modeled this way from Phase 1 so no schema migration is needed when the editor ships.
+- **Inventory is a ledger, not a mutable number:** `InventoryTransaction` rows (§7.4) back every stock change; `currentStock` is a cached running total for fast reads. Storage is kept bounded via periodic snapshots (taken at each reconciliation) plus compaction of older transactions — not unbounded event history.
+- **Order actor over order source:** `Order.placedBy` records who placed the order (staff / customer / guest), not which channel it arrived through — no separate `source` field, since nothing in the product currently needs channel-level analytics.
+- **Restaurant storefront routing:** each restaurant is reachable at a stable path (`tablz.com/restaurant-name`), landing directly on its menu — not gated behind a restaurant-selector step. No per-tenant subdomain or custom domain is required for Phase 1–2; that's a possible later monetization tier for large clients, not core infrastructure.
 - **Backend timeline:** the app must work completely without a real backend through Phase 1 and Phase 2 (mocked/local persistence). The real backend is built afterward and may take a long time — it's a separate, later effort, not a Phase 2 dependency.
 
 ---
@@ -328,29 +362,30 @@ Reasoning: warm terracotta reads as food-appropriate without defaulting to the g
 **State-driven changes:**
 - Confirm button shows a spinner + "Processing…" during the simulated payment
 - On success, transitions directly into Order Tracking with a brief "Order placed!" toast
+- No login is required to check out; Phase 1 orders are created with `placedBy.actorType = GUEST` since real customer accounts don't exist yet (§9) — this becomes `CUSTOMER` automatically once Phase 2 auth ships, with no changes to Checkout itself
 
 #### Order Tracking
 **Actions:**
 - View current order status
-- Cancel order (only while `PENDING`)
+- Cancel order (only while the current stage is flagged `cancellable` — `PENDING` by default)
 - View basic order history
 
 **Design:**
-- **Mobile:** Horizontal-dot status stepper spanning the screen width (`Pending → In Preparation → Ready → Delivered`) — completed steps filled `primary`, current step pulsing `primary`-outlined, future steps `border`-gray; order details card below; full-width red-outlined "Cancel Order" button beneath, shown only in `PENDING`.
+- **Mobile:** Horizontal-dot status stepper spanning the screen width, one dot per stage in the tenant's `OrderWorkflowConfig` (§7.3) — defaulting to `Pending → In Preparation → Ready → Delivered` — completed steps filled `primary`, current step pulsing `primary`-outlined, future steps `border`-gray; order details card below; full-width red-outlined "Cancel Order" button beneath, shown only while the current stage is flagged `cancellable`.
 - **Tablet:** Same stepper; order details render beside it in a two-column split instead of stacked below.
 - **Window:** Same stepper + two-column split, plus a persistent 300px right-hand panel listing past orders (compact rows: date, status dot, total).
 
 **State-driven changes:**
 - Stepper advances live as polling returns a new status, with a short fill animation on the connecting line
-- "Cancel Order" disappears the instant status leaves `PENDING`
+- "Cancel Order" disappears the instant the order moves to a stage not flagged `cancellable`
 - A canceled order replaces the stepper entirely with a single muted-red "Canceled" state
 
 #### Orders Board (Worker)
 **Actions:**
-- View orders grouped by status
-- Move an order to the next status
+- View orders grouped by stage (per the tenant's `OrderWorkflowConfig`, §7.3)
+- Move an order to the next stage
 - Open an order for detail
-- Mark `DELIVERED` (triggers inventory deduction)
+- Reach the stage flagged `deductsInventory` (triggers inventory deduction — `DELIVERED` by default)
 - Open the Waste Form
 
 **Design:**
@@ -375,8 +410,8 @@ Reasoning: warm terracotta reads as food-appropriate without defaulting to the g
 - **Window:** Centered modal, fixed 560px width, same backdrop; item list and instructions can sit side by side if space allows.
 
 **State-driven changes:**
-- Primary action label/behavior changes with status: "Start Preparation" (`PENDING`) → "Mark Ready" (`IN_PREPARATION`) → "Mark Delivered" (`READY`)
-- Cancel option only visible while `PENDING`
+- Primary action label/behavior changes per the current stage's configured label — by default "Start Preparation" (`Pending`) → "Mark Ready" (`In Preparation`) → "Mark Delivered" (`Ready`)
+- Cancel option only visible while the current stage is flagged `cancellable`
 
 #### Waste Form (modal)
 **Actions:**
@@ -508,15 +543,15 @@ Reasoning: warm terracotta reads as food-appropriate without defaulting to the g
 **Actions:**
 - View past orders
 - Reorder
-- View/share a digital receipt
+- View the order's pickup code
 
 **Design:**
-- **Mobile:** Vertical list of past-order rows (date, branch, total, status dot); tapping opens a read-only receipt view styled like a paper receipt, with a "Share" button that shares an image of the receipt.
-- **Tablet/Window:** List/table on the left, receipt preview in a side panel on the right instead of full navigation.
+- **Mobile:** Vertical list of past-order rows (date, branch, total, status dot); tapping opens a read-only receipt view styled like a paper receipt, with the pickup code shown prominently at the top (large, monospaced, easy to read aloud or re-enter) rather than a shareable image.
+- **Tablet/Window:** List/table on the left, receipt preview (with the same prominent code) in a side panel on the right instead of full navigation.
 
 **State-driven changes:**
 - "Reorder" pre-fills the Cart with the same items/quantities and routes straight there
-- The shared image is what proves the holder is linked to that order (for self, or family/whoever collects it at pickup) — not a link or QR code
+- The pickup code is what proves the holder is linked to that order (for self, or family/whoever collects it at pickup) — stated or entered at pickup, not shared as an image
 
 #### Detailed Permissions (extends Staff)
 **Actions:**
@@ -578,7 +613,9 @@ Reasoning: warm terracotta reads as food-appropriate without defaulting to the g
 
 *Builds on Phases 1–2; focus is admin-side configurability plus a few new customer/worker surfaces.*
 
-#### Restaurant Selector (Customer home) — replaces the direct-to-Menu entry
+#### Restaurant Selector / Discovery — an optional surface, not the customer home
+A customer who arrives at a specific restaurant's own path (`tablz.com/restaurant-name`, via a social link, SEO/Google result, or a direct return visit) lands **straight on that restaurant's menu** — this screen is never in that path. It exists only for a customer who arrives at the bare root domain wanting to browse/discover, or who deliberately chooses to look at other restaurants from within one they're already viewing.
+
 **Actions:**
 - Browse/search registered restaurants
 - Select one to enter its ordering flow
@@ -591,6 +628,7 @@ Reasoning: warm terracotta reads as food-appropriate without defaulting to the g
 **State-driven changes:**
 - "Recent" only appears for customers with prior order history
 - Once selected, every subsequent screen renders using that restaurant's Phase-3 branding tokens instead of the default Tablz theme
+- **Navigation rule:** on any restaurant's own storefront pages, the logo/home tap never routes back to this selector — it either does nothing or returns to that restaurant's own menu. "Browse other restaurants" appears only as a small, low-emphasis footer or sidebar link, kept out of the primary navigation path so it's available without being the default way back.
 
 #### Business Archetype Settings (Admin)
 **Actions:**

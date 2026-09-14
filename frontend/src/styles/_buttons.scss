@@ -1,24 +1,31 @@
 @use 'sass:color';
+@use './variables' as v;
+@use 'sass:map';
 
 // Utility Mixin for shared button logic
 @mixin custom-btn-base {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  padding: 8px 16px;
-  border-radius: 8px;
+  justify-content: space-between;
+  padding: v.$spacing-sm v.$spacing-md;
+  border-radius: v.$radius-sm;
   font: var(--mat-sys-label-large);
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease-in-out;
   border: none;
-  gap: 8px;
+  gap: v.$spacing-sm;
   text-decoration: none;
   outline: none;
 
   &:disabled {
-    opacity: 0.5;
+    opacity: 0.6;
     cursor: not-allowed;
+  }
+
+  &:focus,
+  &:active {
+    outline: 1px solid var(--mat-sys-outline);
   }
 }
 
@@ -28,20 +35,56 @@
   border-radius: $radius;
 }
 
+button {
+  @include custom-btn-base;
+
+  &.btn-sm {
+    @include btn-size(v.$spacing-xs, v.$spacing-md, var(--mat-sys-label-small), v.$spacing-sm);
+
+    &.icon {
+      padding: v.$spacing-xs;
+    }
+  }
+
+  &.btn-lg {
+    @include btn-size(12px, 20px, var(--mat-sys-label-large), 10px);
+
+    &.icon {
+      padding: v.$spacing-md;
+    }
+  }
+}
+
+button.icon {
+  padding: v.$spacing-sm;
+}
+
 $variants: primary, secondary, tertiary;
+$button-colors: (
+  primary: v.$primary,
+  secondary: v.$secondary,
+  tertiary: v.$tertiary,
+);
+$button-colors-highlight: (
+  primary: v.$primary-highlight,
+  secondary: v.$secondary-highlight,
+  tertiary: v.$tertiary-highlight,
+);
 
 @mixin btn-filled-variant($variant) {
   @include custom-btn-base;
-  background-color: var(--mat-sys-#{$variant});
-  color: var(--mat-sys-on-#{$variant});
+
+  background-color: map.get($button-colors, $variant);
+  color: var(--mat-sys-on-#{$variant}-container);
 
   &:hover:not(:disabled) {
-    background-color: color-mix(in srgb, var(--mat-sys-#{$variant}) 80%, black);
+    background-color: map.get($button-colors-highlight, $variant);
   }
 }
 
 @mixin btn-outline-variant($color-var) {
   @include custom-btn-base;
+
   background: transparent;
   border: 1px solid var(--mat-sys-outline);
   color: var(#{$color-var});
@@ -54,9 +97,10 @@ $variants: primary, secondary, tertiary;
 
 @mixin btn-text-variant($color-var) {
   @include custom-btn-base;
+
   background: transparent;
   color: var(#{$color-var});
-  padding-left: 8px;
+  padding-left: v.$spacing-sm;
   padding-right: 8px;
 
   &:hover:not(:disabled) {
@@ -78,17 +122,5 @@ $variants: primary, secondary, tertiary;
   // Text buttons
   .btn-text-#{$variant} {
     @include btn-text-variant(--mat-sys-#{$variant});
-  }
-
-  .btn-#{$variant},
-  .btn-outline-#{$variant},
-  .btn-text-#{$variant} {
-    &.btn-sm {
-      @include btn-size(4px, 12px, var(--mat-sys-label-medium), 6px);
-    }
-
-    &.btn-lg {
-      @include btn-size(12px, 20px, var(--mat-sys-label-large), 10px);
-    }
   }
 }

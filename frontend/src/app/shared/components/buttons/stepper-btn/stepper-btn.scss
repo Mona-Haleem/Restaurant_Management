@@ -1,0 +1,31 @@
+@use '../../../../../styles/variables' as v;
+
+:host {
+  background-color: var(--color-primary-container);
+  border: 1px solid var(--color-primary-container);
+  height: 34px;
+  border-radius: v.$radius-sm;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: v.$spacing-sm;
+  color: var(--color-text-primary);
+
+  button {
+    background-color: var(--color-surface);
+    border-color: var(--color-primary-container);
+    color: var(--color-text-primary);
+  }
+
+  input[type='number'] {
+    appearance: textfield;
+    text-align: center;
+    color: var(--color-text-primary);
+
+    &::-webkit-inner-spin-button,
+    &::-webkit-outer-spin-button {
+      appearance: none;
+      margin: 0;
+    }
+  }
+}
