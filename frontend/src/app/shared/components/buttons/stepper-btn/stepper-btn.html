@@ -1,0 +1,35 @@
+<button
+  type="button"
+  class="icon btn-sm btn-outline-primary"
+  [attr.aria-label]="'Decrease ' + label()"
+  (click)="decrement()"
+  [disabled]="atMin"
+>
+  <mat-icon aria-hidden="true" fontSet="material-symbols-outlined">remove</mat-icon>
+</button>
+
+<input
+  type="number"
+  role="spinbutton"
+  [attr.aria-label]="labelledby() ? undefined : label()"
+  [attr.aria-labelledby]="labelledby() || undefined"
+  [attr.aria-valuenow]="value()"
+  [attr.aria-valuemin]="min()"
+  [attr.aria-valuemax]="max()"
+  [min]="min()"
+  [max]="max()"
+  [step]="step()"
+  [value]="value()"
+  (blur)="handleBlur($event)"
+  [name]="label()"
+/>
+
+<button
+  type="button"
+  class="icon btn-sm btn-outline-primary"
+  [attr.aria-label]="'Increase ' + label()"
+  (click)="increment()"
+  [disabled]="atMax"
+>
+  <mat-icon aria-hidden="true" fontSet="material-symbols-outlined">add</mat-icon>
+</button>

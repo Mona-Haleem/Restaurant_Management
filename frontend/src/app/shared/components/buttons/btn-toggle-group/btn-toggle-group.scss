@@ -1,0 +1,12 @@
+:host {
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+  align-items: center;
+  justify-content: space-between;
+
+  .option {
+    background-color: var(--mat-sys-on-primary-container);
+    color: var(--mat-sys-primary-container);
+  }
+}
