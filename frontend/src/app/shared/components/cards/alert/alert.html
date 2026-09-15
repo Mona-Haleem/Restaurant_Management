@@ -1,0 +1,97 @@
+<div class="alert-header">
+  <div class="alert-header-info">
+    <mat-icon class="alert-icon" fontSet="material-symbols-outlined" aria-hidden="true">
+      {{ computedIcon() }}
+    </mat-icon>
+
+    <span class="alert-badge">{{ computedBadge() }}</span>
+
+    @if (meta()) {
+      <span class="alert-meta">{{ meta() }}</span>
+    }
+    <ng-content select="[meta]" />
+  </div>
+
+  @if (collapsible()) {
+    <button
+      type="button"
+      class="alert-toggle-btn"
+      [attr.aria-expanded]="expanded()"
+      [attr.aria-controls]="detailsId"
+      (click)="toggleExpand()"
+    >
+      <span>{{ expanded() ? collapseLabel() : expandLabel() }}</span>
+      <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">
+        {{ expanded() ? 'expand_less' : 'expand_more' }}
+      </mat-icon>
+    </button>
+  }
+</div>
+
+<div class="alert-main">
+  <div class="alert-text-block">
+    <div class="alert-title" role="heading" [attr.aria-level]="headingLevel()">{{ title() }}</div>
+
+    @if (metric()) {
+      <p class="alert-metric" [id]="metricId">
+        <strong class="metric-prefix">Flagged Metric:</strong> {{ metric() }}
+      </p>
+    }
+
+    @if (description()) {
+      <p class="alert-description" [id]="descriptionId">{{ description() }}</p>
+    }
+    <ng-content select="[subtitle]" />
+  </div>
+
+  <div class="alert-side-actions">
+    @if (actionLabel()) {
+      <button type="button" class="alert-btn-outline">{{ actionLabel() }}</button>
+    }
+    <ng-content select="[actions]" />
+  </div>
+</div>
+
+<!-- Detailed Log Container (Expanded view) -->
+@if (expanded() || (!collapsible() && hasDetails())) {
+  <div
+    class="alert-details-card"
+    [id]="detailsId"
+    role="region"
+    [attr.aria-label]="title() + ' details'"
+  >
+    <div class="details-content-row">
+      @if (explanation()) {
+        <p class="details-explanation">
+          <strong class="explanation-prefix">Variance Explanation:</strong> {{ explanation() }}
+        </p>
+      }
+      <ng-content select="[explanation]" />
+      <ng-content select="[details]" />
+
+      @if (skus() && skus()!.length > 0) {
+        <ul class="sku-badges" aria-label="Related SKUs">
+          @for (sku of skus()!; track sku) {
+            <li class="sku-badge">{{ sku }}</li>
+          }
+        </ul>
+      }
+      <ng-content select="[skus]" />
+    </div>
+
+    <!-- Actions toolbar in expanded log -->
+    <div class="details-footer">
+      <div class="details-left-actions">
+        <ng-content select="[secondary-actions]" />
+        <ng-content select="[left-actions]" />
+      </div>
+
+      <div class="details-right-actions">
+        <ng-content select="[primary-action]" />
+        <ng-content select="[right-actions]" />
+      </div>
+    </div>
+
+    <ng-content />
+  </div>
+}

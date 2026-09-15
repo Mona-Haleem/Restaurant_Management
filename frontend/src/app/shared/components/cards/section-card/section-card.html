@@ -1,10 +1,49 @@
-<header>
-  <div>
-    <h3>{{ title() }}</h3>
-    <p>{{ subtitle() }}</p>
+<header [class.transparent]="transparentHeader()">
+  <div class="text">
+    @if (iconExist()) {
+      <div class="main-icon">
+        @if (icon()) {
+          <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">{{ icon() }}</mat-icon>
+        }
+        <ng-content select="[icon]" />
+      </div>
+    }
+    <div [style.flex]="1">
+      @if (highlight() || highlightIcon()) {
+        <p [class]="size().highlight" class="highlight">
+          @if (highlightIcon()) {
+            <mat-icon class="icon" fontSet="material-symbols-outlined" aria-hidden="true">{{
+              highlightIcon()
+            }}</mat-icon>
+          }
+          {{ highlight() }}
+        </p>
+      }
+
+      <div
+        [id]="titleId"
+        class="card-title"
+        [class]="size().title"
+        role="heading"
+        [attr.aria-level]="headingLevel()"
+      >
+        @if (titleIcon()) {
+          <mat-icon class="icon" fontSet="material-symbols-outlined" aria-hidden="true">{{
+            titleIcon()
+          }}</mat-icon>
+        }
+        {{ title() }}
+        <ng-content select="[badge]" />
+      </div>
+
+      @if (subtitle()) {
+        <p [class]="size().subtitle">{{ subtitle() }}</p>
+      }
+    </div>
   </div>
 
   <ng-content select="[actions]" />
 </header>
-
-<ng-content />
+<article>
+  <ng-content />
+</article>

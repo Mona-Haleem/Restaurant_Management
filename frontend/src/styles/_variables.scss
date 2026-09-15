@@ -11,8 +11,10 @@ $bg-light: #faf7f2;
 $bg-dark: #1b1815;
 $surface-light: #fff;
 $surface-dark: #26221e;
+$surface-dark-elevated: #302b26;
 $border-light: #e7dfd5;
 $border-dark: #3a342e;
+$border-dark-elevated: #4f473f;
 
 // text
 $text-primary: #2b2420;
@@ -38,6 +40,7 @@ $font-size-h2: 22px;
 $font-size-h3: 18px;
 $font-size-body: 15px;
 $font-size-caption: 13px;
+$font-size-icon: 10px;
 
 // Spacing Scale
 $spacing-xs: 4px;
@@ -49,10 +52,71 @@ $spacing-2xl: 32px;
 $spacing-3xl: 48px;
 
 // Corner Radius
+$radius-xs: 4px;
 $radius-sm: 8px;
 $radius-md: 16px;
 $radius-lg: 20px;
 
 // Elevation
 $shadow-light: 0 2px 8px rgb(0 0 0 / 6%);
-$border-dark: 1px solid $border-light;
+$elevation-border-light: 1px solid $border-light;
+$elevation-border-dark: 1px solid $border-dark-elevated;
+
+// =============================================================================
+// Alert Severity Colors
+// Reuse status color palette where possible; define badge/metric variants.
+// =============================================================================
+
+// --- Critical (maps to $status-canceled red family) ---
+$alert-critical-accent: #b42318; // deeper than $status-canceled for border
+$alert-critical-icon: #b42318;
+$alert-critical-badge-bg: #991b1b;
+$alert-critical-badge-text: #fff;
+$alert-critical-metric: #993d28;
+
+// dark
+$alert-critical-badge-bg-dark: #7f1d1d;
+$alert-critical-badge-text-dark: #fecaca;
+$alert-critical-metric-dark: #f87171; // clearly vivid red on dark
+
+// --- Medium / Warning (maps to $primary orange family) ---
+$alert-medium-accent: $primary;
+$alert-medium-icon: $primary;
+$alert-medium-badge-bg: #eddcd0;
+$alert-medium-badge-text: #6b3512;
+$alert-medium-metric: $primary;
+
+// dark
+$alert-medium-badge-bg-dark: #4a2411;
+$alert-medium-badge-text-dark: #fed7aa;
+$alert-medium-metric-dark: #fb923c; // vivid orange, clearly distinct on dark
+
+// --- Audit / Warning (maps to $status-pending amber family) ---
+$alert-audit-accent: #9e7925; // darker amber than $status-pending
+$alert-audit-icon: #9e7925;
+$alert-audit-badge-bg: #eadebe;
+$alert-audit-badge-text: #594511;
+$alert-audit-metric: #9e7925;
+
+// dark
+$alert-audit-badge-bg-dark: #3f3213;
+$alert-audit-badge-text-dark: #fef08a;
+$alert-audit-metric-dark: #facc15; // vivid gold, clearly distinct on dark
+
+// --- Info (maps to $status-in-preparation blue family) ---
+$alert-info-accent: $status-in-preparation;
+$alert-info-icon: $status-in-preparation;
+$alert-info-badge-bg: #dbeafe;
+$alert-info-badge-text: #1e40af;
+$alert-info-metric: $status-in-preparation;
+
+// dark
+$alert-info-badge-bg-dark: #1e3a8a;
+$alert-info-badge-text-dark: #bfdbfe;
+$alert-info-metric-dark: #60a5fa; // vivid sky-blue, clearly distinct on dark
+
+// --- SKU badge (neutral warm) ---
+$alert-sku-badge-bg: #ebdcd2;
+$alert-sku-badge-text: #3a2e26;
+$alert-sku-badge-bg-dark: #382e25;
+$alert-sku-badge-text-dark: #dfcfc1;

@@ -1,0 +1,428 @@
+@use './variables' as v;
+@use './mixins' as m;
+
+// =============================================================================
+// Tables  — global reusable classes
+// All colors consumed from CSS custom-properties defined in styles.scss so
+// light/dark theme switching works automatically.
+// =============================================================================
+
+// ── Wrapper ───────────────────────────────────────────────────────────────────
+// Provides scroll, elevation, and rounded corners.
+
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: v.$radius-sm;
+  border: 1px solid var(--color-border, #{v.$border-light});
+  background-color: var(--color-surface, #{v.$surface-light});
+  box-shadow: var(--card-shadow, #{v.$shadow-light});
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+
+  // Dark-mode elevation: border replaces shadow
+  [data-theme='dark'] & {
+    border-color: var(--color-border-elevated, #{v.$border-dark-elevated});
+  }
+}
+
+// ── Base Table ────────────────────────────────────────────────────────────────
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: v.$font-size-caption; // 13px
+  color: var(--color-text-primary);
+}
+
+// ── Header ────────────────────────────────────────────────────────────────────
+
+.table-header,
+.table thead tr {
+  background-color: var(--color-primary-container);
+  border-bottom: 1px solid var(--color-border, #{v.$border-light});
+}
+
+.table th,
+.table .th {
+  padding: 10px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  text-align: start;
+  white-space: nowrap;
+  user-select: none;
+
+  // Sortable column hint
+  &.sortable {
+    cursor: pointer;
+
+    &:hover {
+      color: var(--color-text-primary);
+    }
+  }
+}
+
+// ── Rows ──────────────────────────────────────────────────────────────────────
+
+.table td,
+.table .td {
+  padding: 14px;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--color-border, #{v.$border-light});
+  transition: background-color 0.12s ease;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+// Interactive row
+.table-row {
+  cursor: default;
+  transition: background-color 0.15s ease;
+
+  &:hover {
+    background-color: color-mix(in srgb, var(--color-primary) 4%, var(--color-surface));
+  }
+
+  &:last-child td {
+    border-bottom: none;
+  }
+}
+
+// Muted / archived / deactivated row
+.table-row-muted {
+  td,
+  .td {
+    color: var(--color-text-secondary);
+    opacity: 0.65;
+  }
+
+  img,
+  .avatar {
+    filter: grayscale(0.7);
+  }
+
+  &:hover {
+    background-color: color-mix(in srgb, var(--color-text-primary) 3%, var(--color-surface));
+  }
+}
+
+// Highlighted / selected row
+.table-row-selected {
+  background-color: color-mix(in srgb, var(--color-primary) 7%, var(--color-surface)) !important;
+
+  td,
+  .td {
+    border-bottom-color: color-mix(in srgb, var(--color-primary) 20%, var(--color-border));
+  }
+}
+
+// ── Cell Modifiers ────────────────────────────────────────────────────────────
+
+// Numeric data: tabular figures + right-aligned
+.table-cell-numeric {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+  font-weight: 500;
+}
+
+// Monospace / code values (SKUs, PO numbers)
+.table-cell-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  letter-spacing: 0.2px;
+}
+
+// Compact no-padding cell (wraps custom components like progress-bar)
+.table-cell-progress {
+  min-width: 100px;
+  max-width: 180px;
+  padding-block: 12px;
+}
+
+// Trailing action cell — right-aligned, shrunk width
+.table-cell-actions {
+  width: 1%; // shrink to content
+  white-space: nowrap;
+  text-align: end;
+  padding-inline: 8px;
+}
+
+// ── Item / Avatar Cell ────────────────────────────────────────────────────────
+// Used for the first column: thumbnail + primary name + sub-line
+
+.table-item-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 180px;
+}
+
+.table-item-thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: v.$radius-xs;
+  object-fit: cover;
+  flex-shrink: 0;
+  background-color: var(--color-bg, #{v.$bg-light});
+  border: 1px solid var(--color-border, #{v.$border-light});
+}
+
+.table-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.table-item-name {
+  font-size: v.$font-size-caption;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  line-height: 1.3;
+}
+
+.table-item-sub {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  line-height: 1.3;
+}
+
+// ── Avatar Circle ─────────────────────────────────────────────────────────────
+// Used in staff-directory first column
+
+.table-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+  background-color: var(--color-primary);
+  color: #fff;
+
+  // Status dot: online / offline
+  &-wrap {
+    position: relative;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+
+  &-status {
+    position: absolute;
+    inset-block-end: 1px;
+    inset-inline-end: 1px;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    border: 2px solid var(--color-surface, #{v.$surface-light});
+    background-color: var(--color-text-secondary);
+
+    &.online {
+      background-color: #{v.$status-delivered};
+    }
+
+    &.away {
+      background-color: #{v.$status-pending};
+    }
+
+    &.offline {
+      background-color: var(--color-text-secondary);
+    }
+  }
+}
+
+// ── Category / Status Pill ────────────────────────────────────────────────────
+// Small pill used for Category column (e.g. "Raw Material", "Mains")
+
+.table-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  background-color: color-mix(in srgb, var(--color-primary) 10%, var(--color-surface));
+  color: var(--color-primary);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 25%, var(--color-border));
+
+  &.pill-neutral {
+    background-color: color-mix(in srgb, var(--color-text-secondary) 10%, var(--color-surface));
+    color: var(--color-text-secondary);
+    border-color: var(--color-border);
+  }
+
+  &.pill-success {
+    background-color: color-mix(in srgb, #{v.$status-ready} 12%, var(--color-surface));
+    color: #{v.$status-ready};
+    border-color: color-mix(in srgb, #{v.$status-ready} 30%, var(--color-border));
+  }
+
+  &.pill-warning {
+    background-color: color-mix(in srgb, #{v.$status-pending} 12%, var(--color-surface));
+    color: #{v.$status-pending};
+    border-color: color-mix(in srgb, #{v.$status-pending} 30%, var(--color-border));
+  }
+
+  &.pill-critical {
+    background-color: color-mix(in srgb, #{v.$status-canceled} 10%, var(--color-surface));
+    color: #{v.$status-canceled};
+    border-color: color-mix(in srgb, #{v.$status-canceled} 25%, var(--color-border));
+  }
+}
+
+// ── Row-Action Icon Buttons ───────────────────────────────────────────────────
+// Inline icon buttons in the actions column (edit / duplicate / delete)
+
+.table-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  background: transparent;
+  border-radius: v.$radius-xs;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+
+  &:hover {
+    background-color: color-mix(in srgb, var(--color-primary) 10%, var(--color-surface));
+    color: var(--color-primary);
+  }
+
+  &.danger:hover {
+    background-color: color-mix(in srgb, #{v.$status-canceled} 10%, var(--color-surface));
+    color: #{v.$status-canceled};
+  }
+
+  mat-icon,
+  .mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    line-height: 1;
+  }
+}
+
+.table-actions-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+// ── Quick-Action Button ───────────────────────────────────────────────────────
+// The "+ Restock" style prominent cell button from image 1
+
+.table-quick-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 7px 12px;
+  border: none;
+  border-radius: v.$radius-sm;
+  background-color: var(--color-primary);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background-color 0.15s ease,
+    transform 0.1s ease;
+
+  &:hover {
+    background-color: var(--color-primary-highlight);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  mat-icon,
+  .mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+
+  &.secondary {
+    background-color: var(--color-secondary);
+
+    &:hover {
+      background-color: var(--color-secondary-highlight);
+    }
+  }
+}
+
+// ── Pagination Row ────────────────────────────────────────────────────────────
+
+.table-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-top: 1px solid var(--color-border, #{v.$border-light});
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.table-pagination {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.table-page-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 6px;
+  border: 1px solid var(--color-border, #{v.$border-light});
+  border-radius: v.$radius-xs;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+
+  &:hover:not(:disabled) {
+    background-color: color-mix(in srgb, var(--color-primary) 8%, var(--color-surface));
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  &.active {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #fff;
+    font-weight: 700;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
