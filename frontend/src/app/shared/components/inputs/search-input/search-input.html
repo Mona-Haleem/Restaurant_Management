@@ -1,0 +1,31 @@
+<mat-icon class="search-icon" fontSet="material-symbols-outlined" aria-hidden="true"
+  >search</mat-icon
+>
+
+<input
+  #inputEl
+  type="search"
+  [appInputField]="label()"
+  [hint]="hint()"
+  [placeholder]="placeholder()"
+  [attr.aria-label]="ariaLabel()"
+  [name]="ariaLabel()"
+  [attr.disabled]="disabled() ? '' : null"
+  [value]="value()"
+  (input)="onInput($event)"
+  (focus)="isFocused.set(true)"
+  (blur)="onBlur()"
+  (keydown.escape)="clear()"
+  autocomplete="off"
+/>
+
+@if (hasValue() && !disabled()) {
+  <button
+    type="button"
+    class="clear-button"
+    [attr.aria-label]="clearAriaLabel()"
+    (click)="clear($event)"
+  >
+    <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">close</mat-icon>
+  </button>
+}

@@ -23,6 +23,9 @@
   --color-text-primary: #{v.$text-primary};
   --color-text-secondary: #{v.$text-secondary};
   --color-border: #{v.$border-light};
+  --color-error: #{v.$status-canceled};
+  --color-error-container: #fdf0f0;
+  --color-on-error-container: #5c1818;
   --card-shadow: 0 2px 8px rgb(0 0 0 / 6%);
 }
 
@@ -38,6 +41,9 @@
   --color-text-primary: #{v.$text-primary-dark};
   --color-text-secondary: #{v.$text-secondary-dark};
   --color-border: #{v.$border-dark};
+  --color-error: #{v.$status-canceled};
+  --color-error-container: #3d1b1b;
+  --color-on-error-container: #fce8e8;
   --card-shadow: none;
 }
 

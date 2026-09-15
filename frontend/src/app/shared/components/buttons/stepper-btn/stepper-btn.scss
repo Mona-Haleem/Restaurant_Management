@@ -21,6 +21,16 @@
     appearance: textfield;
     text-align: center;
     color: var(--color-text-primary);
+    background-color: transparent;
+    border: none;
+    outline: none;
+    height: 100%;
+    flex: 1;
+
+    &:focus,
+    &:active {
+      outline: none;
+    }
 
     &::-webkit-inner-spin-button,
     &::-webkit-outer-spin-button {
