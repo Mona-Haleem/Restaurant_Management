@@ -184,12 +184,12 @@ describe('SearchInput (owned input)', () => {
   });
 
   it('applies light variant and size classes to container', async () => {
-    const { container } = await render(TestHostComponent, {
+    await render(TestHostComponent, {
       componentProperties: { variant: 'light', size: 'sm' },
     });
 
-    const searchBox = container.querySelector('.search-box');
-    expect(searchBox?.classList.contains('search-light')).toBe(true);
-    expect(searchBox?.classList.contains('search-sm')).toBe(true);
+    const searchBox = screen.getByTestId('searchBox');
+    expect(searchBox.className).toContain('search-light');
+    expect(searchBox.className).toContain('search-sm');
   });
 });

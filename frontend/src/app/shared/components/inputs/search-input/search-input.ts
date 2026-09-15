@@ -24,6 +24,9 @@ export type SearchInputSize = 'sm' | 'default' | 'lg';
   templateUrl: './search-input.html',
   styleUrl: './search-input.scss',
   host: {
+    role: 'search',
+    '[attr.aria-disabled]': "disabled() ? 'true' : null",
+    '(click)': 'onHostClick($event)',
     '[class.search-light]': "variant() === 'light'",
     '[class.search-sm]': "size() === 'sm'",
     '[class.search-lg]': "size() === 'lg'",
@@ -32,6 +35,7 @@ export type SearchInputSize = 'sm' | 'default' | 'lg';
 
     '[style.margin-top]': "label() ? null : '0'",
     '[style.margin-bottom]': "hint() ? null : '0'",
+    '[attr.data-testId]': 'ariaLabel() + "searchBox"',
   },
 })
 export class SearchInput {
@@ -46,6 +50,7 @@ export class SearchInput {
   readonly size = input<SearchInputSize>('default');
   readonly ariaLabel = input<string>('');
   readonly clearAriaLabel = input<string>('Clear search');
+  readonly name = input<string | undefined>(undefined);
 
   readonly searchCallback = input<((query: string) => void) | undefined>(undefined);
 
@@ -63,8 +68,18 @@ export class SearchInput {
 
   readonly isFocused = signal(false);
   readonly hasValue = computed(() => Boolean(this.value()));
+  readonly statusMessage = signal('');
 
-  /** Single reactive source of truth for the wrapper's state classes */
+  /** Single reactive source of truth for accessible label */
+  readonly computedAriaLabel = computed(() => {
+    if (this.ariaLabel().trim()) {
+      return this.ariaLabel().trim();
+    }
+    if (this.label().trim()) {
+      return null;
+    }
+    return this.placeholder().trim() || 'Search';
+  });
 
   private lastEmittedValue = '';
   private debounceTimer?: ReturnType<typeof setTimeout>;
@@ -76,6 +91,7 @@ export class SearchInput {
   onInput(event: Event): void {
     const value = (event.target as HTMLInputElement).value;
     this.value.set(value);
+    this.statusMessage.set('');
 
     clearTimeout(this.debounceTimer);
     this.debounceTimer = setTimeout(() => {
@@ -89,6 +105,13 @@ export class SearchInput {
     this.isFocused.set(false);
   }
 
+  onHostClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.clear-button') && target !== this.inputRef?.nativeElement) {
+      this.focusInput();
+    }
+  }
+
   focusInput(): void {
     this.inputRef?.nativeElement.focus();
   }
@@ -100,6 +123,7 @@ export class SearchInput {
     clearTimeout(this.debounceTimer);
     this.value.set('');
     this.focusInput();
+    this.statusMessage.set('Search cleared');
     this.emitSearch('');
   }
 

@@ -62,11 +62,14 @@ export class InputFieldDirective implements OnDestroy {
   private hintEl: HTMLElement | null = null;
   private errorEl: HTMLElement | null = null;
   private mutationObserver?: MutationObserver;
+  private initialAriaDescribedBy: string | null = null;
 
   constructor() {
     effect(() => {
       this.ensureStructure();
       this.syncRequiredAttribute(this.required());
+      this.syncDisabledState(this.computedDisabled());
+      this.syncInvalid(this.computedInvalid());
       this.syncLabel();
       this.syncHint(this.hint());
       this.syncError(this.error());
@@ -89,24 +92,20 @@ export class InputFieldDirective implements OnDestroy {
       return;
     }
 
+    this.initialAriaDescribedBy = host.getAttribute('aria-describedby');
+
     const wrapper = this.renderer.createElement('div');
     this.renderer.addClass(wrapper, 'field');
     this.renderer.insertBefore(parent, wrapper, host);
 
-    const label = this.renderer.createElement('label');
-    this.renderer.addClass(label, 'input-label');
-
     if (!host.id) {
       this.renderer.setAttribute(host, 'id', `input-field-${++nextFieldId}`);
     }
-    this.renderer.setAttribute(label, 'for', host.id);
 
-    this.renderer.appendChild(wrapper, label);
     this.renderer.removeChild(parent, host);
     this.renderer.appendChild(wrapper, host);
 
     this.wrapperEl = wrapper;
-    this.labelEl = label;
 
     this.bindStateTracking(host);
   }
@@ -156,20 +155,61 @@ export class InputFieldDirective implements OnDestroy {
     const host = this.elementRef.nativeElement;
     if (isRequired) {
       this.renderer.setAttribute(host, 'required', '');
+      this.renderer.setAttribute(host, 'aria-required', 'true');
     } else {
       this.renderer.removeAttribute(host, 'required');
+      this.renderer.removeAttribute(host, 'aria-required');
+    }
+  }
+
+  private syncDisabledState(isDisabled: boolean): void {
+    const host = this.elementRef.nativeElement;
+    if (this.disabled() !== undefined) {
+      if (isDisabled) {
+        this.renderer.setAttribute(host, 'disabled', '');
+        this.renderer.setAttribute(host, 'aria-disabled', 'true');
+      } else {
+        this.renderer.removeAttribute(host, 'disabled');
+        this.renderer.removeAttribute(host, 'aria-disabled');
+      }
+    }
+  }
+
+  private syncInvalid(isInvalid: boolean): void {
+    const host = this.elementRef.nativeElement;
+    if (isInvalid) {
+      this.renderer.setAttribute(host, 'aria-invalid', 'true');
+    } else {
+      this.renderer.removeAttribute(host, 'aria-invalid');
     }
   }
 
   private syncLabel(): void {
-    if (!this.labelEl) {
+    if (!this.wrapperEl) {
       return;
     }
-    this.renderer.setProperty(this.labelEl, 'textContent', this.appInputField());
-    this.toggleClass(this.labelEl, 'is-required', this.required());
-    this.toggleClass(this.labelEl, 'is-focused', this.computedFocused());
-    this.toggleClass(this.labelEl, 'is-disabled', this.computedDisabled());
-    this.toggleClass(this.labelEl, 'is-invalid', this.computedInvalid());
+
+    const text = this.appInputField()?.trim();
+    if (!text) {
+      if (this.labelEl) {
+        this.renderer.removeChild(this.wrapperEl, this.labelEl);
+        this.labelEl = null;
+      }
+      return;
+    }
+
+    if (!this.labelEl) {
+      this.labelEl = this.renderer.createElement('label');
+      this.renderer.addClass(this.labelEl, 'input-label');
+      this.renderer.setAttribute(this.labelEl, 'for', this.elementRef.nativeElement.id);
+      this.renderer.insertBefore(this.wrapperEl, this.labelEl, this.elementRef.nativeElement);
+    }
+
+    this.renderer.setProperty(this.labelEl, 'textContent', text);
+    this.toggleClass(this.labelEl!, 'is-required', this.required());
+    this.toggleClass(this.labelEl!, 'is-focused', this.computedFocused());
+    this.toggleClass(this.labelEl!, 'is-disabled', this.computedDisabled());
+    this.toggleClass(this.labelEl!, 'is-invalid', this.computedInvalid());
   }
 
   private syncHint(text: string | undefined): void {
@@ -181,6 +221,7 @@ export class InputFieldDirective implements OnDestroy {
       if (this.hintEl) {
         this.renderer.removeChild(this.wrapperEl, this.hintEl);
         this.hintEl = null;
+        this.syncAriaDescribedBy();
       }
       return;
     }
@@ -188,9 +229,11 @@ export class InputFieldDirective implements OnDestroy {
     if (!this.hintEl) {
       this.hintEl = this.renderer.createElement('span');
       this.renderer.addClass(this.hintEl, 'input-hint');
+      this.renderer.setAttribute(this.hintEl, 'id', `${this.elementRef.nativeElement.id}-hint`);
       this.renderer.appendChild(this.wrapperEl, this.hintEl);
     }
     this.renderer.setProperty(this.hintEl, 'textContent', text);
+    this.syncAriaDescribedBy();
   }
 
   private syncError(text: string | undefined): void {
@@ -202,6 +245,7 @@ export class InputFieldDirective implements OnDestroy {
       if (this.errorEl) {
         this.renderer.removeChild(this.wrapperEl, this.errorEl);
         this.errorEl = null;
+        this.syncAriaDescribedBy();
       }
       return;
     }
@@ -209,9 +253,40 @@ export class InputFieldDirective implements OnDestroy {
     if (!this.errorEl) {
       this.errorEl = this.renderer.createElement('span');
       this.renderer.addClass(this.errorEl, 'input-error');
+      this.renderer.setAttribute(this.errorEl, 'id', `${this.elementRef.nativeElement.id}-error`);
+      this.renderer.setAttribute(this.errorEl, 'role', 'alert');
+      this.renderer.setAttribute(this.errorEl, 'aria-live', 'polite');
       this.renderer.appendChild(this.wrapperEl, this.errorEl);
     }
     this.renderer.setProperty(this.errorEl, 'textContent', text);
+    this.syncAriaDescribedBy();
+  }
+
+  private syncAriaDescribedBy(): void {
+    const host = this.elementRef.nativeElement;
+    const ids: string[] = [];
+
+    if (this.initialAriaDescribedBy) {
+      ids.push(this.initialAriaDescribedBy);
+    }
+    if (this.errorEl?.id) {
+      ids.push(this.errorEl.id);
+    }
+    if (this.hintEl?.id) {
+      ids.push(this.hintEl.id);
+    }
+
+    if (ids.length > 0) {
+      this.renderer.setAttribute(host, 'aria-describedby', ids.join(' '));
+    } else {
+      this.renderer.removeAttribute(host, 'aria-describedby');
+    }
+
+    if (this.errorEl?.id) {
+      this.renderer.setAttribute(host, 'aria-errormessage', this.errorEl.id);
+    } else {
+      this.renderer.removeAttribute(host, 'aria-errormessage');
+    }
   }
 
   private toggleClass(el: Element, className: string, on: boolean): void {

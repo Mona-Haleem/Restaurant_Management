@@ -1,28 +1,66 @@
+@use '../../../../../styles/variables' as v;
+@use '../../../../../styles/mixins' as m;
+
 :host {
   display: block;
-  background-color: #fff;
-  border: 1px solid #e0e0e0;
-  padding: 2rem;
+
+  @include m.elevation;
+
+  border-radius: v.$radius-md;
+  overflow: hidden;
 
   header {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 1rem;
-    border-bottom: 1px solid #e0e0e0;
-    padding-bottom: 1rem;
-    text-transform: uppercase;
+    align-items: center;
+    padding: v.$spacing-lg;
+    width: 100%;
+    text-transform: capitalize;
+    background-color: var(--section-headers);
 
-    h3 {
-      font-weight: 700;
-      font-size: 1.5rem;
+    .text {
+      display: flex;
+      flex: 1;
+      align-items: flex-start;
+      gap: v.$spacing-sm;
     }
 
-    p {
-      font-weight: 600;
-      margin-top: 0.5rem;
-      font-size: 1rem;
-      color: var(--mat-sys-tertiary);
+    // Was `h3 { ... }` — now class-based so layout holds regardless of
+    // which heading level (h2–h6) a given card is configured to render.
+    .card-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
+
+    .main-icon {
+      color: var(--color-bg);
+      background-color: var(--color-primary);
+      border-radius: v.$radius-sm;
+      padding: v.$spacing-xs;
+      width: 2.5rem;
+      height: 2.5rem;
+
+      @include m.centred;
+    }
+
+    .highlight {
+      color: v.$primary;
+      display: flex;
+      align-items: center;
+      gap: v.$spacing-sm;
+    }
+
+    .text-caption {
+      color: var(--color-text-secondary);
+    }
+
+    &.transparent {
+      background-color: transparent !important;
+    }
+  }
+
+  article {
+    padding: v.$spacing-lg;
   }
 }

@@ -1,0 +1,14 @@
+@if (label() || showValue()) {
+  <div class="pb-label-row" data-testid="pb-label-row">
+    @if (label()) {
+      <span class="pb-label">{{ label() }}</span>
+    }
+    @if (showValue()) {
+      <span class="pb-value">{{ clampedValue() }}%</span>
+    }
+  </div>
+}
+
+<div class="pb-track">
+  <div class="pb-fill" [style.width]="fillPercent()"></div>
+</div>

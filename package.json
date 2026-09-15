@@ -7,7 +7,7 @@
     "frontend:format:check": "npm --prefix frontend run format:check",
     "frontend:test:ci": "npm --prefix frontend run test:ci",
     "lint": "npm run frontend:lint",
-    "test": "npm run frontend:test",
+    "test": "npm run frontend:test:ci",
     "build": "npm run frontend:build",
     "prepare": "husky"
   },

@@ -8,6 +8,7 @@
 @use './styles/buttons' as buttons;
 @use './styles/inputs' as inputs;
 @use './styles/typography' as typography;
+@use './styles/tables';
 @use './styles/variables' as v;
 
 :root {
@@ -20,13 +21,16 @@
   --color-secondary-highlight: #{v.$secondary-highlight};
   --color-bg: #{v.$bg-light};
   --color-surface: #{v.$surface-light};
+  --color-surface-elevated: #{v.$surface-light};
   --color-text-primary: #{v.$text-primary};
   --color-text-secondary: #{v.$text-secondary};
   --color-border: #{v.$border-light};
+  --color-border-elevated: #{v.$border-light};
   --color-error: #{v.$status-canceled};
   --color-error-container: #fdf0f0;
   --color-on-error-container: #5c1818;
-  --card-shadow: 0 2px 8px rgb(0 0 0 / 6%);
+  --card-shadow: #{v.$shadow-light};
+  --section-headers: var(--mat-sys-on-surface-variant);
 }
 
 [data-theme='dark'] {
@@ -38,13 +42,16 @@
   --color-secondary-highlight: #{v.$secondary-highlight};
   --color-bg: #{v.$bg-dark};
   --color-surface: #{v.$surface-dark};
+  --color-surface-elevated: #{v.$surface-dark-elevated};
   --color-text-primary: #{v.$text-primary-dark};
   --color-text-secondary: #{v.$text-secondary-dark};
   --color-border: #{v.$border-dark};
+  --color-border-elevated: #{v.$border-dark-elevated};
   --color-error: #{v.$status-canceled};
   --color-error-container: #3d1b1b;
   --color-on-error-container: #fce8e8;
   --card-shadow: none;
+  --section-headers: var(--mat-sys-surface-variant);
 }
 
 html {

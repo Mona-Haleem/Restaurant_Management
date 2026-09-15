@@ -1,9 +1,30 @@
+@use './variables' as v;
+
 @mixin line-clamp($lines: 2) {
   display: -webkit-box;
   -webkit-line-clamp: $lines;
   line-clamp: $lines;
   -webkit-box-orient: vertical;
-
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/// Elevation mixin for cards and surfaces according to PRD:
+/// - Light mode: uses a soft shadow (`0 2px 8px rgba(0,0,0,0.06)`) on cards/surfaces.
+/// - Dark mode: uses a 1px lighter border instead of shadow (shadows barely read on dark backgrounds)
+///   plus a slightly lighter surface tone to imply elevation.
+@mixin elevation {
+  background-color: var(--color-surface-elevated, var(--color-surface, #{v.$surface-light}));
+  border: 1px solid var(--color-border-elevated, var(--color-border, #{v.$border-light}));
+  box-shadow: var(--card-shadow, #{v.$shadow-light});
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+@mixin centred {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }

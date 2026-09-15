@@ -8,8 +8,8 @@
   [appInputField]="label()"
   [hint]="hint()"
   [placeholder]="placeholder()"
-  [attr.aria-label]="ariaLabel()"
-  [name]="ariaLabel()"
+  [attr.aria-label]="computedAriaLabel()"
+  [attr.name]="name() || computedAriaLabel() || null"
   [attr.disabled]="disabled() ? '' : null"
   [value]="value()"
   (input)="onInput($event)"
@@ -24,8 +24,13 @@
     type="button"
     class="clear-button"
     [attr.aria-label]="clearAriaLabel()"
+    [title]="clearAriaLabel()"
     (click)="clear($event)"
   >
     <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">close</mat-icon>
   </button>
 }
+
+<span class="sr-only" role="status" aria-live="polite">
+  {{ statusMessage() }}
+</span>
