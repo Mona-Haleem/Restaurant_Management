@@ -1,5 +1,21 @@
 @use '../../../../../styles/variables' as v;
-@use '../../../../../styles/mixins' as m;
+@use 'sass:map';
+
+@mixin alert-severity($name) {
+  $colors: map.get(v.$alert-severities, $name);
+
+  --alert-accent: #{map.get($colors, accent)};
+  --alert-icon-color: #{map.get($colors, icon)};
+  --alert-badge-bg: #{map.get($colors, badge-bg)};
+  --alert-badge-text: #{map.get($colors, badge-text)};
+  --alert-metric-color: #{map.get($colors, metric)};
+
+  [data-theme='dark'] & {
+    --alert-badge-bg: #{map.get($colors, badge-bg-dark)};
+    --alert-badge-text: #{map.get($colors, badge-text-dark)};
+    --alert-metric-color: #{map.get($colors, metric-dark)};
+  }
+}
 
 :host {
   display: block;
@@ -18,38 +34,21 @@
     box-shadow 0.2s ease;
 
   // ── Light-mode severity tokens ──────────────────────────────────────────────
-
   &.alert-critical {
-    --alert-accent: #{v.$alert-critical-accent};
-    --alert-icon-color: #{v.$alert-critical-icon};
-    --alert-badge-bg: #{v.$alert-critical-badge-bg};
-    --alert-badge-text: #{v.$alert-critical-badge-text};
-    --alert-metric-color: #{v.$alert-critical-metric};
+    @include alert-severity(critical);
   }
 
   &.alert-medium,
   &.alert-warning {
-    --alert-accent: #{v.$alert-medium-accent};
-    --alert-icon-color: #{v.$alert-medium-icon};
-    --alert-badge-bg: #{v.$alert-medium-badge-bg};
-    --alert-badge-text: #{v.$alert-medium-badge-text};
-    --alert-metric-color: #{v.$alert-medium-metric};
+    @include alert-severity(medium);
   }
 
   &.alert-audit {
-    --alert-accent: #{v.$alert-audit-accent};
-    --alert-icon-color: #{v.$alert-audit-icon};
-    --alert-badge-bg: #{v.$alert-audit-badge-bg};
-    --alert-badge-text: #{v.$alert-audit-badge-text};
-    --alert-metric-color: #{v.$alert-audit-metric};
+    @include alert-severity(audit);
   }
 
   &.alert-info {
-    --alert-accent: #{v.$alert-info-accent};
-    --alert-icon-color: #{v.$alert-info-icon};
-    --alert-badge-bg: #{v.$alert-info-badge-bg};
-    --alert-badge-text: #{v.$alert-info-badge-text};
-    --alert-metric-color: #{v.$alert-info-metric};
+    @include alert-severity(info);
   }
 
   // ── Dark-mode overrides ─────────────────────────────────────────────────────
@@ -62,38 +61,6 @@
     box-shadow: none;
 
     // Critical — vivid red badge + bright metric text
-    &.alert-critical {
-      // accent/icon stay the same (#b42318) — vivid enough on dark
-      --alert-badge-bg: #{v.$alert-critical-badge-bg-dark};
-      --alert-badge-text: #{v.$alert-critical-badge-text-dark};
-      --alert-metric-color: #{v.$alert-critical-metric-dark};
-    }
-
-    // Medium — vivid orange badge + bright metric
-    &.alert-medium,
-    &.alert-warning {
-      // accent/icon stay the same ($primary) — readable on dark
-      --alert-badge-bg: #{v.$alert-medium-badge-bg-dark};
-      --alert-badge-text: #{v.$alert-medium-badge-text-dark};
-      --alert-metric-color: #{v.$alert-medium-metric-dark};
-    }
-
-    // Audit — vivid amber/gold badge + bright metric
-    &.alert-audit {
-      // accent/icon stay the same (#9e7925)
-      --alert-badge-bg: #{v.$alert-audit-badge-bg-dark};
-      --alert-badge-text: #{v.$alert-audit-badge-text-dark};
-      --alert-metric-color: #{v.$alert-audit-metric-dark};
-    }
-
-    // Info — vivid sky-blue badge + bright metric
-    &.alert-info {
-      // accent/icon stay the same ($status-in-preparation blue)
-      --alert-badge-bg: #{v.$alert-info-badge-bg-dark};
-      --alert-badge-text: #{v.$alert-info-badge-text-dark};
-      --alert-metric-color: #{v.$alert-info-metric-dark};
-    }
-
     .alert-details-card {
       background-color: color-mix(in srgb, var(--color-surface) 65%, var(--color-bg));
       border-color: var(--color-border);
