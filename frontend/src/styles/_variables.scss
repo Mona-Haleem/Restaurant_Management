@@ -29,6 +29,12 @@ $status-ready: #2f9e8f;
 $status-delivered: #3c9a5f;
 $status-canceled: #c94c4c;
 $status-low-stock-waste-alert: #c94c4c;
+$status-in-stock: #3c9a5f;
+$status-low-stock: #e8a93a;
+$status-critical: #c94c4c;
+$status-out-of-stock: #bdd4f3;
+$status-derived: #2f9e8f;
+$status-unknown: #6b5f55;
 
 // Typography
 $font-family-base: 'Cairo', sans-serif;
