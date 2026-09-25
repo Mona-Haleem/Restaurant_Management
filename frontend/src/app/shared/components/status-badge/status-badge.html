@@ -1,0 +1,6 @@
+@if (showIcon() && displayedIcon()) {
+  <mat-icon class="status-icon" fontSet="material-symbols-outlined" aria-hidden="true">{{
+    displayedIcon()
+  }}</mat-icon>
+}
+<span class="status-label text-caption">{{ displayedLabel() }}</span>

@@ -10,6 +10,7 @@
 @use './styles/typography' as typography;
 @use './styles/tables';
 @use './styles/variables' as v;
+@use './styles/mixins' as m;
 
 :root {
   color-scheme: light dark;

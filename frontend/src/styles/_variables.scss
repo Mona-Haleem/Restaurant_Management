@@ -29,6 +29,12 @@ $status-ready: #2f9e8f;
 $status-delivered: #3c9a5f;
 $status-canceled: #c94c4c;
 $status-low-stock-waste-alert: #c94c4c;
+$status-in-stock: #3c9a5f;
+$status-low-stock: #e8a93a;
+$status-critical: #c94c4c;
+$status-out-of-stock: #bdd4f3;
+$status-derived: #2f9e8f;
+$status-unknown: #6b5f55;
 
 // Typography
 $font-family-base: 'Cairo', sans-serif;
@@ -64,59 +70,53 @@ $elevation-border-dark: 1px solid $border-dark-elevated;
 
 // =============================================================================
 // Alert Severity Colors
-// Reuse status color palette where possible; define badge/metric variants.
 // =============================================================================
-
-// --- Critical (maps to $status-canceled red family) ---
-$alert-critical-accent: #b42318; // deeper than $status-canceled for border
-$alert-critical-icon: #b42318;
-$alert-critical-badge-bg: #991b1b;
-$alert-critical-badge-text: #fff;
-$alert-critical-metric: #993d28;
-
-// dark
-$alert-critical-badge-bg-dark: #7f1d1d;
-$alert-critical-badge-text-dark: #fecaca;
-$alert-critical-metric-dark: #f87171; // clearly vivid red on dark
-
-// --- Medium / Warning (maps to $primary orange family) ---
-$alert-medium-accent: $primary;
-$alert-medium-icon: $primary;
-$alert-medium-badge-bg: #eddcd0;
-$alert-medium-badge-text: #6b3512;
-$alert-medium-metric: $primary;
-
-// dark
-$alert-medium-badge-bg-dark: #4a2411;
-$alert-medium-badge-text-dark: #fed7aa;
-$alert-medium-metric-dark: #fb923c; // vivid orange, clearly distinct on dark
-
-// --- Audit / Warning (maps to $status-pending amber family) ---
-$alert-audit-accent: #9e7925; // darker amber than $status-pending
-$alert-audit-icon: #9e7925;
-$alert-audit-badge-bg: #eadebe;
-$alert-audit-badge-text: #594511;
-$alert-audit-metric: #9e7925;
-
-// dark
-$alert-audit-badge-bg-dark: #3f3213;
-$alert-audit-badge-text-dark: #fef08a;
-$alert-audit-metric-dark: #facc15; // vivid gold, clearly distinct on dark
-
-// --- Info (maps to $status-in-preparation blue family) ---
-$alert-info-accent: $status-in-preparation;
-$alert-info-icon: $status-in-preparation;
-$alert-info-badge-bg: #dbeafe;
-$alert-info-badge-text: #1e40af;
-$alert-info-metric: $status-in-preparation;
-
-// dark
-$alert-info-badge-bg-dark: #1e3a8a;
-$alert-info-badge-text-dark: #bfdbfe;
-$alert-info-metric-dark: #60a5fa; // vivid sky-blue, clearly distinct on dark
 
 // --- SKU badge (neutral warm) ---
 $alert-sku-badge-bg: #ebdcd2;
 $alert-sku-badge-text: #3a2e26;
 $alert-sku-badge-bg-dark: #382e25;
 $alert-sku-badge-text-dark: #dfcfc1;
+$alert-severities: (
+  critical: (
+    accent: #b42318,
+    icon: #b42318,
+    badge-bg: #991b1b,
+    badge-text: #fff,
+    metric: #993d28,
+    badge-bg-dark: #7f1d1d,
+    badge-text-dark: #fecaca,
+    metric-dark: #f87171,
+  ),
+  medium: (
+    accent: $primary,
+    icon: $primary,
+    badge-bg: #eddcd0,
+    badge-text: #6b3512,
+    metric: $primary,
+    badge-bg-dark: #4a2411,
+    badge-text-dark: #fed7aa,
+    metric-dark: #fb923c,
+  ),
+  audit: (
+    accent: 9e7925,
+    icon: 9e7925,
+    badge-bg: #eadebe,
+    badge-text: #594511,
+    metric: 9e7925,
+    badge-bg-dark: #3f3213,
+    badge-text-dark: #fef08a,
+    metric-dark: #facc15,
+  ),
+
+  info: (
+    accent: $status-in-preparation,
+    icon: $status-in-preparation,
+    badge-bg: #dbeafe,
+    badge-text: #1e40af,
+    metric: $status-in-preparation,
+    badge-bg-dark: #1e3a8a,
+    badge-text-dark: #bfdbfe,
+    metric-dark: #60a5fa,
+  ),
+);

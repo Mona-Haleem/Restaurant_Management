@@ -1,4 +1,6 @@
 @use './variables' as v;
+@use 'sass:map';
+@use 'sass:color';
 
 @mixin line-clamp($lines: 2) {
   display: -webkit-box;
@@ -27,4 +29,48 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+$status-colors: (
+  pending: #e8a93a,
+  in-preparation: #3b7dd8,
+  ready: #2f9e8f,
+  delivered: #3c9a5f,
+  cancelled: #c94c4c,
+  in-stock: #3c9a5f,
+  low-stock: #e8a93a,
+  critical: #c94c4c,
+  out-of-stock: #bdd4f3,
+  derived: #2f9e8f,
+  unknown: #6b5f55,
+);
+$status-keys:
+  'pending', 'in-preparation', 'ready', 'delivered', 'cancelled', 'in-stock', 'low-stock',
+  'critical', 'out-of-stock', 'derived', 'unknown';
+
+@mixin status($color) {
+  background-color: color.scale($color, $lightness: 30%, $saturation: 20%);
+
+  [data-theme='dark'] & {
+    background-color: color-mix(in srgb, #{$color} 22%, #{v.$surface-dark});
+    color: color.scale($color, $lightness: 45%);
+  }
+
+  color: color.scale($color, $lightness: -60%);
+  box-shadow: var(--card-shadow, #{v.$shadow-light});
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+@each $status in $status-keys {
+  .status-#{$status} {
+    border-radius: v.$radius-sm;
+    padding: v.$spacing-sm;
+    text-align: center;
+    text-transform: uppercase;
+
+    @include status(map.get($status-colors, $status));
+  }
 }
