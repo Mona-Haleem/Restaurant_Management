@@ -1,4 +1,6 @@
 import { Routes } from '@angular/router';
+import { authGuard } from './core/guards/auth-guard/auth-guard';
+import { roleGuard } from './core/guards/role-guard/role-guard';
 
 export const routes: Routes = [
   {
@@ -14,14 +16,23 @@ export const routes: Routes = [
   {
     path: 'worker',
     loadChildren: () => import('./features/worker/routes').then((m) => m.routes),
+    canActivateChild: [authGuard, roleGuard],
+    data: { roles: ['worker', 'manager', 'admin'] },
   },
   {
     path: 'manager',
     loadChildren: () => import('./features/manager/routes').then((m) => m.routes),
+    canActivateChild: [authGuard, roleGuard],
+    data: { roles: ['manager', 'admin'] },
   },
   {
     path: 'auth/**',
     loadComponent: () => import('./shared/screens/auth/auth').then((m) => m.Auth),
+  },
+  {
+    path: 'unauthorized',
+    loadComponent: () =>
+      import('./shared/screens/unauthorized/unauthorized').then((m) => m.Unauthorized),
   },
   {
     path: '**',

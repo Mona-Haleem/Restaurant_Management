@@ -1,4 +1,6 @@
 import { Routes } from '@angular/router';
+import { authGuard } from '../../core/guards/auth-guard/auth-guard';
+import { roleGuard } from '../../core/guards/role-guard/role-guard';
 
 // import { menuResolver } from './resolvers/menu.resolver';
 // import { orderTrackingResolver } from './resolvers/order-tracking.resolver';
@@ -25,15 +27,21 @@ export const routes: Routes = [
     path: 'checkout',
     loadComponent: () =>
       import('./screens/checkout-page/checkout-page').then((m) => m.CheckoutPage),
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['customer'] },
     //  resolve: { cartData: cartResolver },
   },
   {
     path: 'order/:id',
     loadComponent: () => import('./screens/orders-page/orders-page').then((m) => m.OrdersPage),
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['customer'] },
     //    resolve: { orders: ordersHistoryResolver },
   },
   {
     path: 'orders',
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['customer'] },
     loadComponent: () =>
       import('./screens/order-history-page/order-history-page').then((m) => m.OrderHistoryPage),
     //  resolve: { orders: orderTrackingResolver },
