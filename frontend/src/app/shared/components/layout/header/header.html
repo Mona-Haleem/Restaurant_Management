@@ -1,0 +1,25 @@
+<div id="routes">
+  <img [src]="logoImg()" alt="logo" id="logo" />
+  <nav app-nav [links]="navLinks"></nav>
+</div>
+<div id="actions">
+  @for (item of actions; track item.label) {
+    <button class="btn-text-primary icon" (click)="handleClick(item)">
+      <mat-icon fontSet="material-symbols-outlined">{{ item.icon }}</mat-icon>
+      @if (item.label === 'cart') {
+        @if (count) {
+          <span class="badge">
+            {{ count > 9 ? '9+' : count }}
+          </span>
+        }
+      }
+    </button>
+  }
+</div>
+<app-dropdown-menu
+  [items]="actions"
+  triggerType="avatar"
+  avatarText="M"
+  placement="bottom-end"
+  (itemClick)="handleClick($event)"
+></app-dropdown-menu>

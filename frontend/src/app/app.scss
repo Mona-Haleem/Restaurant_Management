@@ -1,3 +1,41 @@
+@use '../styles/mixins' as m;
+@use '../styles/variables' as v;
+
 main.app-content {
   margin-top: 5rem;
+}
+
+:host {
+  display: block;
+  height: 100%;
+
+  button {
+    position: absolute;
+    bottom: 73px;
+    margin-inline-start: calc(100% - 65px);
+    display: none;
+
+    @include m.responsive(
+      (
+        mobile: (
+          display: block,
+        ),
+      )
+    );
+
+    .badge {
+      width: 15px;
+      height: 15px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background-color: var(--mat-sys-primary);
+      color: white;
+      border-radius: 50%;
+      font-size: 0.5rem;
+    }
+  }
 }

@@ -1,0 +1,55 @@
+@use '../../../../../styles/mixins' as m;
+@use '../../../../../styles/variables' as v;
+
+:host {
+  position: absolute;
+  bottom: 0;
+  overflow: hidden;
+  height: v.$spacing-4xl;
+
+  @include m.row(between);
+
+  background-color: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  padding: v.$spacing-sm v.$spacing-md;
+  padding-top: 0;
+  z-index: 1000;
+  width: 100%;
+  display: none;
+
+  @include m.responsive(
+    (
+      mobile: (
+        display: flex,
+      ),
+    )
+  );
+
+  a {
+    @include m.centred;
+
+    flex-direction: column;
+    transition: all 0.1s ease;
+    text-transform: capitalize;
+    color: var(--color-text-secondary);
+    flex: 1;
+    padding-top: 4px;
+
+    &.active {
+      font-weight: bold;
+      color: var(--color-primary);
+      border-top: 3px solid var(--color-primary);
+    }
+
+    &:hover {
+      scale: 1.1;
+      text-shadow: 0 0 1px var(--color-primary);
+      color: var(--color-primary-highlight);
+    }
+
+    mat-icon {
+      height: 24px;
+      width: 24px;
+    }
+  }
+}

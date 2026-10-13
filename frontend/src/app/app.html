@@ -1,5 +1,16 @@
+<app-header></app-header>
+
 <main class="app-content">
   tablz
   <router-outlet />
   <!-- <app-components></app-components> -->
 </main>
+<button class="btn-primary icon">
+  <mat-icon fontSet="material-symbols-outlined">shopping_cart</mat-icon>
+  @if (count) {
+    <span class="badge">
+      {{ count > 9 ? '9+' : count }}
+    </span>
+  }
+</button>
+<app-bottom-tabs [links]="navLinks"></app-bottom-tabs>

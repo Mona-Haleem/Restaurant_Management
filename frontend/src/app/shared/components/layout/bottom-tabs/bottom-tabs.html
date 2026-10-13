@@ -1,0 +1,15 @@
+@for (link of links(); track link.label) {
+  <a
+    id="{{ link.label }}"
+    routerLink="{{ link.route }}"
+    routerLinkActive="active"
+    [routerLinkActiveOptions]="{ exact: true }"
+  >
+    @if (link.icon) {
+      <mat-icon fontSet="material-symbols-outlined">{{ link.icon }}</mat-icon>
+    }
+    <span class="text-caption">
+      {{ link.label }}
+    </span>
+  </a>
+}

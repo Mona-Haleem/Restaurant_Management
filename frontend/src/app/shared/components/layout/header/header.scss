@@ -1,0 +1,73 @@
+@use '../../../../../styles//variables' as v;
+@use '../../../../../styles/mixins' as m;
+
+:host {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  height: v.$spacing-5xl;
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  padding: v.$spacing-sm v.$spacing-md;
+
+  app-dropdown-menu {
+    display: none;
+
+    @include m.responsive(
+      (
+        mobile: (
+          display: block,
+        ),
+      )
+    );
+  }
+
+  #actions,
+  #routes nav {
+    @include m.responsive(
+      (
+        mobile: (
+          display: none,
+        ),
+      )
+    );
+  }
+
+  button:has(.badge) {
+    position: relative;
+  }
+
+  @include m.row(between);
+  @include m.responsive(
+    (
+      mobile: (
+        height: v.$spacing-4xl,
+      ),
+    )
+  );
+}
+
+#logo {
+  height: 100%;
+}
+
+#routes {
+  height: 100%;
+
+  @include m.row(between);
+}
+
+.badge {
+  width: 15px;
+  height: 15px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  top: 0;
+  right: 0;
+  background-color: var(--mat-sys-primary);
+  color: white;
+  border-radius: 50%;
+  font-size: 0.5rem;
+}
