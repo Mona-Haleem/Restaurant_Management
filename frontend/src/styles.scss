@@ -93,9 +93,10 @@ body {
   // Set a default background, font and text colors for the application using
   // Angular Material's system-level CSS variables. Learn more about these
   // variables at https://material.angular.dev/guide/system-variables
-  background-image: radial-gradient(circle, var(--mat-sys-outline) 1px, transparent 1px);
-  background-size: 35px 35px;
-  color: var(--mat-sys-on-surface);
+  // background-image: radial-gradient(circle, var(--mat-sys-outline) 1px, transparent 1px);
+  // background-size: 35px 35px;
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
   font: var(--mat-sys-body-medium);
   height: 100%;
 

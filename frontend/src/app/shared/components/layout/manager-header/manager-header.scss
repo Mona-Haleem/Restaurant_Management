@@ -1,0 +1,50 @@
+@use '../../../../../styles/mixins' as m;
+
+:host {
+  position: fixed;
+  top: 0;
+  transform: translateX(240px);
+  width: calc(100% - 240px);
+  z-index: 1000;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  background-color: var(--color-bg);
+  border-bottom: 2px solid transparent;
+  transition: all 0.25s ease-in-out;
+  animation: navbar-border linear both;
+  animation-timeline: scroll(root);
+  animation-range: 0 1px;
+
+  @include m.responsive(
+    (
+      tablet: (
+        transform: translate(72px),
+        width: calc(100% - 72px),
+      ),
+    )
+  );
+
+  &:hover {
+    @include m.responsive(
+      (
+        tablet: (
+          transform: translate(240px),
+          width: calc(100% - 240px),
+        ),
+      )
+    );
+  }
+
+  h1 {
+    text-transform: capitalize;
+  }
+}
+
+@keyframes navbar-border {
+  to {
+    border-bottom-color: var(--color-border);
+  }
+}

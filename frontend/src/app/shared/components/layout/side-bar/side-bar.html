@@ -1,0 +1,45 @@
+<div>
+  <img id="logo" [src]="logoImg()" alt="logo" />
+
+  <nav id="routes">
+    @for (link of links(); track link.label) {
+      <a
+        id="{{ link.label }}"
+        routerLink="{{ link.route }}"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: true }"
+      >
+        @if (link.icon) {
+          <mat-icon fontSet="material-symbols-outlined">{{ link.icon }}</mat-icon>
+        }
+        <span class="text-body">
+          {{ link.label }}
+        </span>
+      </a>
+    }
+  </nav>
+</div>
+
+<div id="actions">
+  <div class="action-row">
+    <button class="btn-outline-primary icon" (click)="languageService.toggleLanguage()">
+      <mat-icon fontSet="material-symbols-outlined">{{ actions.language.icon }}</mat-icon>
+      <span class="text-caption">{{ actions.language.label }}</span>
+    </button>
+    <button class="btn-outline-primary icon" (click)="themeService.toggleTheme()">
+      <mat-icon fontSet="material-symbols-outlined">{{ actions.theme.icon }}</mat-icon>
+      <span class="text-caption">{{ actions.theme.label }}</span>
+    </button>
+  </div>
+  <div class="user">
+    <div class="avatar">UI</div>
+    <div class="info">
+      <p class="text-body">User Name</p>
+      <p class="text-caption">Role</p>
+    </div>
+  </div>
+  <button class="btn-outline-primary icon logout-btn">
+    <mat-icon fontSet="material-symbols-outlined">{{ actions.logout.icon }}</mat-icon>
+    <span class="text-caption">{{ actions.logout.label }}</span>
+  </button>
+</div>
