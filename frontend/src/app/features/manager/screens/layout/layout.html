@@ -1,0 +1,45 @@
+<a href="#main-content" class="skip-link">{{ 'navigation.skipToContent' | transloco }}</a>
+@if (!isMobile()) {
+  <app-side-bar [links]="navLinks" [isMobile]="isMobile()" [isTablet]="isTablet()"></app-side-bar>
+}
+<div class="container">
+  <header app-manager-header [headerTitle]="headerTitle()" [isMobile]="isMobile()">
+    @if (isMobile()) {
+      <button
+        type="button"
+        class="btn-outline-primary icon action-btn"
+        id="manager-lang-toggle"
+        [attr.aria-label]="'navigation.toggleLanguage' | transloco"
+        (click)="languageService.toggleLanguage()"
+      >
+        <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">translate</mat-icon>
+        <span class="btn-label">{{ 'navigation.language' | transloco }}</span>
+      </button>
+      <button
+        type="button"
+        class="btn-outline-primary icon action-btn"
+        id="manager-theme-toggle"
+        [attr.aria-label]="
+          themeService.theme() === 'dark'
+            ? ('navigation.switchToLight' | transloco)
+            : ('navigation.switchToDark' | transloco)
+        "
+        (click)="themeService.toggleTheme()"
+      >
+        <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">{{
+          themeService.theme() === 'light' ? 'light_mode' : 'dark_mode'
+        }}</mat-icon>
+        <span class="btn-label">{{
+          (themeService.theme() === 'dark' ? 'navigation.themeDark' : 'navigation.themeLight')
+            | transloco
+        }}</span>
+      </button>
+    }
+  </header>
+  <main id="main-content" class="app-content" tabindex="-1">
+    <router-outlet />
+  </main>
+</div>
+@if (isMobile()) {
+  <app-bottom-tabs [links]="navLinks"></app-bottom-tabs>
+}

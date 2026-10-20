@@ -56,6 +56,8 @@ $spacing-lg: 16px;
 $spacing-xl: 24px;
 $spacing-2xl: 32px;
 $spacing-3xl: 48px;
+$spacing-4xl: 56px;
+$spacing-5xl: 64px;
 
 // Corner Radius
 $radius-xs: 4px;
@@ -67,6 +69,14 @@ $radius-lg: 20px;
 $shadow-light: 0 2px 8px rgb(0 0 0 / 6%);
 $elevation-border-light: 1px solid $border-light;
 $elevation-border-dark: 1px solid $border-dark-elevated;
+
+// breakpoints
+$breakpoints: (
+  mini: 420px,
+  mobile: 640px,
+  tablet: 1024px,
+  desktop: 1440px,
+);
 
 // =============================================================================
 // Alert Severity Colors

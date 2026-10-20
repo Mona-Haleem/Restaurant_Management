@@ -1,0 +1,84 @@
+<div>
+  <img
+    id="logo"
+    [src]="logoImg()"
+    [alt]="'navigation.logoAlt' | transloco"
+    [class.collapse]="isTablet()"
+  />
+  @if (isTablet()) {
+    <img src="logo_small.png" [alt]="'navigation.logoAlt' | transloco" class="expanded" />
+  }
+  <nav id="routes" [attr.aria-label]="'navigation.sideNav' | transloco">
+    @for (link of links(); track link.label) {
+      <a
+        id="{{ link.label }}"
+        [routerLink]="link.route"
+        [class.active]="isActive(link.route)"
+        [attr.aria-current]="isActive(link.route) ? 'page' : null"
+        [attr.aria-label]="'navigation.' + link.label | transloco"
+      >
+        @if (link.icon) {
+          <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">{{
+            link.icon
+          }}</mat-icon>
+        }
+        <span class="text-body" [class.collapse]="isTablet()">
+          {{ 'navigation.' + link.label | transloco }}
+        </span>
+      </a>
+    }
+  </nav>
+</div>
+
+<div id="actions">
+  <div class="action-row">
+    <button
+      type="button"
+      class="btn-outline-primary icon"
+      (click)="languageService.toggleLanguage()"
+      [attr.aria-label]="'navigation.toggleLanguage' | transloco"
+    >
+      <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">{{
+        actions.language.icon
+      }}</mat-icon>
+      <span class="text-caption" [class.collapse]="isTablet()">{{
+        'navigation.language' | transloco
+      }}</span>
+    </button>
+    <button
+      type="button"
+      class="btn-outline-primary icon"
+      (click)="themeService.toggleTheme()"
+      [attr.aria-label]="
+        themeService.theme() === 'dark'
+          ? ('navigation.switchToLight' | transloco)
+          : ('navigation.switchToDark' | transloco)
+      "
+    >
+      <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">{{ themeIcon() }}</mat-icon>
+      <span class="text-caption" [class.collapse]="isTablet()">{{
+        (themeService.theme() === 'dark' ? 'navigation.themeDark' : 'navigation.themeLight')
+          | transloco
+      }}</span>
+    </button>
+  </div>
+  <div class="user">
+    <div class="avatar" aria-hidden="true">UI</div>
+    <div class="info" [class.collapse]="isTablet()">
+      <p class="text-body">{{ 'navigation.userName' | transloco }}</p>
+      <p class="text-caption">{{ 'navigation.role' | transloco }}</p>
+    </div>
+  </div>
+  <button
+    type="button"
+    class="btn-outline-primary icon logout-btn"
+    [attr.aria-label]="'navigation.logout' | transloco"
+  >
+    <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">{{
+      actions.logout.icon
+    }}</mat-icon>
+    <span class="text-caption" [class.collapse]="isTablet()">{{
+      'navigation.logout' | transloco
+    }}</span>
+  </button>
+</div>

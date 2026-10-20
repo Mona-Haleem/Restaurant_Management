@@ -31,6 +31,19 @@
   justify-content: center;
 }
 
+@mixin row($spacing) {
+  display: flex;
+  align-items: center;
+
+  @if $spacing == 'between' {
+    justify-content: space-between;
+  } @else if $spacing == 'around' {
+    justify-content: space-around;
+  } @else {
+    justify-content: center;
+  }
+}
+
 $status-colors: (
   pending: #e8a93a,
   in-preparation: #3b7dd8,
@@ -72,5 +85,21 @@ $status-keys:
     text-transform: uppercase;
 
     @include status(map.get($status-colors, $status));
+  }
+}
+
+@mixin responsive($styles) {
+  @each $breakpoint, $properties in $styles {
+    $width: map.get(v.$breakpoints, $breakpoint);
+
+    @if not $width {
+      @error "Unknown breakpoint: #{$breakpoint}";
+    }
+
+    @media (max-width: $width) {
+      @each $property, $value in $properties {
+        #{$property}: #{$value};
+      }
+    }
   }
 }

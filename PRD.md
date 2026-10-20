@@ -298,6 +298,120 @@ Reasoning: warm terracotta reads as food-appropriate without defaulting to the g
 - **Minimum size:** below ~24px (e.g. a mobile tab-bar icon), drop the tab-notch detail and keep only the plate + checkmark silhouette for legibility.
 
 ---
+### 14.1.1 Layout Foundations (shared by every shell and screen)
+ 
+**Breakpoints** (one shared set of tokens/mixins — no per-component pixel values):
+| Name | Range | Design width | Notes |
+|---|---|---|---|
+| Mobile | 0–639px | 360px (must not break at 320px) | Single column, bottom/sheet-based navigation |
+| Tablet | 640–1023px | 768px | Two columns, top-bar navigation |
+| Window | 1024px+ | 1280px | Sidebars/panels; content centered with a max-width beyond 1440px |
+| ↳ Compact window | 1024–1279px | — | Manager sidebar collapses to a 72px icon rail |
+ 
+**Page gutters & grid:** content padding 16px (mobile) · 24px (tablet) · 32px (window). Grid: 4 columns/16px gutter (mobile) · 8 columns/24px (tablet) · 12 columns/24px (window).
+ 
+**Content max-widths:** Customer 1280px · Manager/Admin 1440px · Worker full-bleed (no max-width) · Auth forms 480px, Role Picker row 960px.
+ 
+**Layering (z-index tokens):** base `0` · sticky bars `10` · floating action buttons `20` · slide-over/side panels `30` · modal backdrop `40` · modals/sheets `50` · toasts `60` · global progress bar `70`.
+ 
+**Shell offset token:** every shell publishes its top-bar height as `--shell-top-offset` (and bottom bar as `--shell-bottom-offset`) so screen-level sticky elements (e.g. the Menu search bar) offset themselves correctly instead of hardcoding pixel values.
+ 
+**Safe areas:** all fixed top/bottom bars add `env(safe-area-inset-*)` padding so nothing sits under a notch or home indicator.
+ 
+**Elements present in every shell:**
+- **Skip-to-content link** — first focusable element, hidden until focused, then shown as a `primary` pill top-start of the screen.
+- **Global progress bar** — 2px `primary` bar pinned to the very top (z70), visible during route transitions and initial data loads.
+- **Language + theme controls** — always reachable (inline icon buttons on larger bars, inside the overflow menu on compact bars). 44px minimum touch target (48px in the Worker shell).
+- **Role badge + "Switch role"** (Phase 1 only) — shows the previewed role and returns to the Role Picker; replaced by a user/account menu once real auth ships in Phase 2.
+- **Toast host** — mobile: bottom-center, 16px above any bottom bar, max 92% width · tablet/window: bottom-start (mirrors in RTL), 24px inset, 360px wide. Auto-dismiss after 4s (6s when it carries an action like "Undo"); stacks up to 3.
+- **Modal host** — mobile: bottom sheet, max-height 90dvh, 20px top radius, 36×4px drag handle in `border` color · tablet/window: centered dialog at 480px (sm) / 560px (md) / 720px (lg), 16px radius, 24px padding. Backdrop is 40% black (60% in dark mode). Focus is trapped inside, `Esc` closes, and focus returns to the element that opened it. Body scroll locks while open.
+- **Route-change focus management** — on navigation, focus moves to the new page's `<h1>` (programmatically focusable) and the title is announced to screen readers.
+**Scroll model:** Customer and Manager use normal page scroll; the Worker board uses a fixed viewport with each column scrolling internally; modals and sheets scroll internally.
+ 
+**Page header pattern** (used inside shells): H1 title (22px on mobile, 28px on larger screens) with an optional back button at the start, an optional caption beneath it, and page-level actions (e.g. "+ Add item") at the end. On mobile, the title lives inside the top bar instead of the content area.
+ 
+**Shell comparison at a glance:**
+|   | Auth | Customer | Worker | Manager / Admin |
+|---|---|---|---|---|
+| Top bar    | none (toggles only) | 56 / 64 / 64px | 48 / 56 / 56px | 56 / 64px / sidebar |
+| Bottom bar | none | tabs (mobile only) | none | tabs (mobile only) |
+| Sidebar | none | none (Menu has its own filter sidebar on window) | none | 240px or 72px rail (window only) |
+| Content width | centered, narrow | max 1280 | full-bleed | max 1440 |
+| Scroll model | page | page | fixed viewport + column scroll | page |
+ 
+---
+ 
+### 14.1.2 Application Shells
+ 
+#### Auth Shell (Role Picker in Phase 1 · Login / Reset Password in Phase 2)
+**Actions:**
+- Toggle language and theme
+- (No navigation — this shell exists only before a role/account is active)
+**Design:**
+- **Mobile:** No bars. `bg` background; logo lockup centered at the top (32px top margin); content vertically centered when shorter than the viewport, top-aligned with 32px padding when taller; language and theme as two 44px icon buttons pinned top-end with a 16px inset.
+- **Tablet:** Same structure; content constrained to a 560px centered column.
+- **Window:** Same structure; content max-width 960px (Role Picker row) or 480px (forms), centered. Plain `bg` with no decorative imagery, so the first screen loads instantly.
+**State-driven changes:**
+- If a role/session is already active, visiting the root redirects to that role's home instead of showing the Auth shell
+- Phase 2 hosts Login, Reset Password, and Employee Registration inside this same shell
+#### Customer Shell
+**Actions:**
+- Move between Menu and Orders
+- Open the cart
+- Go back from nested screens (Cart, Checkout, Order Tracking detail)
+- Toggle language/theme, switch role (Phase 1)
+**Design:**
+- **Mobile:** Sticky top app bar, 56px (`surface`, 1px `border` bottom): it shows the logo icon  at the start , an avatar button at the end opens a small `surface` popover (Language, Theme, Switch role). Sticky bottom tab bar, 64px + safe area (`surface`, 1px `border` top) with two tabs in Phase 1 — Menu and Orders — each a 24px icon over a 12px label; the active tab uses `primary` for icon + label with a 3px `primary` indicator on its top edge, the inactive tab uses `text-secondary`. The floating cart pill sits 16px above the bottom bar. The bottom bar hides on Checkout (focused flow) and while the on-screen keyboard is open.
+- **Tablet:** Top app bar, 64px: logo lockup at the start, inline nav links (Menu, Orders — 15px SemiBold; the active link gets a 2px `primary` bottom border) beside it, and at the end a cart icon button with a count badge (opens the 400px slide-over cart), then language and theme icon buttons, then an overflow menu for Switch role. No bottom bar.
+- **Window:** Same 64px top bar; content centered within 1280px. On the Menu route the layout is the 240px filter sidebar + item grid + permanent 320px cart panel, so the top-bar cart button is hidden there; on every other route the cart button reappears and opens the slide-over. No footer in Phase 1.
+**State-driven changes:**
+- Non-empty cart → count badge on the cart button (shows "9+" beyond 9); on mobile the floating pill carries the count and total instead
+- An order in a non-terminal status exists → 8px dot on the Orders tab/link, colored with that order's current status color
+- Nested route → back button replaces the logo; Checkout hides the bottom bar and its back action returns to Cart
+- RTL → bar item order, tab order, back-chevron direction, and sidebar/cart-panel sides all mirror
+- Phase 2: tabs become Menu · Branches · Orders · Account; a selected-branch chip appears in the top bar (tap opens the Branch Picker); the account menu replaces "Switch role"
+- Phase 3: the top bar shows the selected restaurant's logo/name (tenant branding) instead of the Tablz lockup; a notification bell is added next to the toggles
+#### Worker Shell
+**Actions:**
+- Switch between order-status views (mobile tabs)
+- Open the Waste Form
+- Toggle language/theme, switch role (Phase 1)
+**Design:**
+- **Mobile:** Denser, speed-first chrome. Sticky top bar, 48px: logo icon (24px) and restaurant/branch name (14px SemiBold, truncated) at the start; theme toggle and an overflow menu (Language, Switch role) at the end. No bottom bar — the Board's status tabs (Pending / In Prep / Ready) sit directly beneath the top bar as the shell's primary navigation. The Waste floating action button is 56px, 16px from the end edge, with safe-area padding. All touch targets are at least 48px, because workers are often wearing gloves or in a hurry.
+- **Tablet:** Top bar, 56px: logo icon + branch name at the start; in the center read-only live-count chips (Pending *n* · In Prep *n* · Ready *n*), each tinted with its status color; language, theme, and Switch role as visible icon buttons at the end (no overflow).
+- **Window:** Same 56px top bar, full-bleed with no max-width. The content area is exactly `100dvh − 56px` with no page-level scroll — each Kanban column scrolls independently. "Log waste" becomes a `primary` button at the end of the top bar instead of a floating button.
+**State-driven changes:**
+- A new pending order → the Pending count chip pulses once (amber) for ~1s
+- Phase 2: a notification bell slot is added between the count chips and the toggles; workers with extra permissions (e.g. menu or inventory management) get a "Manage" entry in the overflow menu that opens only their permitted Manager sections inside the Manager shell
+- Phase 3 (offline support): while offline the top bar gains a 4px `pending`-colored bottom stripe plus a 32px "Offline — changes will sync when you reconnect" banner; a queued-actions count shows beside it
+- RTL → the whole bar mirrors; the Waste button moves to the opposite corner
+#### Manager / Admin Shell
+**Actions:**
+- Navigate between Dashboard, Menu, Inventory, Reports, Staff
+- Go back from full-screen forms on mobile
+- Toggle language/theme, switch role (Phase 1)
+**Design:**
+- **Mobile:** Sticky top bar, 56px: logo icon (or a back chevron on full-screen forms such as Add/Edit Item) at the start, the section title (H3) centered, an overflow menu (Language, Theme, Switch role) at the end. Sticky bottom tab bar, 64px + safe area, five tabs — Dashboard, Menu, Inventory, Reports, Staff — each a 24px icon over a 12px label, active state in `primary` with a top indicator. If more than five destinations exist (Phase 2+), the fifth tab becomes "More" and opens a bottom sheet listing the rest. Floating action buttons sit 16px above the bar.
+- **Tablet:** Top bar, 64px: logo at the start; the navigation tabs inline beside it (icon + 15px label; active tab has a 2px `primary` bottom border); language/theme icons and the Switch role overflow at the end. Tabs that don't fit collapse into a trailing "More ▾" menu.
+- **Window:** Persistent left sidebar on `surface` with a 1px `border` edge on its content side. Width is 240px at ≥1280px and a 72px icon rail at 1024–1279px (the rail expands to a 240px overlay on hover or click). Sidebar layout, top to bottom: a 64px logo area (full lockup, or icon only in the rail); nav items grouped under small 12px uppercase group labels — Operations (Dashboard, Menu, Inventory), Insights (Reports), Team (Staff) — each item 44px tall with a 20px icon and a 15px label and a 12px radius, hover tinted `bg`, **active = `primary` text, 12% `primary` tint background, and a 3px `primary` bar on the inline-start edge**; pinned to the bottom, the theme toggle, language toggle, and the role badge ("Manager") with a Switch role button. The content region has a 72px sticky page header (H1 28px Bold at the start, page-level actions such as "+ Add item" at the end; it gains a bottom `border` once content scrolls under it), 32px padding, and a 1440px max-width centered.
+**State-driven changes:**
+- Items below their low-stock threshold → red numeric badge on the Inventory nav item (a dot in the icon rail and in the mobile tab)
+- Unflagged vs. flagged anomalies → a dot on the Reports nav item when the current period has anomalies
+- Role = Admin → same shell and Phase 1 navigation as Manager; the nav list grows by role and phase: Phase 2 adds Offers and Reservations (Operations) and Branches and detailed Permissions (Team, admin only); Phase 3 adds a Settings group (Business Archetype, Branding, Loyalty)
+- Branch context: Phase 1 shows the single restaurant name in the sidebar header/top bar; Phase 2 managers see a static branch label, admins get a branch switcher dropdown there
+- Navigating away from a form with unsaved changes → shell-level confirmation dialog ("Discard changes?")
+- RTL → the sidebar moves to the right edge, its active bar and borders move to the inline-start side, and the tab order reverses
+#### System-state screens (404 · Access denied · Unexpected error)
+**Actions:**
+- Return to the role's home screen
+- Go back
+- Retry (unexpected errors only)
+**Design:**
+- **Mobile / Tablet / Window:** Rendered inside the user's current shell whenever a role is active (so navigation stays available as an escape route), otherwise inside the Auth shell. Content is centered in the content area: a 160px illustration, H2 title, 15px `text-secondary` explanation (max 40ch), a `primary` "Go home" button and a secondary "Back" button; the unexpected-error variant adds a "Try again" button and a collapsible technical-details section hidden by default.
+**State-driven changes:**
+- Access-denied appears when a role navigates to another role's area; its "Go home" goes to the *current* role's home, not the Role Picker
+- Error messages are fully translated and mirror correctly in RTL
+---
 
 ### 14.2 Phase 1 Screens
 

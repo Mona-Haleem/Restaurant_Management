@@ -4,3 +4,5 @@ npx lint-staged
 echo "🧪 Running tests..."
 npm test
 echo "✅ Pre-commit checks passed!"
+
+#type must be one of [build, chore, ci, docs, feat, fix, perf, refactor, revert, style, test]

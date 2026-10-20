@@ -7,18 +7,18 @@ interface User {
   name: string;
   email: string;
 }
-// const dummyUser: User = {
-//   token: 'dummy',
-//   role: 'manager',
-//   name: 'John Doe',
-//   email: 'user@test.com',
-// }
+const dummyUser: User = {
+  token: 'dummy',
+  role: 'manager',
+  name: 'John Doe',
+  email: 'user@test.com',
+};
 
 @Injectable({
   providedIn: 'root',
 })
 export class AuthService {
-  currentUser = signal<User | null>(null);
+  currentUser = signal<User | null>(dummyUser);
   isAuthenticated(): boolean {
     return this.currentUser() !== null;
   }
