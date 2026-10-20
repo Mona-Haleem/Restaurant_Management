@@ -1,0 +1,74 @@
+@use '../../../../../styles/mixins' as m;
+@use '../../../../../styles/variables' as v;
+
+.skip-link {
+  position: absolute;
+  top: -999px;
+  inset-inline-start: 16px;
+  z-index: 10000;
+  padding: 8px 16px;
+  background-color: var(--color-primary);
+  color: #fff;
+  border-radius: 4px;
+  font-weight: 600;
+  text-decoration: none;
+
+  &:focus {
+    top: 16px;
+    outline: 2px solid var(--color-primary-highlight);
+  }
+}
+
+:host {
+  display: flex;
+  overflow: hidden;
+  height: 100%;
+  width: 100%;
+  position: relative;
+
+  div.container {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+  }
+
+  main {
+    overflow: auto;
+    flex: 1;
+    padding-bottom: 0;
+    outline: none;
+
+    @include m.responsive(
+      (
+        mobile: (
+          padding-bottom: v.$spacing-4xl,
+        ),
+      )
+    );
+  }
+
+  .action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+
+    .btn-label {
+      @include m.responsive(
+        (
+          mobile: (
+            display: none,
+          ),
+        )
+      );
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 2px;
+      border-radius: 4px;
+    }
+  }
+}

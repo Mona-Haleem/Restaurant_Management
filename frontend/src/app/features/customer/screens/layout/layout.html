@@ -1,0 +1,25 @@
+<a href="#main-content" class="skip-link">{{ 'navigation.skipToContent' | transloco }}</a>
+<header app-header [isMobile]="isMobile()" [count]="count"></header>
+<main id="main-content" class="app-content" tabindex="-1">
+  <router-outlet />
+</main>
+@if (isMobile()) {
+  <button
+    type="button"
+    class="btn-primary icon floating-cart-btn"
+    [attr.aria-label]="
+      count
+        ? ('navigation.cartWithCount' | transloco: { count: count })
+        : ('navigation.cart' | transloco)
+    "
+  >
+    <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">shopping_cart</mat-icon>
+    @if (count) {
+      <span class="badge" aria-hidden="true">
+        {{ count > 9 ? '9+' : count }}
+      </span>
+      <span class="sr-only">{{ 'navigation.cartBadge' | transloco: { count: count } }}</span>
+    }
+  </button>
+  <app-bottom-tabs [links]="navLinks"></app-bottom-tabs>
+}

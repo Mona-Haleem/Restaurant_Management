@@ -4,7 +4,7 @@
   @include m.row(between);
 
   a {
-    margin-left: 20px;
+    margin-inline-start: 20px;
     transition: all 0.1s ease;
     text-transform: capitalize;
     color: var(--color-text-secondary);
@@ -17,9 +17,15 @@
     }
 
     &:hover {
-      scale: 1.1;
+      scale: 1.05;
       text-shadow: 0 0 1px var(--color-primary);
       color: var(--color-primary-highlight);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 4px;
+      border-radius: 4px;
     }
   }
 }

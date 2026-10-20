@@ -15,15 +15,7 @@
   padding-top: 0;
   z-index: 1000;
   width: 100%;
-  display: none;
-
-  @include m.responsive(
-    (
-      mobile: (
-        display: flex,
-      ),
-    )
-  );
+  display: flex;
 
   a {
     @include m.centred;
@@ -42,14 +34,30 @@
     }
 
     &:hover {
-      scale: 1.1;
+      scale: 1.05;
       text-shadow: 0 0 1px var(--color-primary);
       color: var(--color-primary-highlight);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: -2px;
+      border-radius: 4px;
     }
 
     mat-icon {
       height: 24px;
       width: 24px;
+    }
+
+    .text-caption {
+      @include m.responsive(
+        (
+          mini: (
+            display: none,
+          ),
+        )
+      );
     }
   }
 }

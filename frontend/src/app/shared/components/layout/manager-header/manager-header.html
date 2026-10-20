@@ -1,4 +1,9 @@
-<h1 class="text-h1">{{ headerTitle() }}</h1>
-<div id="actions">
+<h1 class="text-h1">{{ translatedTitle() }}</h1>
+<div
+  id="actions"
+  class="manager-header-actions"
+  role="toolbar"
+  [attr.aria-label]="'navigation.actions' | transloco"
+>
   <ng-content></ng-content>
 </div>

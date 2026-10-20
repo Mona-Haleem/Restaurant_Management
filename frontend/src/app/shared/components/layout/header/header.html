@@ -1,25 +1,37 @@
 <div id="routes">
-  <img [src]="logoImg()" alt="logo" id="logo" />
-  <nav app-nav [links]="navLinks"></nav>
-</div>
-<div id="actions">
-  @for (item of actions; track item.label) {
-    <button class="btn-text-primary icon" (click)="handleClick(item)">
-      <mat-icon fontSet="material-symbols-outlined">{{ item.icon }}</mat-icon>
-      @if (item.label === 'cart') {
-        @if (count) {
-          <span class="badge">
-            {{ count > 9 ? '9+' : count }}
-          </span>
-        }
-      }
-    </button>
+  <img [src]="logoImg()" [alt]="'navigation.logoAlt' | transloco" id="logo" />
+  @if (!isMobile()) {
+    <nav app-nav [links]="navLinks"></nav>
   }
 </div>
-<app-dropdown-menu
-  [items]="actions"
-  triggerType="avatar"
-  avatarText="M"
-  placement="bottom-end"
-  (itemClick)="handleClick($event)"
-></app-dropdown-menu>
+
+@if (isMobile()) {
+  <app-dropdown-menu
+    [items]="mobileActions()"
+    triggerType="avatar"
+    avatarText="M"
+    placement="bottom-end"
+    (itemClick)="handleClick($event)"
+  >
+  </app-dropdown-menu>
+} @else {
+  <div id="actions" role="toolbar" [attr.aria-label]="'navigation.actions' | transloco">
+    @for (item of actions(); track item.id) {
+      <button
+        type="button"
+        class="btn-text-primary icon"
+        [id]="'header-action-' + item.id"
+        [attr.aria-label]="getActionAriaLabel(item)"
+        (click)="handleClick(item)"
+      >
+        <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">{{ item.icon }}</mat-icon>
+        @if (item.id === 'cart' && count()) {
+          <span class="badge" aria-hidden="true">
+            {{ count() > 9 ? '9+' : count() }}
+          </span>
+          <span class="sr-only">{{ 'navigation.cartBadge' | transloco: { count: count() } }}</span>
+        }
+      </button>
+    }
+  </div>
+}
