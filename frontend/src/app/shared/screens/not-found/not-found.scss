@@ -1,0 +1,25 @@
+// ── Host: full-viewport centred layout ──────────────────────────
+// (must live here — :host is not reachable from global CSS)
+@use '../../../../styles/variables' as v;
+
+:host {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: v.$spacing-xl v.$spacing-lg;
+  background-color: var(--color-bg);
+  box-sizing: border-box;
+}
+
+// ── Per-variant accent: pending (yellow-orange) ──────────────────
+.icon-badge {
+  color: v.$status-pending;
+}
+
+.error-code {
+  color: v.$status-pending;
+
+  .dot {
+    background-color: v.$status-pending;
+  }
+}

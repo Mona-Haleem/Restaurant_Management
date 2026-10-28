@@ -34,5 +34,62 @@
     "logoAlt": "Restaurant logo",
     "home": "Home",
     "accountMenu": "Account menu"
+  },
+  "errors": {
+    "notFound": {
+      "code": "ERR-404 · PAGE NOT FOUND",
+      "title": "Page Not Found",
+      "description": "The page you're looking for doesn't exist or has been moved. Let's get you back on track.",
+      "pageTitle": "Page Not Found — Tablz",
+      "metaDescription": "The requested page could not be found on Tablz.",
+      "actionsLabel": "Error recovery actions"
+    },
+    "unauthorized": {
+      "code": "ERR-403 · AUTHORIZATION REQUIRED",
+      "title": "Access Restricted",
+      "description": "You don't have permission to access this area. Please return to your assigned section or switch roles.",
+      "pageTitle": "Access Denied — Tablz",
+      "metaDescription": "You do not have permission to view this page.",
+      "actionsLabel": "Error recovery actions"
+    },
+    "unexpected": {
+      "code": "ERR-500 · UNEXPECTED ERROR",
+      "title": "Something Went Wrong",
+      "description": "An unexpected error occurred. We're sorry for the inconvenience — please try again or head back to the home page.",
+      "tryAgain": "Try Again",
+      "pageTitle": "Error — Tablz",
+      "actionsLabel": "Error recovery actions"
+    },
+    "goHome": "Go Home",
+    "goBack": "Go Back",
+    "simulator": {
+      "title": "System State Simulator",
+      "subtitle": "Tablz Blueprint 14.1.2 · Resilient fallback modes",
+      "accessDenied": "Access Denied",
+      "notFound": "404 Not Found",
+      "unexpected": "Unexpected Error"
+    },
+    "quickNav": {
+      "floorGrid": {
+        "title": "Floor Grid",
+        "description": "Check table map, assignments, and guest capacity directly.",
+        "action": "Open Floor Map"
+      },
+      "kitchenBoard": {
+        "title": "Kitchen Board",
+        "description": "Real-time KDS tickets, order timers, and item expediting.",
+        "action": "Active Tickets"
+      },
+      "roleSwitcher": {
+        "title": "Role Switcher",
+        "description": "Elevate permissions with manager passkey or shift PIN.",
+        "action": "Enter PIN Pass"
+      }
+    },
+    "status": {
+      "gateway": "Station Gateway: 192.168.4.12",
+      "sessionTtl": "Session TTL: 05h 42m",
+      "dispatch": "Front-of-House Dispatch: Ext 201"
+    }
   }
 }

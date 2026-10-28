@@ -1,2 +1,5 @@
-<router-outlet />
-<main class="app-content">tablz</main>
+@if (errorState.hasError()) {
+  <app-error-boundary />
+} @else {
+  <router-outlet />
+}

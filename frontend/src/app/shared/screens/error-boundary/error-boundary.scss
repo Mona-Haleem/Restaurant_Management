@@ -1,0 +1,25 @@
+// ── Host: full-viewport centred layout ──────────────────────────
+// (must live here — :host is not reachable from global CSS)
+@use '../../../../styles/variables' as v;
+
+:host {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: v.$spacing-xl v.$spacing-lg;
+  background-color: var(--color-bg);
+  box-sizing: border-box;
+}
+
+// ── Per-variant accent: error (CSS custom property) ─────────────
+.icon-badge {
+  color: var(--color-error);
+}
+
+.error-code {
+  color: var(--color-error);
+
+  .dot {
+    background-color: var(--color-error);
+  }
+}

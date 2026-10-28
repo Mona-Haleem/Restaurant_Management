@@ -10,7 +10,7 @@ export const routes: Routes = [
       import('./shared/screens/role-picker/role-picker').then((m) => m.RolePicker),
   },
   {
-    path: 'customer',
+    path: '',
     loadChildren: () => import('./features/customer/routes').then((m) => m.routes),
   },
   {
@@ -30,12 +30,22 @@ export const routes: Routes = [
     loadComponent: () => import('./shared/screens/auth/auth').then((m) => m.Auth),
   },
   {
-    path: 'unauthorized',
-    loadComponent: () =>
-      import('./shared/screens/unauthorized/unauthorized').then((m) => m.Unauthorized),
-  },
-  {
-    path: '**',
-    loadComponent: () => import('./shared/screens/not-found/not-found').then((m) => m.NotFound),
+    path: '',
+    loadComponent: () => import('./shared/screens/layout/layout').then((m) => m.Layout),
+    children: [
+      {
+        path: 'unauthorized',
+        loadComponent: () =>
+          import('./shared/screens/unauthorized/unauthorized').then((m) => m.Unauthorized),
+      },
+      {
+        path: 'not-found',
+        loadComponent: () => import('./shared/screens/not-found/not-found').then((m) => m.NotFound),
+      },
+      {
+        path: '**',
+        loadComponent: () => import('./shared/screens/not-found/not-found').then((m) => m.NotFound),
+      },
+    ],
   },
 ];

@@ -1,0 +1,392 @@
+@use './variables' as v;
+@use './mixins' as m;
+
+// ── Error page host — full-viewport centred layout ──────────────
+@mixin error-page-host {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: v.$spacing-xl v.$spacing-lg;
+  background-color: var(--color-bg);
+  box-sizing: border-box;
+}
+
+// ── Outer Shell & Layout ─────────────────────────────────────────
+@mixin error-shell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 820px;
+  gap: v.$spacing-xl;
+  margin: 0 auto;
+}
+
+// ── Simulator Bar (Top Bar) ───────────────────────────────────────
+@mixin error-simulator-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 16px;
+  background-color: color-mix(in srgb, var(--color-primary) 5%, var(--color-surface));
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  flex-wrap: wrap;
+  gap: v.$spacing-md;
+
+  .simulator-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    .simulator-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+      color: var(--color-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .simulator-info {
+      display: flex;
+      flex-direction: column;
+
+      .simulator-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--color-text-primary);
+      }
+
+      .simulator-sub {
+        font-size: 11px;
+        color: var(--color-text-secondary);
+      }
+    }
+  }
+
+  .simulator-tabs {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+
+    .simulator-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+      color: var(--color-text-secondary);
+      background: transparent;
+
+      .material-symbols-outlined {
+        font-size: 16px;
+      }
+
+      &:hover:not(.active) {
+        background-color: color-mix(in srgb, var(--color-primary) 8%, transparent);
+        color: var(--color-text-primary);
+      }
+
+      &.active {
+        background-color: #943c08;
+        color: #fff;
+        border-color: #943c08;
+      }
+    }
+  }
+}
+
+// ── Card container ──────────────────────────────────────────────
+@mixin error-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 640px;
+  width: 100%;
+  padding: 36px 40px;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 22px;
+  box-shadow: 0 10px 30px rgb(43 36 32 / 4%);
+  gap: v.$spacing-sm;
+  box-sizing: border-box;
+
+  @media (width <= 640px) {
+    padding: 24px 20px;
+  }
+}
+
+// ── Icon assembly (cloche illustration + badge) ──────────────────
+@mixin error-icon-wrap {
+  position: relative;
+  width: 170px;
+  height: 110px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: v.$spacing-sm;
+
+  &::before {
+    content: '';
+    position: absolute;
+    width: 130px;
+    height: 90px;
+    border-radius: 50%;
+    background: radial-gradient(
+      circle,
+      color-mix(in srgb, var(--color-primary) 14%, transparent) 0%,
+      transparent 70%
+    );
+    pointer-events: none;
+  }
+
+  .cloche-svg {
+    width: 140px;
+    height: 90px;
+    display: block;
+  }
+
+  .icon-main {
+    display: none; // replaced by pixel-accurate cloche SVG
+  }
+}
+
+@mixin error-icon-badge {
+  position: absolute;
+  top: 14px;
+  right: 28px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+
+  @include m.centred;
+
+  font-size: 16px;
+  background-color: var(--color-surface);
+  border: 2px solid currentcolor;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 8%);
+
+  .material-symbols-outlined {
+    font-size: 16px;
+  }
+}
+
+// ── Error code label ────────────────────────────────────────────
+@mixin error-code {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: v.$font-family-base;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-top: v.$spacing-xs;
+
+  .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+}
+
+// ── Title ───────────────────────────────────────────────────────
+@mixin error-title {
+  font-family: v.$font-family-base;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--color-text-primary);
+  margin: 4px 0;
+
+  @media (width <= 640px) {
+    font-size: 20px;
+  }
+}
+
+// ── Description ─────────────────────────────────────────────────
+@mixin error-description {
+  font-family: v.$font-family-base;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+  max-width: 480px;
+}
+
+// ── Action buttons row ──────────────────────────────────────────
+@mixin error-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+
+  .btn-primary,
+  .action-btn-primary {
+    background-color: #943c08;
+    color: #fff;
+    padding: 12px 22px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+
+    &:hover {
+      background-color: #7b3105;
+    }
+  }
+
+  .btn-outline-primary,
+  .action-btn-secondary {
+    background-color: color-mix(in srgb, var(--color-primary) 8%, var(--color-surface));
+    color: var(--color-text-primary);
+    padding: 12px 22px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background-color 0.15s ease;
+
+    &:hover {
+      background-color: color-mix(in srgb, var(--color-primary) 14%, var(--color-surface));
+    }
+  }
+
+  .material-symbols-outlined {
+    font-size: 18px;
+  }
+}
+
+// ── Quick Navigation Cards ──────────────────────────────────────
+@mixin error-quick-nav {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  width: 100%;
+
+  @media (width <= 768px) {
+    grid-template-columns: 1fr;
+  }
+
+  .quick-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 18px 20px;
+    background-color: color-mix(in srgb, var(--color-primary) 4%, var(--color-surface));
+    border: 1px solid var(--color-border);
+    border-radius: 14px;
+    text-decoration: none;
+    transition:
+      transform 0.15s ease,
+      box-shadow 0.15s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgb(43 36 32 / 5%);
+    }
+
+    .card-icon-wrap {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+      color: #943c08;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 10px;
+
+      .material-symbols-outlined {
+        font-size: 18px;
+      }
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--color-text-primary);
+      margin-bottom: 4px;
+    }
+
+    .card-desc {
+      font-size: 12px;
+      line-height: 1.45;
+      color: var(--color-text-secondary);
+      margin-bottom: 12px;
+      text-align: start;
+    }
+
+    .card-link {
+      font-size: 13px;
+      font-weight: 600;
+      color: #943c08;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: auto;
+
+      .material-symbols-outlined {
+        font-size: 16px;
+        transition: transform 0.15s ease;
+      }
+
+      &:hover .material-symbols-outlined {
+        transform: translateX(3px);
+      }
+    }
+  }
+}
+
+// ── Status Indicators Bar ───────────────────────────────────────
+@mixin error-status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  padding-bottom: v.$spacing-md;
+
+  .status-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    .material-symbols-outlined {
+      font-size: 15px;
+    }
+  }
+
+  .status-separator {
+    opacity: 0.5;
+  }
+}

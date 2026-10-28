@@ -1,0 +1,123 @@
+<section class="error-page" role="alert" aria-labelledby="error-boundary-title">
+  <div class="error-shell">
+    <!-- Main 500 Card -->
+    <div class="error-card">
+      <div class="icon-wrap" aria-hidden="true">
+        <svg
+          class="cloche-svg"
+          viewBox="0 0 160 100"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <ellipse cx="80" cy="55" rx="55" ry="32" fill="#fcf4ed" />
+          <path
+            d="M30 76 C30 38, 52 24, 80 24 C108 24, 130 38, 130 76 Z"
+            fill="#faebe1"
+            stroke="#f0d5c2"
+            stroke-width="1.5"
+          />
+          <circle cx="80" cy="20" r="7" fill="#8c360c" />
+          <rect x="22" y="74" width="116" height="8" rx="4" fill="#8c360c" />
+        </svg>
+        <span class="icon-badge">
+          <span class="material-symbols-outlined">priority_high</span>
+        </span>
+      </div>
+
+      <p class="error-code">
+        <span class="dot" aria-hidden="true"></span>
+        {{ 'errors.unexpected.code' | transloco }}
+      </p>
+
+      <h1 id="error-boundary-title" class="error-title">
+        {{ 'errors.unexpected.title' | transloco }}
+      </h1>
+
+      <p class="error-description">
+        {{ 'errors.unexpected.description' | transloco }}
+      </p>
+
+      <div
+        class="error-actions"
+        role="group"
+        [attr.aria-label]="'errors.unexpected.actionsLabel' | transloco"
+      >
+        <button
+          type="button"
+          class="btn-primary btn-lg"
+          id="error-boundary-try-again"
+          (click)="tryAgain()"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">refresh</span>
+          {{ 'errors.unexpected.tryAgain' | transloco }}
+        </button>
+        <button
+          type="button"
+          class="btn-outline-primary btn-lg"
+          id="error-boundary-go-home"
+          (click)="goHome()"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">home</span>
+          {{ 'errors.goHome' | transloco }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Quick Navigation Cards -->
+    <!-- <div class="error-quick-nav">
+      <a routerLink="/customer" class="quick-card" (click)="errorState.clearError()">
+        <div class="card-icon-wrap" aria-hidden="true">
+          <span class="material-symbols-outlined">table_restaurant</span>
+        </div>
+        <h2 class="card-title">{{ 'errors.quickNav.floorGrid.title' | transloco }}</h2>
+        <p class="card-desc">{{ 'errors.quickNav.floorGrid.description' | transloco }}</p>
+        <span class="card-link">
+          {{ 'errors.quickNav.floorGrid.action' | transloco }}
+          <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+        </span>
+      </a>
+
+      <a routerLink="/worker" class="quick-card" (click)="errorState.clearError()">
+        <div class="card-icon-wrap" aria-hidden="true">
+          <span class="material-symbols-outlined">soup_kitchen</span>
+        </div>
+        <h2 class="card-title">{{ 'errors.quickNav.kitchenBoard.title' | transloco }}</h2>
+        <p class="card-desc">{{ 'errors.quickNav.kitchenBoard.description' | transloco }}</p>
+        <span class="card-link">
+          {{ 'errors.quickNav.kitchenBoard.action' | transloco }}
+          <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+        </span>
+      </a>
+
+      <a routerLink="/" class="quick-card" (click)="errorState.clearError()">
+        <div class="card-icon-wrap" aria-hidden="true">
+          <span class="material-symbols-outlined">badge</span>
+        </div>
+        <h2 class="card-title">{{ 'errors.quickNav.roleSwitcher.title' | transloco }}</h2>
+        <p class="card-desc">{{ 'errors.quickNav.roleSwitcher.description' | transloco }}</p>
+        <span class="card-link">
+          {{ 'errors.quickNav.roleSwitcher.action' | transloco }}
+          <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+        </span>
+      </a>
+    </div> -->
+
+    <!-- Status Indicators Bar
+    <footer class="error-status-bar">
+      <span class="status-item">
+        <span class="material-symbols-outlined" aria-hidden="true">wifi</span>
+        {{ 'errors.status.gateway' | transloco }}
+      </span>
+      <span class="status-separator" aria-hidden="true">•</span>
+      <span class="status-item">
+        <span class="material-symbols-outlined" aria-hidden="true">schedule</span>
+        {{ 'errors.status.sessionTtl' | transloco }}
+      </span>
+      <span class="status-separator" aria-hidden="true">•</span>
+      <span class="status-item">
+        <span class="material-symbols-outlined" aria-hidden="true">headset_mic</span>
+        {{ 'errors.status.dispatch' | transloco }}
+      </span>
+    </footer> -->
+  </div>
+</section>
