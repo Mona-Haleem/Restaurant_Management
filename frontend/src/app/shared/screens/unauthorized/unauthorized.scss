@@ -1,0 +1,58 @@
+@use '../../../../styles/error-pages' as ep;
+@use '../../../../styles/variables' as v;
+
+:host {
+  @include ep.error-page-host;
+}
+
+.error-shell {
+  @include ep.error-shell;
+}
+
+.error-simulator-bar {
+  @include ep.error-simulator-bar;
+}
+
+.error-card {
+  @include ep.error-card;
+}
+
+.icon-wrap {
+  @include ep.error-icon-wrap;
+}
+
+.icon-badge {
+  @include ep.error-icon-badge;
+
+  color: #943c08;
+}
+
+.error-code {
+  @include ep.error-code;
+
+  color: #943c08;
+
+  .dot {
+    background-color: #943c08;
+  }
+}
+
+.error-title {
+  @include ep.error-title;
+}
+
+.error-description {
+  @include ep.error-description;
+}
+
+.error-actions {
+  @include ep.error-actions;
+}
+
+.error-quick-nav {
+  @include ep.error-quick-nav;
+}
+
+.error-status-bar {
+  @include ep.error-status-bar;
+}
