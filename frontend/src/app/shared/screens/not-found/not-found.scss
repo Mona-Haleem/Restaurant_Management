@@ -1,58 +1,25 @@
-@use '../../../../styles/error-pages' as ep;
+// ── Host: full-viewport centred layout ──────────────────────────
+// (must live here — :host is not reachable from global CSS)
 @use '../../../../styles/variables' as v;
 
 :host {
-  @include ep.error-page-host;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: v.$spacing-xl v.$spacing-lg;
+  background-color: var(--color-bg);
+  box-sizing: border-box;
 }
 
-.error-shell {
-  @include ep.error-shell;
-}
-
-.error-simulator-bar {
-  @include ep.error-simulator-bar;
-}
-
-.error-card {
-  @include ep.error-card;
-}
-
-.icon-wrap {
-  @include ep.error-icon-wrap;
-}
-
+// ── Per-variant accent: pending (yellow-orange) ──────────────────
 .icon-badge {
-  @include ep.error-icon-badge;
-
   color: v.$status-pending;
 }
 
 .error-code {
-  @include ep.error-code;
-
   color: v.$status-pending;
 
   .dot {
     background-color: v.$status-pending;
   }
-}
-
-.error-title {
-  @include ep.error-title;
-}
-
-.error-description {
-  @include ep.error-description;
-}
-
-.error-actions {
-  @include ep.error-actions;
-}
-
-.error-quick-nav {
-  @include ep.error-quick-nav;
-}
-
-.error-status-bar {
-  @include ep.error-status-bar;
 }

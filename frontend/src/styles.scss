@@ -11,6 +11,7 @@
 @use './styles/tables';
 @use './styles/variables' as v;
 @use './styles/mixins' as m;
+@use './styles/error-pages';
 
 :root {
   color-scheme: light dark;
@@ -134,3 +135,7 @@ a {
 //   gap: 1rem;
 //   padding: 1rem;
 // }
+
+// ── Shared error-page layout classes ─────────────────────────────
+// Emitted once globally so error-boundary / not-found / unauthorized
+// components stay under the anyComponentStyle budget.
