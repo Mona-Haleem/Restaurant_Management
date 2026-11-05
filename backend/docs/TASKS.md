@@ -7,7 +7,7 @@ Ticket details live in `docs/ROADMAP.md` §6. This file tracks order, status and
 
 | Order | Ticket | Title | Who | Depends on | Blocked by (ARCHITECTURE §10) | Status | PR |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | B101 | Workspace, tooling and CI | 🤝 | — | — | todo | |
+| 1 | B101 | Workspace, tooling and CI | 🤝 | — | — | in review | |
 | 2 | B201 | Local DB, Supabase projects, env guards | 🤝 | B101 | — | todo | |
 | 3 | B301 | Prisma schema and first migration | 🤖 | B201 | — | todo | |
 | 4 | B302 | Schema review and ADRs | 🤖 | B301 | — | todo | |

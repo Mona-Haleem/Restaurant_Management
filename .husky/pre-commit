@@ -3,6 +3,10 @@ echo "🔍 Running pre-commit checks..."
 npx lint-staged
 echo "🧪 Running tests..."
 npm test
+if git diff --cached --name-only | grep -q '^backend/'; then
+  echo "🧪 Running backend unit tests..."
+  npm --prefix backend test
+fi
 echo "✅ Pre-commit checks passed!"
 
 #type must be one of [build, chore, ci, docs, feat, fix, perf, refactor, revert, style, test]

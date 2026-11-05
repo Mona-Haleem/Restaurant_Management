@@ -19,13 +19,15 @@ NestJS (TypeScript strict) · Prisma · PostgreSQL · OpenAPI · Jest + Supertes
 
 ## Commands
 
-Keep this section accurate; fix it as B101/B201 create the real scripts.
+Keep this section accurate. Run from `backend/`, Node 24 (root `.nvmrc`).
 
-- Install: `npm ci`
-- Dev server: `npm run start:dev`
-- Lint: `npm run lint` · Types: `npx tsc --noEmit`
-- Unit tests: `npm run test` · Integration: `npm run test:e2e`
-- Local DB: `docker compose up -d db`
+- Install: `npm ci` (never `npm install` without asking — it rewrites the lockfile)
+- Dev server: `npm run start:dev` · Build: `npm run build` (→ `dist/`)
+- Lint: `npm run lint` (zero warnings) · Format: `npm run format` / `npm run format:check` · Types: `npm run typecheck`
+- Unit tests: `npm run test` · With coverage gate (80% global, what CI runs): `npm run test:cov`
+- Integration tests: `npm run test:e2e` (Supertest, `test/**/*.e2e-spec.ts`; real Postgres via `DATABASE_URL` from B301 on)
+- Tests run through `node --experimental-vm-modules` because NestJS 12 is ESM-only; the warning it prints is expected.
+- Local DB: `docker compose up -d db` (arrives in B201)
 - New migration (local only): `npx prisma migrate dev --name <name>` (use `--create-only` when you need to add SQL such as CHECK constraints)
 
 ## Rules that are never broken
@@ -47,9 +49,10 @@ Keep this section accurate; fix it as B101/B201 create the real scripts.
 - Ask before `git push`, installing new dependencies, or changing anything in `.github/`.
 - Tickets marked 👤 or 🤝 in TASKS.md need account access you don't have: prepare the files and a checklist, then hand over.
 
-## Proposed defaults (confirm or change during B101)
+## Project conventions (confirmed in B101)
 
-- One folder per module under `src/modules/`; shared code in `src/common/`; Prisma in `src/prisma/` and `prisma/`; integration tests in `test/`.
+- One folder per module under `src/modules/`; shared code in `src/common/`; Prisma in `src/prisma/` and `prisma/`; unit tests (`*.spec.ts`) beside the code; integration tests in `test/`.
+- App-wide setup (prefix, pipes, filters) lives in `configureApp()` in `src/app.setup.ts`, used by both `main.ts` and the e2e tests, so tests boot the same app production runs.
 - class-validator DTOs with a global `ValidationPipe`; `@nestjs/swagger` decorators on every route; routes under `/v1`.
 - Thin controllers; business rules in services; calculations (expected stock, reconciliation gap, anomalies) as pure functions with unit tests.
 - One error shape everywhere: `{ code, message, details }`, no stack traces.
