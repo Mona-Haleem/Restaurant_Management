@@ -57,4 +57,6 @@ Keep this section accurate. Run from `backend/`, Node 24 (root `.nvmrc`).
 - App-wide setup (prefix, pipes, filters) lives in `configureApp()` in `src/app.setup.ts`, used by both `main.ts` and the e2e tests, so tests boot the same app production runs.
 - class-validator DTOs with a global `ValidationPipe`; `@nestjs/swagger` decorators on every route; routes under `/v1`.
 - Thin controllers; business rules in services; calculations (expected stock, reconciliation gap, anomalies) as pure functions with unit tests.
-- One error shape everywhere: `{ code, message, details }`, no stack traces.
+- One error shape everywhere: `{ code, message, details }`, no stack traces. Expected failures throw `AppException(status, 'STABLE_CODE', message, details)` from `src/common/errors/`; anything else becomes a logged, generic 500 `INTERNAL_ERROR`.
+- Config comes from `loadConfig()` (`src/config/app-config.ts`, fail fast, all problems listed) and is injected with `@Inject(APP_CONFIG)`. Never read `process.env` in feature code.
+- Logs: inject `PinoLogger` (`nestjs-pino`); every line carries the request id (`x-request-id`, echoed to the client). Never log secrets or whole request bodies.

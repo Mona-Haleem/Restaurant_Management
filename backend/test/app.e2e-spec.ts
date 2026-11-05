@@ -4,13 +4,18 @@ import request from 'supertest';
 import type { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/app.setup';
+import { testConfig } from './test-config';
 
 describe('App (e2e)', () => {
   let app: INestApplication<App>;
 
   beforeAll(async () => {
-    const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
-    app = configureApp(moduleRef.createNestApplication<INestApplication<App>>());
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule.register(testConfig())],
+    }).compile();
+    app = configureApp(
+      moduleRef.createNestApplication<INestApplication<App>>({ bufferLogs: true }),
+    );
     await app.init();
   });
 

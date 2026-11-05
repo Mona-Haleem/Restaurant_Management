@@ -63,6 +63,8 @@ Then `npm run db:up` again. The `-v` deletes the volume, so the init script crea
 | `APP_ENV` | `.env.example` (`local`) | CI job env (`test`) | Render env | Render env |
 | `DATABASE_URL` (app, transaction pooler :6543) | `.env.example`, throwaway | CI job env, throwaway | Render env + password manager | Render env + password manager |
 | `DIRECT_URL` (migrations, session pooler :5432) | `.env.example` | CI job env | GitHub secret `STAGING_DIRECT_URL` + password manager | GitHub secret `PROD_DIRECT_URL` + password manager |
+| `CORS_ORIGINS` (not secret) | default `http://localhost:4200` | default | Render env: staging frontend + Vercel preview pattern | Render env: production frontend only |
+| `LOG_LEVEL` (not secret) | default `debug` | default `silent` | default `info` | default `info` |
 | Supabase DB password / project ref | — | — | password manager | password manager |
 
 Rules:
