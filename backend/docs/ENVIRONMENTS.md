@@ -32,6 +32,7 @@ No `.env` is needed: when there is none, `.env.example` (local values only) is u
 | `APP_ENV` | API boot, Prisma CLI | a missing or unknown value |
 | URL vs `APP_ENV` | API boot, Prisma CLI | `local`/`test` with a non-local host (e.g. any Supabase host); `staging`/`production` with a local host |
 | `app_environment` row | API boot | a row that differs from `APP_ENV`; an unmarked database under `staging`/`production` (`local`/`test` claim it) |
+| Seed | `npm run db:seed` (`src/prisma/seed/seed-guard.ts`) | `APP_ENV` other than `local`/`test`, a non-local `DATABASE_URL`, or a database marked for another environment |
 | Destructive commands | `prisma.config.ts` (every Prisma CLI call) | `migrate reset`, `migrate dev`, `db push`, `db seed`, `db execute` unless `APP_ENV` is `local`/`test` and `DATABASE_URL` and `DIRECT_URL` are local |
 
 Each refusal exits with code 1 and a message that names the variable and host, never the password.
@@ -44,6 +45,7 @@ Each refusal exits with code 1 and a message that names the variable and host, n
 | `npm run db:migrate -- --name <name>` | create and apply a new migration (add `--create-only` to edit SQL first) |
 | `npm run db:status` | show which migrations are applied |
 | `npm run db:down` | stop the container (data is kept in the `tablz-db` volume) |
+| `npm run db:seed` | build, then insert the demo tenants (B401, [ADR 0016](adr/0016-demo-seed.md)). Safe to re-run: only missing rows are added, existing rows are left alone. Prints the demo guest tracking links. To get the seed back after changing data, `db:reset` then `db:seed`. |
 | `npm run db:reset` | **local only:** drop and recreate `tablz_dev` from the migrations. Ask first if anyone else depends on your data. |
 
 To wipe everything, including `tablz_test`, and start over:
