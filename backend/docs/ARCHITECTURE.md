@@ -33,7 +33,7 @@ The PRD's §10 line "real backend (Express, Mongo, Mongoose)" is superseded by t
 | `prisma` | PrismaService (unscoped, platform only), `TENANT_DB` tenant-scoped client extension ([ADR 0018](adr/0018-tenant-access-defaults-and-rate-limit.md)) | B301, B503 | config |
 | `context` | request context provider (tenant, branch, actor, role), `TenantAccessGuard` (roles + demo-only writes), context store, `GET /:tenantSlug/context` | B503 | prisma |
 | `health` | `/health`, `/health/db` | B503 | prisma |
-| `catalog` | categories, menu items, menu-item ingredients | B601 | context |
+| `catalog` | categories, menu items, menu-item ingredients, customer menu ([ADR 0019](adr/0019-catalog-rules.md)) | B601 | context |
 | `inventory` | inventory items, components, **ledger service** (only writer of `current_stock`), stock queries, restock | B701, B702 | context |
 | `orders` | workflow stages, order lifecycle, stage history, board/tracking queries | B801, B802 | catalog, inventory |
 | `waste` | waste entries (via the ledger service) | B901 | inventory |
@@ -122,7 +122,7 @@ The table list is in ROADMAP §4. Cross-cutting rules:
 - All routes under `/v1`; tenant routes under `/v1/:tenantSlug/` ([ADR 0007](adr/0007-request-context-slug-and-demo-users.md)). OpenAPI generated from decorators and committed as `openapi.json` with a drift test ([ADR 0012](adr/0012-openapi-contract.md)); the spec is the contract for the Angular client and the frontend mocks (B502).
 - Input: one DTO per request body/query, validated globally.
 - Errors: `{ "code": "ORDER_NOT_CANCELLABLE", "message": "…", "details": { … } }`. Codes are stable strings the frontend can switch on.
-- Decimals are serialized as strings in JSON, so the frontend never receives a rounded float. Confirmed in [ADR 0013](adr/0013-numeric-precision.md); `bigint` values are strings too.
+- Decimals are serialized as strings in JSON, so the frontend never receives a rounded float. Confirmed in [ADR 0013](adr/0013-numeric-precision.md); `bigint` values are strings too. Inputs use `IsDecimalString`, outputs `formatDecimal` (`src/common/decimal`).
 
 ---
 

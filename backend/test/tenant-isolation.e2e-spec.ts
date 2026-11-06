@@ -19,8 +19,30 @@ import { testConfig } from './test-config';
 const A_SLUG = 'nile-bites';
 const B_SLUG = 'harbor-grill';
 
-type Ctx = { http: () => ReturnType<typeof request>; seed: SeedTenants };
+type Ctx = { http: () => ReturnType<typeof request>; seed: SeedTenants; prisma: PrismaClient };
 type IsolationCase = (ctx: Ctx) => Promise<void>;
+
+const ADMIN = { 'x-dev-role': 'ADMIN' };
+const ids = (rows: unknown): string[] => (rows as { id: string }[]).map((r) => r.id);
+
+/** B's menu item, as the database holds it, to prove a cross-tenant write changed nothing. */
+async function bMenuItemRow(prisma: PrismaClient, seed: SeedTenants): Promise<unknown> {
+  return prisma.menuItem.findUnique({
+    where: { id: seed.bMenuItemId },
+    select: { name: true, price: true, status: true, updatedAt: true },
+  });
+}
+
+/** Expects every request to answer `status`, and B's menu item to stay exactly as it was. */
+async function leavesBUnchanged(
+  { http, seed, prisma }: Ctx,
+  status: number,
+  send: (agent: ReturnType<typeof request>) => request.Test,
+): Promise<void> {
+  const before = await bMenuItemRow(prisma, seed);
+  await send(http()).set(ADMIN).expect(status);
+  expect(await bMenuItemRow(prisma, seed)).toEqual(before);
+}
 
 /** One entry per tenant route of the real API: "METHOD /v1/{tenantSlug}/…". */
 const ISOLATION_CASES: Record<string, IsolationCase> = {
@@ -44,6 +66,122 @@ const ISOLATION_CASES: Record<string, IsolationCase> = {
     });
     expect(JSON.stringify(bodyOf(own))).not.toContain(seed.b.tenant.id);
   },
+
+  // ── Catalog (B601) ──────────────────────────────────────────────────────────────────────
+  'GET /v1/{tenantSlug}/menu': async ({ http, seed }) => {
+    const a = bodyOf(await http().get(`/v1/${A_SLUG}/menu`).expect(200)) as {
+      categories: unknown;
+      items: unknown;
+    };
+    expect(ids(a.items)).not.toContain(seed.bMenuItemId);
+    expect(ids(a.categories)).not.toContain(seed.bCategoryId);
+    const b = bodyOf(await http().get(`/v1/${B_SLUG}/menu`).expect(200)) as { items: unknown };
+    expect(ids(b.items)).toContain(seed.bMenuItemId);
+    expect(ids(b.items).filter((id) => ids(a.items).includes(id))).toEqual([]);
+  },
+  'GET /v1/{tenantSlug}/categories': async ({ http, seed }) => {
+    const res = await http().get(`/v1/${A_SLUG}/categories`).set(ADMIN).expect(200);
+    expect(ids(bodyOf(res))).not.toContain(seed.bCategoryId);
+    expect(ids(bodyOf(res))).toEqual(expect.arrayContaining(seed.a.categories.map((c) => c.id)));
+  },
+  'POST /v1/{tenantSlug}/categories': async ({ http, seed, prisma }) => {
+    const res = await http()
+      .post(`/v1/${A_SLUG}/categories`)
+      .set(ADMIN)
+      .send({ name: `Isolation ${Date.now()}` })
+      .expect(201);
+    const row = await prisma.category.findUnique({
+      where: { id: (bodyOf(res) as { id: string }).id },
+    });
+    expect(row?.tenantId).toBe(seed.a.tenant.id);
+    // Names are unique per tenant only: A may use B's category name.
+    const bName = (await prisma.category.findUnique({ where: { id: seed.bCategoryId } }))!.name;
+    const taken = await prisma.category.count({
+      where: { tenantId: seed.a.tenant.id, name: bName },
+    });
+    if (taken === 0) {
+      await http().post(`/v1/${A_SLUG}/categories`).set(ADMIN).send({ name: bName }).expect(201);
+    }
+  },
+  'PATCH /v1/{tenantSlug}/categories/{id}': async ({ http, seed, prisma }) => {
+    await http()
+      .patch(`/v1/${A_SLUG}/categories/${seed.bCategoryId}`)
+      .set(ADMIN)
+      .send({ name: 'Hacked', isActive: false })
+      .expect(404);
+    const row = await prisma.category.findUnique({ where: { id: seed.bCategoryId } });
+    expect(row).toMatchObject({ name: 'Seafood (tenant B)', isActive: true });
+  },
+  'GET /v1/{tenantSlug}/menu-items': async ({ http, seed }) => {
+    const res = await http().get(`/v1/${A_SLUG}/menu-items`).set(ADMIN).expect(200);
+    expect(ids(bodyOf(res))).not.toContain(seed.bMenuItemId);
+    expect(ids(bodyOf(res)).length).toBeGreaterThan(0);
+  },
+  'GET /v1/{tenantSlug}/menu-items/{id}': async ({ http, seed }) => {
+    await http().get(`/v1/${A_SLUG}/menu-items/${seed.bMenuItemId}`).set(ADMIN).expect(404);
+    const aItem = seed.a.menuItems[0]!.id;
+    await http().get(`/v1/${B_SLUG}/menu-items/${aItem}`).set(ADMIN).expect(404);
+  },
+  'POST /v1/{tenantSlug}/menu-items': async ({ http, seed, prisma }) => {
+    const before = await prisma.menuItem.count({ where: { tenantId: seed.b.tenant.id } });
+    const intoB = await http()
+      .post(`/v1/${A_SLUG}/menu-items`)
+      .set(ADMIN)
+      .send({ categoryId: seed.bCategoryId, name: 'Sneaky', price: '1' })
+      .expect(400);
+    expect(bodyOf(intoB)).toMatchObject({ code: 'CATEGORY_NOT_FOUND' });
+    const bIngredient = await http()
+      .post(`/v1/${A_SLUG}/menu-items`)
+      .set(ADMIN)
+      .send({
+        categoryId: seed.a.categories[0]!.id,
+        name: 'Borrowed fish',
+        price: '1',
+        ingredients: [{ inventoryItemId: seed.bInventoryItemId, quantity: '1', unit: 'KG' }],
+      })
+      .expect(400);
+    expect(bodyOf(bIngredient)).toMatchObject({
+      code: 'INVALID_RECIPE',
+      details: { issues: [{ code: 'INVENTORY_ITEM_NOT_FOUND' }] },
+    });
+    expect(await prisma.menuItem.count({ where: { tenantId: seed.b.tenant.id } })).toBe(before);
+  },
+  'PATCH /v1/{tenantSlug}/menu-items/{id}': async (ctx) => {
+    await leavesBUnchanged(ctx, 404, (agent) =>
+      agent
+        .patch(`/v1/${A_SLUG}/menu-items/${ctx.seed.bMenuItemId}`)
+        .send({ name: 'Hacked', price: '0' }),
+    );
+    // A's own item cannot be pointed at B's category, branch or inventory item.
+    const own = ctx.seed.a.menuItems.find((m) => m.status === 'ACTIVE')!.id;
+    const attempts: [Record<string, unknown>, string][] = [
+      [{ categoryId: ctx.seed.bCategoryId }, 'CATEGORY_NOT_FOUND'],
+      [{ branchId: ctx.seed.b.branches[0]!.id }, 'BRANCH_NOT_FOUND'],
+      [
+        {
+          ingredients: [{ inventoryItemId: ctx.seed.bInventoryItemId, quantity: '1', unit: 'KG' }],
+        },
+        'INVALID_RECIPE',
+      ],
+    ];
+    for (const [body, code] of attempts) {
+      const res = await ctx
+        .http()
+        .patch(`/v1/${A_SLUG}/menu-items/${own}`)
+        .set(ADMIN)
+        .send(body)
+        .expect(400);
+      expect(bodyOf(res)).toMatchObject({ code });
+    }
+  },
+  'POST /v1/{tenantSlug}/menu-items/{id}/archive': (ctx) =>
+    leavesBUnchanged(ctx, 404, (agent) =>
+      agent.post(`/v1/${A_SLUG}/menu-items/${ctx.seed.bMenuItemId}/archive`),
+    ),
+  'POST /v1/{tenantSlug}/menu-items/{id}/restore': (ctx) =>
+    leavesBUnchanged(ctx, 404, (agent) =>
+      agent.post(`/v1/${A_SLUG}/menu-items/${ctx.seed.bMenuItemId}/restore`),
+    ),
 };
 
 function tenantRoutes(): string[] {
@@ -94,7 +232,7 @@ describe('tenant isolation (B503)', () => {
   });
 
   it.each(Object.keys(ISOLATION_CASES))('%s', async (route) => {
-    await ISOLATION_CASES[route]!({ http, seed });
+    await ISOLATION_CASES[route]!({ http, seed, prisma });
   });
 
   describe('reads and writes through the tenant-scoped client', () => {

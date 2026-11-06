@@ -9,7 +9,8 @@
  * - Nested relation writes (`connect`, nested `create`, `set`, …) are refused: a nested connect
  *   writes the parent's key, `tenant_id` included, onto the child and could pull another
  *   tenant's row in. Write related rows with their own scoped query instead.
- * - No hard deletes (CLAUDE.md rule 5): `delete` / `deleteMany` are refused.
+ * - No hard deletes (CLAUDE.md rule 5): `delete` / `deleteMany` are refused, except on recipe
+ *   lines (`menu_item_ingredients`, ADR 0019), which are configuration rather than history.
  * - `tenants` is scoped by its own id and is read-only; `app_environment` is off limits.
  * - Unknown operations are refused, so a new Prisma operation can never slip through unscoped.
  */
@@ -37,6 +38,8 @@ const FILTER_OPERATIONS = new Set([
 const UPDATE_OPERATIONS = new Set(['update', 'updateMany', 'updateManyAndReturn']);
 const CREATE_MANY_OPERATIONS = new Set(['createMany', 'createManyAndReturn']);
 const DELETE_OPERATIONS = new Set(['delete', 'deleteMany']);
+/** The only tables whose rows may be hard-deleted (ADR 0019). Deletes stay tenant-scoped. */
+const HARD_DELETE_MODELS = new Set(['MenuItemIngredient']);
 const TENANT_TABLE_WRITES = new Set([
   'create',
   'createMany',
@@ -136,7 +139,7 @@ export function scopeQueryArgs(
   if (isTenantTable && TENANT_TABLE_WRITES.has(operation)) {
     refuse(`tenants: ${operation} is not allowed from a tenant request`);
   }
-  if (DELETE_OPERATIONS.has(operation)) {
+  if (DELETE_OPERATIONS.has(operation) && !HARD_DELETE_MODELS.has(model)) {
     refuse(
       `${model}.${operation}: no hard deletes (CLAUDE.md rule 5); archive or deactivate instead`,
     );
@@ -144,7 +147,7 @@ export function scopeQueryArgs(
   const scope: Row = isTenantTable ? { id: tenantId } : { tenantId };
   const scoped: Args = { ...(args ?? {}) };
 
-  if (FILTER_OPERATIONS.has(operation)) {
+  if (FILTER_OPERATIONS.has(operation) || DELETE_OPERATIONS.has(operation)) {
     scoped.where = withScope(scoped.where, scope);
   } else if (UPDATE_OPERATIONS.has(operation)) {
     scoped.where = withScope(scoped.where, scope);

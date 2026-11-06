@@ -11,15 +11,17 @@ export interface SeedTenants {
   a: TenantSeed;
   /** harbor-grill: the second tenant (read-only in Phase 1). */
   b: TenantSeed;
-  /** A category that belongs to tenant B, so there is a B row to aim at. */
+  /** Rows that belong to tenant B, so isolation tests have B ids to aim at. */
   bCategoryId: string;
+  bInventoryItemId: string;
+  bMenuItemId: string;
 }
 
 export function unscopedClient(): PrismaClient {
   return new PrismaClient({ adapter: new PrismaPg({ connectionString: TEST_DATABASE_URL }) });
 }
 
-/** Makes sure both seed tenants (B401) exist in tablz_test, plus one category for tenant B. */
+/** Makes sure both seed tenants (B401) exist in tablz_test, plus a few rows for tenant B. */
 export async function ensureSeedTenants(prisma: PrismaClient): Promise<SeedTenants> {
   const now = new Date();
   const a = buildTenantSeed(DEMO_TENANT, now);
@@ -27,10 +29,31 @@ export async function ensureSeedTenants(prisma: PrismaClient): Promise<SeedTenan
   for (const seed of [a, b]) {
     await prisma.$transaction((tx) => writeTenantSeed(tx, seed), { timeout: 60_000 });
   }
+  const tenantId = b.tenant.id;
   const bCategoryId = seedId(SECOND_TENANT.slug, 'categories', 'isolation-target');
+  const bInventoryItemId = seedId(SECOND_TENANT.slug, 'inventory_items', 'isolation-target');
+  const bMenuItemId = seedId(SECOND_TENANT.slug, 'menu_items', 'isolation-target');
   await prisma.category.createMany({
-    data: [{ id: bCategoryId, tenantId: b.tenant.id, name: 'Seafood (tenant B)' }],
+    data: [{ id: bCategoryId, tenantId, name: 'Seafood (tenant B)' }],
     skipDuplicates: true,
   });
-  return { a, b, bCategoryId };
+  await prisma.inventoryItem.createMany({
+    data: [
+      { id: bInventoryItemId, tenantId, name: 'Sea Bass (tenant B)', type: 'RAW', unit: 'KG' },
+    ],
+    skipDuplicates: true,
+  });
+  await prisma.menuItem.createMany({
+    data: [
+      {
+        id: bMenuItemId,
+        tenantId,
+        categoryId: bCategoryId,
+        name: 'Grilled Sea Bass (tenant B)',
+        price: '320.00',
+      },
+    ],
+    skipDuplicates: true,
+  });
+  return { a, b, bCategoryId, bInventoryItemId, bMenuItemId };
 }
