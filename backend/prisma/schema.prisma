@@ -1,4 +1,13 @@
-// Tablz API schema. B201 adds only the environment marker; B301 adds the business tables.
+// Tablz API schema, Backend Phase 1 (ROADMAP §4, ARCHITECTURE §4, ADRs 0002–0011).
+//
+// Rules every model follows (checked by src/prisma/schema-rules.spec.ts):
+// - uuid ids; tenant_id on every tenant-owned table, first in every index;
+// - foreign keys between tenant-owned tables include tenant_id, so a row can never point at
+//   another tenant's row; every model is referenceable by @@unique([tenantId, id]);
+// - money Decimal(12,2), stock quantities Decimal(14,3), unit costs Decimal(14,4); never Float;
+// - created_at / updated_at everywhere; onDelete: Restrict everywhere (archive, never delete).
+// CHECK constraints cannot be expressed here: they are added by hand to the migration SQL
+// (list in docs/SCHEMA.md).
 
 generator client {
   provider     = "prisma-client"
@@ -9,6 +18,8 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+// ───────────────────────────── System ─────────────────────────────
 
 enum AppEnvironmentName {
   local
@@ -24,8 +35,559 @@ enum AppEnvironmentName {
 model AppEnvironment {
   id        Int                @id @default(1)
   name      AppEnvironmentName
-  createdAt DateTime           @default(now()) @map("created_at")
-  updatedAt DateTime           @updatedAt @map("updated_at")
+  createdAt DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@map("app_environment")
+}
+
+// ─────────────────────── Tenancy & people ─────────────────────────
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  WORKER
+
+  @@map("user_role")
+}
+
+/// A restaurant business. Routes are /v1/:tenantSlug/... (ADR 0007).
+model Tenant {
+  id        String   @id @default(uuid()) @db.Uuid
+  slug      String   @unique
+  name      String
+  /// IANA zone, e.g. "Africa/Cairo"; reports group by local day.
+  timezone  String
+  /// Phase 1 writes are allowed only on the demo tenant (B503).
+  isDemo    Boolean  @default(false) @map("is_demo")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  branches                Branch[]
+  users                   User[]
+  rolePermissions         RolePermission[]
+  userPermissionOverrides UserPermissionOverride[]
+  categories              Category[]
+  menuItems               MenuItem[]
+  menuItemIngredients     MenuItemIngredient[]
+  inventoryItems          InventoryItem[]
+  inventoryItemComponents InventoryItemComponent[]
+  branchStock             BranchStock[]
+  inventoryTransactions   InventoryTransaction[]
+  inventorySnapshots      InventorySnapshot[]
+  reconciliationEntries   ReconciliationEntry[]
+  wasteEntries            WasteEntry[]
+  workflowStages          OrderWorkflowStage[]
+  orders                  Order[]
+  orderItems              OrderItem[]
+  orderStageHistory       OrderStageHistory[]
+
+  @@map("tenants")
+}
+
+model Branch {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  name      String
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant                Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  users                 User[]
+  menuItems             MenuItem[]
+  stock                 BranchStock[]
+  inventoryTransactions InventoryTransaction[]
+  inventorySnapshots    InventorySnapshot[]
+  reconciliationEntries ReconciliationEntry[]
+  wasteEntries          WasteEntry[]
+  orders                Order[]
+
+  @@unique([tenantId, id])
+  @@unique([tenantId, name])
+  @@map("branches")
+}
+
+/// Staff. ADMIN has no branch; MANAGER and WORKER must have one (CHECK, ADR 0007).
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  branchId     String?  @map("branch_id") @db.Uuid
+  name         String
+  email        String?
+  /// Hashed by B1001; login itself is Phase 2.
+  passwordHash String?  @map("password_hash")
+  role         UserRole
+  isActive     Boolean  @default(true) @map("is_active")
+  /// The seeded user that `x-dev-role` selects (ADR 0007).
+  isDemo       Boolean  @default(false) @map("is_demo")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant                Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  branch                Branch?                  @relation(fields: [tenantId, branchId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+  permissionOverrides   UserPermissionOverride[]
+  inventoryTransactions InventoryTransaction[]
+  reconciliationEntries ReconciliationEntry[]
+  wasteEntries          WasteEntry[]
+  stageChanges          OrderStageHistory[]
+
+  @@unique([tenantId, id])
+  @@unique([tenantId, email])
+  @@index([tenantId, role, isActive])
+  @@index([tenantId, branchId])
+  @@map("users")
+}
+
+/// Detailed permissions per role. Created now, enforced in Phase 2 (ARCHITECTURE §1).
+model RolePermission {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @map("tenant_id") @db.Uuid
+  role       UserRole
+  permission String
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([tenantId, id])
+  @@unique([tenantId, role, permission])
+  @@map("role_permissions")
+}
+
+/// Per-user grant or revoke on top of the role. Created now, enforced in Phase 2.
+model UserPermissionOverride {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @map("tenant_id") @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  permission String
+  granted    Boolean
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  user   User   @relation(fields: [tenantId, userId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([tenantId, id])
+  @@unique([tenantId, userId, permission])
+  @@map("user_permission_overrides")
+}
+
+// ───────────────────────────── Catalog ────────────────────────────
+
+enum MenuItemStatus {
+  ACTIVE
+  ARCHIVED
+
+  @@map("menu_item_status")
+}
+
+/// Stock and recipe units; conversion only within a dimension, in code (ADR 0003).
+enum Unit {
+  G
+  KG
+  ML
+  L
+  PCS
+
+  @@map("unit")
+}
+
+model Category {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  name      String
+  position  Int      @default(0)
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  menuItems MenuItem[]
+
+  @@unique([tenantId, id])
+  @@unique([tenantId, name])
+  @@index([tenantId, isActive, position])
+  @@map("categories")
+}
+
+/// A dish. Tenant-wide; branch_id NULL = offered at every branch (ADR 0004).
+model MenuItem {
+  id          String         @id @default(uuid()) @db.Uuid
+  tenantId    String         @map("tenant_id") @db.Uuid
+  categoryId  String         @map("category_id") @db.Uuid
+  branchId    String?        @map("branch_id") @db.Uuid
+  name        String
+  description String?
+  price       Decimal        @db.Decimal(12, 2)
+  status      MenuItemStatus @default(ACTIVE)
+  /// Reserved for Phase 2 combos; always false in Phase 1.
+  isCombo     Boolean        @default(false) @map("is_combo")
+  createdAt   DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant      Tenant               @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  category    Category             @relation(fields: [tenantId, categoryId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+  branch      Branch?              @relation(fields: [tenantId, branchId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+  ingredients MenuItemIngredient[]
+  orderItems  OrderItem[]
+
+  @@unique([tenantId, id])
+  @@index([tenantId, categoryId])
+  @@index([tenantId, status, branchId])
+  @@map("menu_items")
+}
+
+/// Recipe line: how much of an inventory item one portion uses, in the unit typed (ADR 0003).
+model MenuItemIngredient {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @map("tenant_id") @db.Uuid
+  menuItemId      String   @map("menu_item_id") @db.Uuid
+  inventoryItemId String   @map("inventory_item_id") @db.Uuid
+  quantity        Decimal  @db.Decimal(14, 3)
+  unit            Unit
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  menuItem      MenuItem      @relation(fields: [tenantId, menuItemId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+  inventoryItem InventoryItem @relation(fields: [tenantId, inventoryItemId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([tenantId, id])
+  @@unique([tenantId, menuItemId, inventoryItemId])
+  @@index([tenantId, inventoryItemId])
+  @@map("menu_item_ingredients")
+}
+
+// ──────────────────────────── Inventory ───────────────────────────
+
+enum InventoryItemType {
+  RAW
+  READY
+  MIXED
+
+  @@map("inventory_item_type")
+}
+
+enum InventoryTransactionType {
+  PURCHASE
+  CONSUMPTION
+  WASTE
+  TRANSFER
+  ADJUSTMENT
+
+  @@map("inventory_transaction_type")
+}
+
+/// Tenant-wide definition. Stock lives in branch_stock (ADR 0004); MIXED items have no stock
+/// and never appear in the ledger (ADR 0002).
+model InventoryItem {
+  id               String            @id @default(uuid()) @db.Uuid
+  tenantId         String            @map("tenant_id") @db.Uuid
+  name             String
+  type             InventoryItemType
+  /// The stock unit: every ledger value for this item is in it (ADR 0003).
+  unit             Unit
+  /// Manual cost fallback per stock unit (ADR 0005).
+  standardUnitCost Decimal?          @map("standard_unit_cost") @db.Decimal(14, 4)
+  isActive         Boolean           @default(true) @map("is_active")
+  createdAt        DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant                Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  usedInMenuItems       MenuItemIngredient[]
+  components            InventoryItemComponent[] @relation("MixedItemComponents")
+  usedInMixedItems      InventoryItemComponent[] @relation("ComponentOfMixedItem")
+  branchStock           BranchStock[]
+  transactions          InventoryTransaction[]
+  snapshots             InventorySnapshot[]
+  reconciliationEntries ReconciliationEntry[]
+  wasteEntries          WasteEntry[]
+
+  @@unique([tenantId, id])
+  @@unique([tenantId, name])
+  @@index([tenantId, type, isActive])
+  @@map("inventory_items")
+}
+
+/// MIXED item → RAW/READY component, quantity per one unit of the MIXED item. One level only
+/// (ADR 0002), enforced in the service.
+model InventoryItemComponent {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @map("tenant_id") @db.Uuid
+  mixedItemId     String   @map("mixed_item_id") @db.Uuid
+  componentItemId String   @map("component_item_id") @db.Uuid
+  quantity        Decimal  @db.Decimal(14, 3)
+  unit            Unit
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  mixedItem     InventoryItem @relation("MixedItemComponents", fields: [tenantId, mixedItemId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+  componentItem InventoryItem @relation("ComponentOfMixedItem", fields: [tenantId, componentItemId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([tenantId, id])
+  @@unique([tenantId, mixedItemId, componentItemId])
+  @@index([tenantId, componentItemId])
+  @@map("inventory_item_components")
+}
+
+/// Cached stock per (branch, item). Written only by the ledger service (rule 3). May go
+/// negative (ADR 0006): no CHECK on current_stock.
+model BranchStock {
+  id                String   @id @default(uuid()) @db.Uuid
+  tenantId          String   @map("tenant_id") @db.Uuid
+  branchId          String   @map("branch_id") @db.Uuid
+  inventoryItemId   String   @map("inventory_item_id") @db.Uuid
+  currentStock      Decimal  @default(0) @map("current_stock") @db.Decimal(14, 3)
+  lowStockThreshold Decimal? @map("low_stock_threshold") @db.Decimal(14, 3)
+  /// Weighted moving average per stock unit, maintained by PURCHASE rows (ADR 0005).
+  avgUnitCost       Decimal? @map("avg_unit_cost") @db.Decimal(14, 4)
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  branch        Branch        @relation(fields: [tenantId, branchId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+  inventoryItem InventoryItem @relation(fields: [tenantId, inventoryItemId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([tenantId, id])
+  @@unique([tenantId, branchId, inventoryItemId])
+  @@map("branch_stock")
+}
+
+/// The append-only ledger. quantity_delta is in the item's stock unit. `seq` orders rows for
+/// "expected stock = latest snapshot + rows after its through_seq" (ARCHITECTURE §5).
+model InventoryTransaction {
+  id              String                   @id @default(uuid()) @db.Uuid
+  seq             BigInt                   @unique @default(autoincrement())
+  tenantId        String                   @map("tenant_id") @db.Uuid
+  branchId        String                   @map("branch_id") @db.Uuid
+  inventoryItemId String                   @map("inventory_item_id") @db.Uuid
+  type            InventoryTransactionType
+  quantityDelta   Decimal                  @map("quantity_delta") @db.Decimal(14, 3)
+  /// Cost per stock unit at write time (ADR 0005); NULL = uncosted.
+  unitCost        Decimal?                 @map("unit_cost") @db.Decimal(14, 4)
+  relatedOrderId  String?                  @map("related_order_id") @db.Uuid
+  actorId         String                   @map("actor_id") @db.Uuid
+  note            String?
+  createdAt       DateTime                 @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant              Tenant               @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  branch              Branch               @relation(fields: [tenantId, branchId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+  inventoryItem       InventoryItem        @relation(fields: [tenantId, inventoryItemId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+  relatedOrder        Order?               @relation(fields: [tenantId, relatedOrderId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+  actor               User                 @relation(fields: [tenantId, actorId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+  wasteEntry          WasteEntry?
+  reconciliationEntry ReconciliationEntry?
+
+  @@unique([tenantId, id])
+  /// Idempotent order deductions (ARCHITECTURE §5). Order ids are global uuids.
+  @@unique([relatedOrderId, inventoryItemId, type])
+  @@index([tenantId, branchId, inventoryItemId, seq], map: "inventory_transactions_item_seq_idx")
+  @@index([tenantId, branchId, inventoryItemId, createdAt], map: "inventory_transactions_item_time_idx")
+  @@index([tenantId, branchId, type, createdAt])
+  @@map("inventory_transactions")
+}
+
+/// Stock of one (branch, item) as of ledger row `through_seq`.
+model InventorySnapshot {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @map("tenant_id") @db.Uuid
+  branchId        String   @map("branch_id") @db.Uuid
+  inventoryItemId String   @map("inventory_item_id") @db.Uuid
+  quantity        Decimal  @db.Decimal(14, 3)
+  /// Highest inventory_transactions.seq already included in `quantity` (0 = none).
+  throughSeq      BigInt   @map("through_seq")
+  takenAt         DateTime @default(now()) @map("taken_at") @db.Timestamptz(3)
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant              Tenant               @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  branch              Branch               @relation(fields: [tenantId, branchId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+  inventoryItem       InventoryItem        @relation(fields: [tenantId, inventoryItemId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+  reconciliationEntry ReconciliationEntry?
+
+  @@unique([tenantId, id])
+  @@index([tenantId, branchId, inventoryItemId, throughSeq])
+  @@map("inventory_snapshots")
+}
+
+/// A physical count. Written with its ADJUSTMENT row (none when the gap is zero) and its new
+/// snapshot in one transaction (ARCHITECTURE §5). gap = counted - expected (CHECK).
+model ReconciliationEntry {
+  id                      String   @id @default(uuid()) @db.Uuid
+  tenantId                String   @map("tenant_id") @db.Uuid
+  branchId                String   @map("branch_id") @db.Uuid
+  inventoryItemId         String   @map("inventory_item_id") @db.Uuid
+  countedQuantity         Decimal  @map("counted_quantity") @db.Decimal(14, 3)
+  expectedQuantity        Decimal  @map("expected_quantity") @db.Decimal(14, 3)
+  gap                     Decimal  @db.Decimal(14, 3)
+  adjustmentTransactionId String?  @map("adjustment_transaction_id") @db.Uuid
+  snapshotId              String   @map("snapshot_id") @db.Uuid
+  actorId                 String   @map("actor_id") @db.Uuid
+  note                    String?
+  createdAt               DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt               DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant                Tenant                @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  branch                Branch                @relation(fields: [tenantId, branchId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+  inventoryItem         InventoryItem         @relation(fields: [tenantId, inventoryItemId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+  adjustmentTransaction InventoryTransaction? @relation(fields: [tenantId, adjustmentTransactionId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+  snapshot              InventorySnapshot     @relation(fields: [tenantId, snapshotId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+  actor                 User                  @relation(fields: [tenantId, actorId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([tenantId, id])
+  @@unique([tenantId, adjustmentTransactionId])
+  @@unique([tenantId, snapshotId])
+  @@index([tenantId, branchId, inventoryItemId, createdAt], map: "reconciliation_entries_item_time_idx")
+  @@map("reconciliation_entries")
+}
+
+/// Logged waste: the business record next to its WASTE ledger row.
+model WasteEntry {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @map("tenant_id") @db.Uuid
+  branchId        String   @map("branch_id") @db.Uuid
+  inventoryItemId String   @map("inventory_item_id") @db.Uuid
+  /// As entered (positive), in `unit`; the ledger row holds the converted negative delta.
+  quantity        Decimal  @db.Decimal(14, 3)
+  unit            Unit
+  reason          String
+  transactionId   String   @map("transaction_id") @db.Uuid
+  actorId         String   @map("actor_id") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant        Tenant               @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  branch        Branch               @relation(fields: [tenantId, branchId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+  inventoryItem InventoryItem        @relation(fields: [tenantId, inventoryItemId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+  transaction   InventoryTransaction @relation(fields: [tenantId, transactionId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+  actor         User                 @relation(fields: [tenantId, actorId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([tenantId, id])
+  @@unique([tenantId, transactionId])
+  @@index([tenantId, branchId, createdAt])
+  @@index([tenantId, branchId, inventoryItemId, createdAt])
+  @@map("waste_entries")
+}
+
+// ───────────────────────────── Orders ─────────────────────────────
+
+enum PlacedByType {
+  STAFF
+  CUSTOMER
+  GUEST
+
+  @@map("placed_by_type")
+}
+
+enum OrderHistoryAction {
+  PLACED
+  ADVANCED
+  CANCELED
+
+  @@map("order_history_action")
+}
+
+/// Per-tenant workflow. Behavior comes from the flags and position only (rule 2, ADR 0009).
+model OrderWorkflowStage {
+  id               String   @id @default(uuid()) @db.Uuid
+  tenantId         String   @map("tenant_id") @db.Uuid
+  key              String
+  label            String
+  position         Int
+  cancellable      Boolean
+  deductsInventory Boolean  @map("deducts_inventory")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant Tenant  @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  orders Order[]
+
+  @@unique([tenantId, id])
+  @@unique([tenantId, key])
+  @@unique([tenantId, position])
+  @@map("order_workflow_stages")
+}
+
+/// An order. "cancelled" is canceled_at, not a stage (ADR 0009). Guests track it with a token
+/// whose SHA-256 hash is stored here (ADR 0008).
+model Order {
+  id                String       @id @default(uuid()) @db.Uuid
+  tenantId          String       @map("tenant_id") @db.Uuid
+  branchId          String       @map("branch_id") @db.Uuid
+  stageKey          String       @map("stage_key")
+  canceledAt        DateTime?    @map("canceled_at") @db.Timestamptz(3)
+  placedByType      PlacedByType @map("placed_by_type")
+  /// STAFF: a user id; CUSTOMER (Phase 2): a customer id; GUEST: NULL (CHECK).
+  placedById        String?      @map("placed_by_id") @db.Uuid
+  total             Decimal      @db.Decimal(12, 2)
+  trackingTokenHash String?      @unique @map("tracking_token_hash")
+  note              String?
+  createdAt         DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant       Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  branch       Branch                 @relation(fields: [tenantId, branchId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+  /// Renaming a stage key carries over to its orders (ON UPDATE CASCADE).
+  stage        OrderWorkflowStage     @relation(fields: [tenantId, stageKey], references: [tenantId, key], onDelete: Restrict, onUpdate: Cascade)
+  items        OrderItem[]
+  history      OrderStageHistory[]
+  transactions InventoryTransaction[]
+
+  @@unique([tenantId, id])
+  /// Board: orders by stage (ROADMAP B301 access path).
+  @@index([tenantId, branchId, stageKey, createdAt])
+  /// Polling with updatedSince (B802).
+  @@index([tenantId, branchId, updatedAt])
+  @@index([tenantId, stageKey])
+  @@index([tenantId, branchId, createdAt])
+  @@map("orders")
+}
+
+/// A line of an order. Name and unit price are copied at order time (ARCHITECTURE §4).
+model OrderItem {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @map("tenant_id") @db.Uuid
+  orderId    String   @map("order_id") @db.Uuid
+  menuItemId String   @map("menu_item_id") @db.Uuid
+  name       String
+  unitPrice  Decimal  @map("unit_price") @db.Decimal(12, 2)
+  quantity   Int
+  lineTotal  Decimal  @map("line_total") @db.Decimal(12, 2)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  order    Order    @relation(fields: [tenantId, orderId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+  menuItem MenuItem @relation(fields: [tenantId, menuItemId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([tenantId, id])
+  @@index([tenantId, orderId])
+  @@index([tenantId, menuItemId])
+  @@map("order_items")
+}
+
+/// Every transition (ARCHITECTURE §6). Stage keys are copied as text: history never changes.
+model OrderStageHistory {
+  id           String             @id @default(uuid()) @db.Uuid
+  tenantId     String             @map("tenant_id") @db.Uuid
+  orderId      String             @map("order_id") @db.Uuid
+  action       OrderHistoryAction
+  fromStageKey String?            @map("from_stage_key")
+  toStageKey   String?            @map("to_stage_key")
+  /// NULL when a guest acted (placing or cancelling with the tracking token).
+  actorId      String?            @map("actor_id") @db.Uuid
+  createdAt    DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  order  Order  @relation(fields: [tenantId, orderId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+  actor  User?  @relation(fields: [tenantId, actorId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([tenantId, id])
+  @@index([tenantId, orderId, createdAt])
+  @@map("order_stage_history")
 }

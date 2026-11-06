@@ -15,6 +15,8 @@ const config: Config = {
     '!generated/**',
     // Needs a real database: covered by test/environment-guard.e2e-spec.ts instead.
     '!config/boot-guard.ts',
+    // CLI script; its output is checked by erd.spec.ts (drift test).
+    '!prisma/generate-erd.ts',
   ],
   coverageDirectory: '../coverage',
   coverageReporters: ['text-summary', 'lcov'],

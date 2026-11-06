@@ -29,6 +29,7 @@ Keep this section accurate. Run from `backend/`, Node 24 (root `.nvmrc`).
 - Tests run through `node --experimental-vm-modules` because NestJS 12 is ESM-only; the warning it prints is expected.
 - Local DB: `npm run db:up` (Docker `db` on host port 5433 + migrations) · `npm run db:status` · `npm run db:down` — see `docs/ENVIRONMENTS.md`
 - New migration (local only): `npx prisma migrate dev --name <name>` (use `--create-only` when you need to add SQL such as CHECK constraints)
+- Schema: `npm test` checks the table rules (`src/prisma/schema-rules.spec.ts`); after changing `prisma/schema.prisma` run `npm run erd:generate` (rewrites `docs/ERD.md`). Rules and decisions: `docs/SCHEMA.md`.
 - Env: `.env` if present, else `.env.example`; already-set variables win. `prisma.config.ts` refuses destructive Prisma commands unless `APP_ENV` is local/test with local URLs (ADR 0011).
 
 ## Rules that are never broken

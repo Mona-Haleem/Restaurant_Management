@@ -9,7 +9,7 @@ Ticket details live in `docs/ROADMAP.md` §6. This file tracks order, status and
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | B101 | Workspace, tooling and CI | 🤝 | — | — | in review | |
 | 2 | B201 | Local DB, Supabase projects, env guards | 🤝 | B101 | Supabase projects + IPv4 check are 👤 (docs/ENVIRONMENTS.md) | in review | |
-| 3 | B301 | Prisma schema and first migration | 🤖 | B201 | — | todo | |
+| 3 | B301 | Prisma schema and first migration | 🤖 | B201 | — | in review | |
 | 4 | B302 | Schema review and ADRs | 🤖 | B301 | — | todo | |
 | 5 | B401 | Idempotent seed | 🤖 | B302 | — | todo | |
 | 6 | B501 | Config, validation, errors, logging | 🤖 | B201 | — | todo | |
