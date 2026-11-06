@@ -2,6 +2,7 @@ import { AppException } from '../../common/errors/app-exception';
 import { RequestContextStore } from '../../context/request-context.store';
 import type { RequestContext } from '../../context/request-context';
 import type { TenantDb } from '../../prisma/tenant-prisma';
+import type { StockService } from '../inventory/stock.service';
 import { CatalogService } from './catalog.service';
 
 // Unit tests for the service's own decisions (error mapping, defaults, menu filter). The real
@@ -78,13 +79,19 @@ async function failure(promise: Promise<unknown>): Promise<string> {
 describe('CatalogService', () => {
   let db: ReturnType<typeof fakeDb>;
   let service: CatalogService;
+  let stock: { servableMenuItems: jest.Mock };
   const store = new RequestContextStore();
   const inContext = <T>(fn: () => Promise<T>, ctx: RequestContext = CTX): Promise<T> =>
     store.run(ctx, async () => await fn());
 
   beforeEach(() => {
     db = fakeDb();
-    service = new CatalogService(db as unknown as TenantDb, store);
+    stock = { servableMenuItems: jest.fn().mockResolvedValue(new Map([['item-1', false]])) };
+    service = new CatalogService(
+      db as unknown as TenantDb,
+      store,
+      stock as unknown as StockService,
+    );
   });
 
   describe('customer menu', () => {
@@ -97,7 +104,9 @@ describe('CatalogService', () => {
         OR: [{ branchId: null }, { branchId: 'branch-1' }],
         name: { contains: 'burg', mode: 'insensitive' },
       });
-      expect(menu.items[0]).toMatchObject({ id: 'item-1', price: '185.00' });
+      expect(menu.items[0]).toMatchObject({ id: 'item-1', price: '185.00', available: false });
+      // Availability is asked for exactly the listed items, in the caller's branch (ADR 0021).
+      expect(stock.servableMenuItems).toHaveBeenCalledWith(['item-1'], 'branch-1');
       expect(firstArg(db.category.findMany)).toMatchObject({
         where: { id: { in: ['cat-1'] } },
       });

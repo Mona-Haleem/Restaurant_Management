@@ -246,6 +246,12 @@ export class CustomerMenuItemDto {
 
   @ApiProperty({ type: String, pattern: MONEY.pattern, example: '185.00' })
   price!: string;
+
+  @ApiProperty({
+    description:
+      "False when the branch's stock cannot make one serving (show greyed out). Ordering is not blocked in Phase 1 (ADR 0006, ADR 0021).",
+  })
+  available!: boolean;
 }
 
 export class CustomerMenuDto {

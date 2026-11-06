@@ -42,6 +42,11 @@ export function roundHalfUp(value: Prisma.Decimal, decimal: DecimalKind): Prisma
   return value.toDecimalPlaces(decimal.scale, Prisma.Decimal.ROUND_HALF_UP);
 }
 
+/** Cuts to the column's scale, toward zero. For read-only derived figures (never stored). */
+export function truncate(value: Prisma.Decimal, decimal: DecimalKind): Prisma.Decimal {
+  return value.toDecimalPlaces(decimal.scale, Prisma.Decimal.ROUND_DOWN);
+}
+
 /** A Decimal as its wire string, padded to the column's scale (`"185.00"`, `"0.150"`). */
 export function formatDecimal(value: Prisma.Decimal, decimal: DecimalKind): string {
   return value.toFixed(decimal.scale);
