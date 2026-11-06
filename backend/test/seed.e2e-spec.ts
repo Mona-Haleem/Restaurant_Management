@@ -159,10 +159,14 @@ describe('seed (B401)', () => {
     );
     expect(seededStock.length).toBeGreaterThan(0);
     expect(unbacked).toEqual([]);
-    const waste = await demoQuery<{ type: string }>(`
-      SELECT x.type FROM waste_entries w
-        JOIN tenants t ON t.id = w.tenant_id AND t.slug = $1
-        JOIN inventory_transactions x ON x.tenant_id = w.tenant_id AND x.id = w.transaction_id`);
+    // Only the seed's own entries: other suites (B901) log waste on the demo tenant too.
+    const seededWaste = buildTenantSeed(DEMO_TENANT, new Date()).wasteEntries.map((w) => w.id);
+    const { rows: waste } = await db.query<{ type: string }>(
+      `SELECT x.type FROM waste_entries w
+        JOIN inventory_transactions x ON x.tenant_id = w.tenant_id AND x.id = w.transaction_id
+       WHERE w.id = ANY($1::uuid[])`,
+      [seededWaste],
+    );
     expect(waste.map((r) => r.type)).toEqual(['WASTE']);
     const reconciled = await demoQuery<{ gap: string; adjusted: boolean }>(`
       SELECT r.gap::text AS gap, r.adjustment_transaction_id IS NOT NULL AS adjusted
