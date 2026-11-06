@@ -12,7 +12,7 @@ Ticket details live in `docs/ROADMAP.md` §6. This file tracks order, status and
 | 3 | B301 | Prisma schema and first migration | 🤖 | B201 | — | in review | |
 | 4 | B302 | Schema review and ADRs | 🤖 | B301 | — | todo | |
 | 5 | B401 | Idempotent seed | 🤖 | B302 | — | todo | |
-| 6 | B501 | Config, validation, errors, logging | 🤖 | B201 | — | todo | |
+| 6 | B501 | Config, validation, errors, logging | 🤖 | B201 | — | in review | |
 | 7 | B502 | OpenAPI contract | 🤖 | B501 | — | todo | |
 | 8 | B503 | Tenant context, auth seam, health, demo safety | 🤖 | B301, B501 | — | todo | |
 | 9 | B601 | Menu, categories and ingredients | 🤖 | B503 | — | todo | |
