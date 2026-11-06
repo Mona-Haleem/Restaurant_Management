@@ -35,7 +35,7 @@ The PRD's §10 line "real backend (Express, Mongo, Mongoose)" is superseded by t
 | `health` | `/health`, `/health/db` | B503 | prisma |
 | `catalog` | categories, menu items, menu-item ingredients, customer menu ([ADR 0019](adr/0019-catalog-rules.md)) | B601 | context |
 | `inventory` | inventory items, components, **ledger service** (only writer of `current_stock`, [ADR 0020](adr/0020-ledger-service-contract.md)), stock queries, restock | B701, B702 | context |
-| `orders` | workflow stages, order lifecycle, stage history, board/tracking queries | B801, B802 | catalog, inventory |
+| `orders` | workflow stages, order lifecycle, stage history ([ADR 0021](adr/0021-order-lifecycle.md)), board/tracking queries | B801, B802 | catalog, inventory |
 | `waste` | waste entries (via the ledger service) | B901 | inventory |
 | `reconciliation` | reconciliation entries, ADJUSTMENT rows, snapshots | B902 | inventory |
 | `staff` | users, roles, activation | B1001 | context |
