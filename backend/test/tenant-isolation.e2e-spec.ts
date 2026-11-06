@@ -327,6 +327,28 @@ const ISOLATION_CASES: Record<string, IsolationCase> = {
     expect(await counts()).toEqual(before);
   },
 
+  // ── Reconciliation (B902) ───────────────────────────────────────────────────────────────
+  'POST /v1/{tenantSlug}/reconciliations': async ({ http, seed, prisma }) => {
+    const bTenant = seed.b.tenant.id;
+    const counts = async () => ({
+      ledger: await prisma.inventoryTransaction.count({ where: { tenantId: bTenant } }),
+      snapshots: await prisma.inventorySnapshot.count({ where: { tenantId: bTenant } }),
+      entries: await prisma.reconciliationEntry.count({ where: { tenantId: bTenant } }),
+    });
+    const before = await counts();
+    // B's item does not exist in A's tenant: 404, and nothing is written in either tenant.
+    const res = await http()
+      .post(`/v1/${A_SLUG}/reconciliations`)
+      .set(ADMIN)
+      .send({ counts: [{ inventoryItemId: seed.bInventoryItemId, quantity: '0', unit: 'KG' }] })
+      .expect(404);
+    expect(bodyOf(res)).toMatchObject({ code: 'INVENTORY_ITEM_NOT_FOUND' });
+    expect(
+      await prisma.inventorySnapshot.count({ where: { inventoryItemId: seed.bInventoryItemId } }),
+    ).toBe(0);
+    expect(await counts()).toEqual(before);
+  },
+
   // ── Stock (B702) ────────────────────────────────────────────────────────────────────────
   'GET /v1/{tenantSlug}/stock': async ({ http, seed }) => {
     const res = await http().get(`/v1/${A_SLUG}/stock`).set(ADMIN).expect(200);

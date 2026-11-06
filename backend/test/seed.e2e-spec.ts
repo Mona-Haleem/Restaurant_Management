@@ -168,12 +168,16 @@ describe('seed (B401)', () => {
       [seededWaste],
     );
     expect(waste.map((r) => r.type)).toEqual(['WASTE']);
-    const reconciled = await demoQuery<{ gap: string; adjusted: boolean }>(`
-      SELECT r.gap::text AS gap, r.adjustment_transaction_id IS NOT NULL AS adjusted
+    // Only the seed's own counts: other suites (B902) reconcile on the demo tenant too.
+    const seededCounts = buildTenantSeed(DEMO_TENANT, new Date()).reconciliations.map((r) => r.id!);
+    const { rows: reconciled } = await db.query<{ gap: string; adjusted: boolean }>(
+      `SELECT r.gap::text AS gap, r.adjustment_transaction_id IS NOT NULL AS adjusted
         FROM reconciliation_entries r
-        JOIN tenants t ON t.id = r.tenant_id AND t.slug = $1
         JOIN inventory_snapshots n ON n.tenant_id = r.tenant_id AND n.id = r.snapshot_id
-       ORDER BY r.gap`);
+       WHERE r.id = ANY($1::uuid[])
+       ORDER BY r.gap`,
+      [seededCounts],
+    );
     expect(reconciled).toEqual([
       { gap: '-0.250', adjusted: true },
       { gap: '0.000', adjusted: false },

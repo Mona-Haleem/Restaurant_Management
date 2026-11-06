@@ -37,7 +37,7 @@ The PRD's §10 line "real backend (Express, Mongo, Mongoose)" is superseded by t
 | `inventory` | inventory items, components, **ledger service** (only writer of `current_stock`, [ADR 0020](adr/0020-ledger-service-contract.md)), stock queries, restock, menu availability ([ADR 0021](adr/0021-stock-view-and-restock.md)) | B701, B702 | context |
 | `orders` | workflow stages, order lifecycle, stage history ([ADR 0022](adr/0022-order-lifecycle.md)), board/tracking queries | B801, B802 | catalog, inventory |
 | `waste` | waste entries (via the ledger service) | B901 | inventory |
-| `reconciliation` | reconciliation entries, ADJUSTMENT rows, snapshots | B902 | inventory |
+| `reconciliation` | reconciliation entries (count sheet); the ledger service writes the ADJUSTMENT rows and snapshots ([ADR 0024](adr/0024-reconciliation-count-sheet.md)) | B902 | inventory |
 | `staff` | users, roles, activation, argon2 password hashes ([ADR 0023](adr/0023-staff-management-rules.md)) | B1001 | context |
 | `reports` | KPIs, aggregates, anomaly detection (pure functions) | B1101 | orders, inventory, waste |
 

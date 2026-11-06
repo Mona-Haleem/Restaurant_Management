@@ -202,6 +202,18 @@ describe('waste logging (B901)', () => {
     expect(await prisma.wasteEntry.count({ where: { tenantId } })).toBe(entriesBefore);
   });
 
+  it('refuses an amount too large for the stock unit after conversion (QUANTITY_TOO_LARGE)', async () => {
+    const saffron = randomUUID();
+    await prisma.inventoryItem.create({
+      data: { id: saffron, tenantId, name: `Waste Saffron ${run}`, type: 'RAW', unit: 'G' },
+    });
+    // 99,999,999,999 KG fits the column as entered, but not as grams.
+    const res = await log({ inventoryItemId: saffron, quantity: '99999999999', unit: 'KG' });
+    expect(res.status).toBe(400);
+    expect(bodyOf(res)).toMatchObject({ code: 'QUANTITY_TOO_LARGE' });
+    expect((await rowsFor(saffron)).length).toBe(0);
+  });
+
   it.each([
     ['a zero quantity', { quantity: '0' }],
     ['a negative quantity', { quantity: '-1' }],
