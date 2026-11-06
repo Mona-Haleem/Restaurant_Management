@@ -1,0 +1,26 @@
+# Local development database only. Staging/production are Supabase, reached only from CI.
+# Same major version as the Supabase projects (verify in the dashboard, docs/ENVIRONMENTS.md).
+services:
+  db:
+    image: postgres:17
+    environment:
+      # Local-only throwaway credentials, not secrets.
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: tablz_dev
+    ports:
+      # 5433 on the host so it never clashes with a natively installed Postgres on 5432.
+      - '${DB_PORT:-5433}:5432'
+    volumes:
+      - tablz-db:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      # Over TCP and for tablz_test: the image's init phase only listens on the unix socket, and
+      # tablz_test exists only once the init script has run.
+      test: ['CMD-SHELL', 'pg_isready -h 127.0.0.1 -U postgres -d tablz_test']
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+volumes:
+  tablz-db:

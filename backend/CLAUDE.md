@@ -25,10 +25,12 @@ Keep this section accurate. Run from `backend/`, Node 24 (root `.nvmrc`).
 - Dev server: `npm run start:dev` · Build: `npm run build` (→ `dist/`)
 - Lint: `npm run lint` (zero warnings) · Format: `npm run format` / `npm run format:check` · Types: `npm run typecheck`
 - Unit tests: `npm run test` · With coverage gate (80% global, what CI runs): `npm run test:cov`
-- Integration tests: `npm run test:e2e` (Supertest, `test/**/*.e2e-spec.ts`; real Postgres via `DATABASE_URL` from B301 on)
+- Integration tests: `npm run test:e2e` (builds first, resets `tablz_test` from the migrations, then runs `test/**/*.e2e-spec.ts` in band against real Postgres via `TEST_DATABASE_URL`)
 - Tests run through `node --experimental-vm-modules` because NestJS 12 is ESM-only; the warning it prints is expected.
-- Local DB: `docker compose up -d db` (arrives in B201)
+- Local DB: `npm run db:up` (Docker `db` on host port 5433 + migrations) · `npm run db:status` · `npm run db:down` — see `docs/ENVIRONMENTS.md`
 - New migration (local only): `npx prisma migrate dev --name <name>` (use `--create-only` when you need to add SQL such as CHECK constraints)
+- Schema: `npm test` checks the table rules (`src/prisma/schema-rules.spec.ts`); after changing `prisma/schema.prisma` run `npm run erd:generate` (rewrites `docs/ERD.md`). Rules and decisions: `docs/SCHEMA.md`.
+- Env: `.env` if present, else `.env.example`; already-set variables win. `prisma.config.ts` refuses destructive Prisma commands unless `APP_ENV` is local/test with local URLs (ADR 0011).
 
 ## Rules that are never broken
 

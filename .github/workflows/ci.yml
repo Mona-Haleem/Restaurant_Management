@@ -72,6 +72,8 @@ jobs:
     env:
       APP_ENV: test
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tablz_test
+      DIRECT_URL: postgresql://postgres:postgres@localhost:5432/tablz_test
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tablz_test
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -87,15 +89,47 @@ jobs:
         run: npm run test:cov
       - name: Postgres is reachable
         run: pg_isready -h localhost -p 5432 -U postgres
-      - name: Integration tests
+      - name: Integration tests (builds first, resets the test DB from the migrations)
         run: npm run test:e2e
-      - run: npm run build
+
+  # B201 acceptance: a fresh clone reaches a working local database with the two documented
+  # commands from docs/ENVIRONMENTS.md. No .env and no APP_ENV here: .env.example is used.
+  local-setup:
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+      - name: Command 1 — install
+        run: npm ci
+      - name: Command 2 — start the database and apply migrations
+        run: npm run db:up
+      - name: Database is up to date
+        run: npm run db:status
+      - name: The API boots against it (boot guards claim the local database)
+        run: |
+          npm run build
+          node dist/main.js > api.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3000/v1; then exit 0; fi
+            sleep 1
+          done
+          cat api.log
+          exit 1
 
   # The single required status check. Fails if any job failed or was cancelled;
   # passes when a job was skipped because its app did not change.
   ci-ok:
     if: always()
-    needs: [changes, build-test, backend]
+    needs: [changes, build-test, backend, local-setup]
     runs-on: ubuntu-latest
     steps:
       - name: All required jobs passed or were skipped
