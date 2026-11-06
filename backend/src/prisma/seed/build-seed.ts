@@ -8,6 +8,13 @@ import {
   type OrderSeed,
   type TenantSeedDefinition,
 } from './demo-data';
+import {
+  expandOrder,
+  nextAverageCost,
+  type ComponentLine,
+  type RecipeLine,
+  type StockItem,
+} from '../../modules/inventory/ledger-math';
 import { assertScale, toStockUnit } from './quantities';
 import { demoTrackingToken, hashTrackingToken, seedId } from './seed-ids';
 
@@ -191,28 +198,30 @@ export function buildTenantSeed(def: TenantSeedDefinition, now: Date): TenantSee
     trackingTokens: [],
   };
 
-  /** Stock-unit quantities of RAW/READY items used by one menu item (MIXED expanded, ADR 0002). */
-  const usage = (menuKey: string): Map<string, Decimal> => {
-    const used = new Map<string, Decimal>();
-    const add = (key: string, qty: Decimal, label: string): void => {
-      assertScale(qty, STOCK_SCALE, label);
-      used.set(key, (used.get(key) ?? new Decimal(0)).plus(qty));
-    };
-    for (const line of menuOf(menuKey).recipe) {
-      const item = itemOf(line.item);
-      const qty = toStockUnit(new Decimal(line.quantity), line.unit, item.unit);
-      if (item.type !== 'MIXED') {
-        add(item.key, qty, `${menuKey}.${item.key}`);
-        continue;
-      }
-      for (const c of item.components ?? []) {
-        const component = itemOf(c.item);
-        const perUnit = toStockUnit(new Decimal(c.quantity), c.unit, component.unit);
-        add(component.key, perUnit.times(qty), `${menuKey}.${item.key}.${component.key}`);
-      }
-    }
-    return used;
-  };
+  // The same recipe expansion as the ledger service (ADR 0016: no second copy), keyed by seed key.
+  const stockItems = new Map<string, StockItem>(
+    def.inventory.map((i) => [i.key, { id: i.key, type: i.type, unit: i.unit }]),
+  );
+  const recipes = new Map<string, RecipeLine[]>(
+    def.menu.map((m) => [
+      m.key,
+      m.recipe.map((r) => ({
+        inventoryItemId: itemOf(r.item).key,
+        quantity: new Decimal(r.quantity),
+        unit: r.unit,
+      })),
+    ]),
+  );
+  const mixedComponents = new Map<string, ComponentLine[]>(
+    def.inventory.map((i) => [
+      i.key,
+      (i.components ?? []).map((c) => ({
+        componentItemId: itemOf(c.item).key,
+        quantity: new Decimal(c.quantity),
+        unit: c.unit,
+      })),
+    ]),
+  );
 
   // ── Orders, and the stock movements they cause ──────────────────────────────────────────────
   type Movement =
@@ -374,13 +383,13 @@ export function buildTenantSeed(def: TenantSeedDefinition, now: Date): TenantSee
   }
   for (const m of movements) {
     if (m.kind === 'consumption') {
-      // Aggregate per inventory item before writing: one CONSUMPTION row per item per order.
-      const total = new Map<string, Decimal>();
-      for (const [menuKey, quantity] of m.order.items) {
-        for (const [key, qty] of usage(menuKey)) {
-          total.set(key, (total.get(key) ?? new Decimal(0)).plus(qty.times(quantity)));
-        }
-      }
+      // One CONSUMPTION row per item per order, aggregated by the ledger's own function.
+      const total = expandOrder(
+        m.order.items.map(([menuItemId, quantity]) => ({ menuItemId, quantity })),
+        recipes,
+        stockItems,
+        mixedComponents,
+      );
       for (const [key, qty] of total) {
         write(
           id('inventory_transactions', `consumption:${m.order.key}:${key}`),
@@ -403,15 +412,8 @@ export function buildTenantSeed(def: TenantSeedDefinition, now: Date): TenantSee
       const s = stateOf(e.item);
       const qty = dec(e.quantity, STOCK_SCALE, `purchase ${e.key}`);
       const cost = dec(e.unitCost, COST_SCALE, `purchase ${e.key} cost`);
-      // ADR 0005 moving average; ADR 0013: the only rounding step, half-up to 4 decimals.
-      s.avg =
-        s.stock.isPositive() && s.avg
-          ? s.stock
-              .times(s.avg)
-              .plus(qty.times(cost))
-              .dividedBy(s.stock.plus(qty))
-              .toDecimalPlaces(COST_SCALE, Decimal.ROUND_HALF_UP)
-          : cost;
+      // ADR 0005 moving average, computed by the ledger's own function.
+      s.avg = nextAverageCost(s.stock, s.avg, qty, cost);
       write(id('inventory_transactions', `purchase:${e.key}`), e.item, 'PURCHASE', qty, m.at, {
         unitCost: cost,
         actorId: managerId,

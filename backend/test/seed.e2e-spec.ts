@@ -1,6 +1,8 @@
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { Client } from 'pg';
+import { buildTenantSeed } from '../src/prisma/seed/build-seed';
+import { DEMO_TENANT } from '../src/prisma/seed/demo-data';
 import { TEST_DATABASE_URL, testEnv } from './test-env';
 
 // B401 acceptance against real Postgres: the built seed CLI (dist/, built by test:e2e) runs
@@ -144,12 +146,18 @@ describe('seed (B401)', () => {
   });
 
   it('backs every stock row with ledger rows and has waste and a reconciliation', async () => {
-    const unbacked = await demoQuery(`
-      SELECT s.id FROM branch_stock s
-        JOIN tenants t ON t.id = s.tenant_id AND t.slug = $1
-       WHERE NOT EXISTS (SELECT 1 FROM inventory_transactions x
-                          WHERE x.tenant_id = s.tenant_id AND x.inventory_item_id = s.inventory_item_id
-                            AND x.type = 'PURCHASE')`);
+    // Only the rows the seed itself creates: other suites may legitimately add stock rows that
+    // were never restocked (a deduction before any purchase, ADR 0006).
+    const seededStock = buildTenantSeed(DEMO_TENANT, new Date()).branchStock.map((s) => s.id);
+    const { rows: unbacked } = await db.query(
+      `SELECT s.id FROM branch_stock s
+        WHERE s.id = ANY($1::uuid[])
+          AND NOT EXISTS (SELECT 1 FROM inventory_transactions x
+                           WHERE x.tenant_id = s.tenant_id AND x.inventory_item_id = s.inventory_item_id
+                             AND x.type = 'PURCHASE')`,
+      [seededStock],
+    );
+    expect(seededStock.length).toBeGreaterThan(0);
     expect(unbacked).toEqual([]);
     const waste = await demoQuery<{ type: string }>(`
       SELECT x.type FROM waste_entries w
