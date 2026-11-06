@@ -247,13 +247,15 @@ describe('waste logging (B901)', () => {
       }, options as never)) as never);
     const stockBefore = await stockOf(cheese);
     const rowsBefore = (await rowsFor(cheese)).length;
+    let calls: number | undefined;
     try {
       const res = await log({ quantity: '5', unit: 'G' }).expect(500);
       expect(bodyOf(res)).toMatchObject({ code: 'INTERNAL_ERROR' });
     } finally {
+      calls = spy.mock.calls.length; // read before mockRestore() clears it
       spy.mockRestore();
     }
-    expect(spy).toHaveBeenCalled();
+    expect(calls).toBe(1);
     expect(await stockOf(cheese)).toBe(stockBefore);
     expect((await rowsFor(cheese)).length).toBe(rowsBefore);
   });
