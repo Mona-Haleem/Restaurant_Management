@@ -3,6 +3,7 @@ import { Logger } from 'nestjs-pino';
 import { isOriginAllowed } from './common/http/cors';
 import { REQUEST_ID_HEADER } from './common/logging/logger-options';
 import { APP_CONFIG, type AppConfig } from './config/app-config';
+import { setupOpenApi } from './openapi/openapi';
 
 export const API_PREFIX = 'v1';
 
@@ -24,5 +25,6 @@ export function configureApp<T extends INestApplication>(app: T): T {
     exposedHeaders: [REQUEST_ID_HEADER, 'etag'],
     maxAge: 600,
   });
+  setupOpenApi(app, config); // after setGlobalPrefix, so documented paths start with /v1
   return app;
 }

@@ -28,12 +28,14 @@
     "db:reset": "prisma migrate reset",
     "db:status": "prisma migrate status",
     "db:generate": "prisma generate",
-    "erd:generate": "npm run build && node dist/prisma/generate-erd.js"
+    "erd:generate": "npm run build && node dist/prisma/generate-erd.js",
+    "openapi:generate": "npm run build && node dist/openapi/generate.js"
   },
   "dependencies": {
     "@nestjs/common": "^12.3.3",
     "@nestjs/core": "^12.3.3",
     "@nestjs/platform-express": "^12.3.3",
+    "@nestjs/swagger": "^12.1.0",
     "@prisma/adapter-pg": "^7.10.1",
     "@prisma/client": "^7.10.1",
     "class-transformer": "^0.5.1",
@@ -66,5 +68,8 @@
     "ts-node": "^10.9.2",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.72.1"
+  },
+  "scarfSettings": {
+    "enabled": false
   }
 }

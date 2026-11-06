@@ -116,7 +116,7 @@ The table list is in ROADMAP §4. Cross-cutting rules:
 
 ## 7. API conventions
 
-- All routes under `/v1`; tenant routes under `/v1/:tenantSlug/` ([ADR 0007](adr/0007-request-context-slug-and-demo-users.md)). OpenAPI generated from decorators; the spec is the contract for the Angular client and the frontend mocks (B502).
+- All routes under `/v1`; tenant routes under `/v1/:tenantSlug/` ([ADR 0007](adr/0007-request-context-slug-and-demo-users.md)). OpenAPI generated from decorators and committed as `openapi.json` with a drift test ([ADR 0012](adr/0012-openapi-contract.md)); the spec is the contract for the Angular client and the frontend mocks (B502).
 - Input: one DTO per request body/query, validated globally.
 - Errors: `{ "code": "ORDER_NOT_CANCELLABLE", "message": "…", "details": { … } }`. Codes are stable strings the frontend can switch on.
 - Decimals are serialized as strings in JSON, so the frontend never receives a rounded float. (Proposed default — confirm in the numeric-precision ADR, B302.)

@@ -2,6 +2,10 @@ import type { INestApplication } from '@nestjs/common';
 import { Logger } from 'nestjs-pino';
 import { API_PREFIX, configureApp } from './app.setup';
 import { APP_CONFIG } from './config/app-config';
+import { setupOpenApi } from './openapi/openapi';
+
+// The real Swagger setup needs a real app; it is covered by openapi.spec.ts and the e2e tests.
+jest.mock('./openapi/openapi', () => ({ setupOpenApi: jest.fn() }));
 
 describe('configureApp', () => {
   const logger = { log: jest.fn() };
@@ -22,6 +26,12 @@ describe('configureApp', () => {
       enableCors: jest.fn<void, [unknown]>(),
     };
   }
+
+  it('serves the OpenAPI spec', () => {
+    const app = fakeApp();
+    configureApp(app as unknown as INestApplication);
+    expect(setupOpenApi).toHaveBeenCalledWith(app, config);
+  });
 
   it('puts every route under /v1 and uses the structured logger', () => {
     const app = fakeApp();

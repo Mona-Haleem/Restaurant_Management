@@ -17,6 +17,8 @@ const config: Config = {
     '!config/boot-guard.ts',
     // CLI script; its output is checked by erd.spec.ts (drift test).
     '!prisma/generate-erd.ts',
+    // CLI script; what it writes is checked by openapi.spec.ts (drift test).
+    '!openapi/generate.ts',
   ],
   coverageDirectory: '../coverage',
   coverageReporters: ['text-summary', 'lcov'],

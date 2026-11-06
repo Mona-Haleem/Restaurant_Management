@@ -7,6 +7,6 @@ describe('AppController', () => {
       controllers: [AppController],
     }).compile();
 
-    expect(moduleRef.get(AppController).getInfo()).toEqual({ name: 'tablz-api' });
+    expect(moduleRef.get(AppController).getApiInfo()).toEqual({ name: 'tablz-api' });
   });
 });

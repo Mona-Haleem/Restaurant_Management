@@ -1,0 +1,96 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/v1": {
+      "get": {
+        "operationId": "getApiInfo",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiInfoDto"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error: `{ code, message, details }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "API name",
+        "tags": [
+          "meta"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Tablz API",
+    "description": "Tablz restaurant management API, Backend Phase 1. Every error response is `{ code, message, details }`.",
+    "version": "1",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "schemas": {
+      "ApiInfoDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "tablz-api"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Stable machine-readable code the frontend switches on.",
+            "example": "VALIDATION_FAILED"
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable summary. Do not parse it.",
+            "example": "Request validation failed"
+          },
+          "details": {
+            "type": "object",
+            "description": "Machine-readable context. VALIDATION_FAILED: `{ fields: [{ field, messages }] }`.",
+            "additionalProperties": true,
+            "example": {
+              "fields": [
+                {
+                  "field": "name",
+                  "messages": [
+                    "name must be a string"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "details"
+        ]
+      }
+    }
+  }
+}
