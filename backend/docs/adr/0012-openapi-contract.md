@@ -34,4 +34,4 @@ Option 2.
   - Generate the Angular client from `backend/openapi.json` into `frontend/`.
   - Add a contract test that validates the mock handlers' requests and responses against the spec.
   - Without these, the frontend side of B502's acceptance ("changing a response field breaks the contract test before it can break the frontend") is not met.
-- The ARCHITECTURE §7 decision that decimals are serialized as strings is still pending B302's numeric-precision ADR. The spec doesn't claim it yet.
+- Decimals and `bigint` values are serialized as strings ([ADR 0013](0013-numeric-precision.md)). The spec marks them as strings once the first endpoint that returns one is built.

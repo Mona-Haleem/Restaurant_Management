@@ -62,6 +62,7 @@ Rules:
 - Guards and services read the context object, never a header. Swapping dev headers for JWT in Phase 2 must touch only the provider.
 - Feature code never imports the unscoped Prisma client. The tenant extension is the only path to the database.
 - Writes are allowed only on the demo tenant until JWT ships (B503 known risk).
+- No Postgres RLS in Phase 1; isolation is the extension plus composite FKs ([ADR 0015](adr/0015-tenant-isolation-without-rls.md)).
 
 **Phase 1 role capabilities (simple mode, PRD §7.1):**
 
@@ -105,7 +106,7 @@ The table list is in ROADMAP §4. Cross-cutting rules:
 
 ## 6. Order workflow rules
 
-- Stages are rows in `order_workflow_stages` (per tenant: key, label, position, `cancellable`, `deducts_inventory`). Four defaults are seeded per tenant.
+- Stages are rows in `order_workflow_stages` (per tenant: key, label, position, `cancellable`, `deducts_inventory`; [ADR 0014](adr/0014-workflow-stages-as-table.md)). Four defaults are seeded per tenant.
 - **Behavior comes from flags and position only.** No code compares a stage key or label. A test that reorders or renames the stages in its fixture must pass unchanged (B801 acceptance).
 - Advance = move to the next stage by position. Reaching a stage flagged `deducts_inventory` calls the ledger service in the same transaction.
 - Cancel = allowed only while the current stage is `cancellable`; sets `canceled_at`; no inventory change.
@@ -119,7 +120,7 @@ The table list is in ROADMAP §4. Cross-cutting rules:
 - All routes under `/v1`; tenant routes under `/v1/:tenantSlug/` ([ADR 0007](adr/0007-request-context-slug-and-demo-users.md)). OpenAPI generated from decorators and committed as `openapi.json` with a drift test ([ADR 0012](adr/0012-openapi-contract.md)); the spec is the contract for the Angular client and the frontend mocks (B502).
 - Input: one DTO per request body/query, validated globally.
 - Errors: `{ "code": "ORDER_NOT_CANCELLABLE", "message": "…", "details": { … } }`. Codes are stable strings the frontend can switch on.
-- Decimals are serialized as strings in JSON, so the frontend never receives a rounded float. (Proposed default — confirm in the numeric-precision ADR, B302.)
+- Decimals are serialized as strings in JSON, so the frontend never receives a rounded float. Confirmed in [ADR 0013](adr/0013-numeric-precision.md); `bigint` values are strings too.
 
 ---
 
