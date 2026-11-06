@@ -183,6 +183,32 @@ const ISOLATION_CASES: Record<string, IsolationCase> = {
       agent.post(`/v1/${A_SLUG}/menu-items/${ctx.seed.bMenuItemId}/restore`),
     ),
 
+  // ── Waste (B901) ────────────────────────────────────────────────────────────────────────
+  'POST /v1/{tenantSlug}/waste': async ({ http, seed, prisma }) => {
+    const bTenant = seed.b.tenant.id;
+    const counts = async () => ({
+      ledger: await prisma.inventoryTransaction.count({ where: { tenantId: bTenant } }),
+      waste: await prisma.wasteEntry.count({ where: { tenantId: bTenant } }),
+      stock: await prisma.branchStock.findMany({
+        where: { tenantId: bTenant, inventoryItemId: seed.bInventoryItemId },
+      }),
+    });
+    const before = await counts();
+    // B's item does not exist in A's tenant: 404, and nothing is written anywhere.
+    const res = await http()
+      .post(`/v1/${A_SLUG}/waste`)
+      .set(ADMIN)
+      .send({ inventoryItemId: seed.bInventoryItemId, quantity: '1', unit: 'KG', reason: 'x' })
+      .expect(404);
+    expect(bodyOf(res)).toMatchObject({ code: 'INVENTORY_ITEM_NOT_FOUND' });
+    expect(
+      await prisma.inventoryTransaction.count({
+        where: { tenantId: seed.a.tenant.id, inventoryItemId: seed.bInventoryItemId },
+      }),
+    ).toBe(0);
+    expect(await counts()).toEqual(before);
+  },
+
   // ── Stock (B702) ────────────────────────────────────────────────────────────────────────
   'GET /v1/{tenantSlug}/stock': async ({ http, seed }) => {
     const res = await http().get(`/v1/${A_SLUG}/stock`).set(ADMIN).expect(200);
