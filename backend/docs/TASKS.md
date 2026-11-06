@@ -10,7 +10,7 @@ Ticket details live in `docs/ROADMAP.md` §6. This file tracks order, status and
 | 1 | B101 | Workspace, tooling and CI | 🤝 | — | — | done | [#11](https://github.com/Mona-Haleem/Restaurant_Management/pull/11) |
 | 2 | B201 | Local DB, Supabase projects, env guards | 🤝 | B101 | — | done | [#13](https://github.com/Mona-Haleem/Restaurant_Management/pull/13) |
 | 3 | B301 | Prisma schema and first migration | 🤖 | B201 | — | done | [#12](https://github.com/Mona-Haleem/Restaurant_Management/pull/12) |
-| 4 | B302 | Schema review and ADRs | 🤖 | B301 | — | in review | |
+| 4 | B302 | Schema review and ADRs | 🤖 | B301 | — | done | [#18](https://github.com/Mona-Haleem/Restaurant_Management/pull/18) |
 | 5 | B401 | Idempotent seed | 🤖 | B302 | — | todo | |
 | 6 | B501 | Config, validation, errors, logging | 🤖 | B201 | — | done | [#14](https://github.com/Mona-Haleem/Restaurant_Management/pull/14) |
 | 7 | B502 | OpenAPI contract | 🤖 | B501 | Angular client + mock contract test wait for frontend TABLZ-401/402/403 (ADR 0012) | backend half done; frontend half blocked | [#15](https://github.com/Mona-Haleem/Restaurant_Management/pull/15) |
