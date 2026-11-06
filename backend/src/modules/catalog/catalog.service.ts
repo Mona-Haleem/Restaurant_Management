@@ -4,6 +4,7 @@ import { AppException } from '../../common/errors/app-exception';
 import { formatDecimal, MONEY, QUANTITY } from '../../common/decimal/decimal';
 import { RequestContextStore } from '../../context/request-context.store';
 import { TENANT_DB, type TenantDb } from '../../prisma/tenant-prisma';
+import { StockService } from '../inventory/stock.service';
 import type { CategoryDto, CreateCategoryDto, UpdateCategoryDto } from './dto/category.dto';
 import type {
   CreateMenuItemDto,
@@ -60,6 +61,7 @@ export class CatalogService {
   constructor(
     @Inject(TENANT_DB) private readonly db: TenantDb,
     private readonly context: RequestContextStore,
+    private readonly stock: StockService,
   ) {}
 
   private get tenantId(): string {
@@ -90,9 +92,18 @@ export class CatalogService {
       orderBy: [{ position: 'asc' }, { name: 'asc' }],
       select: { id: true, name: true, position: true },
     });
+    // B702 / ADR 0021: greyed out, still listed, when one serving cannot be made from stock.
+    const servable = await this.stock.servableMenuItems(
+      items.map((i) => i.id),
+      branchId,
+    );
     return {
       categories,
-      items: items.map((i) => ({ ...i, price: formatDecimal(i.price, MONEY) })),
+      items: items.map((i) => ({
+        ...i,
+        price: formatDecimal(i.price, MONEY),
+        available: servable.get(i.id) ?? true,
+      })),
     };
   }
 

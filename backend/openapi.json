@@ -1049,6 +1049,10 @@
       "get": {
         "description": "Behavior reads only `cancellable`, `deductsInventory` and `position`.",
         "operationId": "getOrderWorkflow",
+    "/v1/{tenantSlug}/stock": {
+      "get": {
+        "description": "400 BRANCH_REQUIRED when an ADMIN of a multi-branch restaurant sent no x-dev-branch.",
+        "operationId": "listStock",
         "parameters": [
           {
             "name": "x-dev-role",
@@ -1155,6 +1159,31 @@
             "required": false,
             "schema": {
               "type": "string"
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "negative",
+                "out-of-stock",
+                "low-stock",
+                "in-stock",
+                "derived"
+              ]
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "RAW",
+                "READY",
+                "MIXED"
+              ]
             }
           },
           {
@@ -1179,11 +1208,17 @@
         },
         "responses": {
           "201": {
+        "responses": {
+          "200": {
             "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PlacedOrderDto"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StockItemDto"
+                  }
                 }
               }
             }
@@ -1209,6 +1244,15 @@
       "post": {
         "description": "Reaching a `deductsInventory` stage deducts the order from inventory in the same transaction, once. 409: ORDER_AT_LAST_STAGE, ORDER_CANCELED, ORDER_STAGE_CHANGED.",
         "operationId": "advanceOrder",
+        "summary": "Stock of every active item in the caller's branch",
+        "tags": [
+          "stock"
+        ]
+      }
+    },
+    "/v1/{tenantSlug}/stock/low": {
+      "get": {
+        "operationId": "listLowStock",
         "parameters": [
           {
             "name": "x-dev-role",
@@ -1267,6 +1311,10 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/OrderDto"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StockItemDto"
+                  }
                 }
               }
             }
@@ -1292,6 +1340,15 @@
       "post": {
         "description": "Only while its stage is `cancellable`; no inventory change. 409: ORDER_NOT_CANCELLABLE, ORDER_CANCELED, ORDER_STAGE_CHANGED.",
         "operationId": "cancelOrder",
+        "summary": "Items below zero, out of stock or below their threshold, worst first",
+        "tags": [
+          "stock"
+        ]
+      }
+    },
+    "/v1/{tenantSlug}/stock/{inventoryItemId}": {
+      "get": {
+        "operationId": "getStockItem",
         "parameters": [
           {
             "name": "x-dev-role",
@@ -1327,6 +1384,7 @@
           },
           {
             "name": "id",
+            "name": "inventoryItemId",
             "required": true,
             "in": "path",
             "schema": {
@@ -1350,6 +1408,7 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/OrderDto"
+                  "$ref": "#/components/schemas/StockItemDetailDto"
                 }
               }
             }
@@ -1375,6 +1434,16 @@
       "post": {
         "description": "Only while its stage is `cancellable`. An unknown token is 404 ORDER_NOT_FOUND. 409: ORDER_NOT_CANCELLABLE, ORDER_CANCELED, ORDER_STAGE_CHANGED.",
         "operationId": "cancelTrackedOrder",
+        "summary": "One item, with how its expected stock is built up",
+        "tags": [
+          "stock"
+        ]
+      }
+    },
+    "/v1/{tenantSlug}/stock/{inventoryItemId}/restock": {
+      "post": {
+        "description": "Adds to the current stock. A unit cost, if given, updates the moving average.",
+        "operationId": "restockItem",
         "parameters": [
           {
             "name": "x-dev-role",
@@ -1417,6 +1486,12 @@
               "pattern": "^[A-Za-z0-9_-]{43}$"
             },
             "description": "The `trackingToken` returned when placing the order."
+            "name": "inventoryItemId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "tenantSlug",
@@ -1430,11 +1505,24 @@
         ],
         "responses": {
           "200": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RestockDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
             "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/OrderDto"
+                  "$ref": "#/components/schemas/RestockResultDto"
                 }
               }
             }
@@ -1453,6 +1541,9 @@
         "summary": "Cancel my order (guest)",
         "tags": [
           "tracking"
+        "summary": "Restock an item (a PURCHASE ledger row)",
+        "tags": [
+          "stock"
         ]
       }
     }
@@ -1641,6 +1732,10 @@
             "type": "string",
             "pattern": "^\\d{1,10}(\\.\\d{1,2})?$",
             "example": "185.00"
+          },
+          "available": {
+            "type": "boolean",
+            "description": "False when the branch's stock cannot make one serving (show greyed out). Ordering is not blocked in Phase 1 (ADR 0006, ADR 0021)."
           }
         },
         "required": [
@@ -1648,7 +1743,8 @@
           "categoryId",
           "name",
           "description",
-          "price"
+          "price",
+          "available"
         ]
       },
       "CustomerMenuDto": {
@@ -2298,6 +2394,332 @@
           "items",
           "createdAt",
           "updatedAt"
+      "StockComponentDto": {
+        "type": "object",
+        "properties": {
+          "inventoryItemId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "example": "Tomatoes"
+          },
+          "quantityPerUnit": {
+            "type": "string",
+            "pattern": "^\\d{1,11}(\\.\\d{1,3})?$",
+            "description": "Per one unit of the MIXED item."
+          },
+          "unit": {
+            "type": "string",
+            "enum": [
+              "G",
+              "KG",
+              "ML",
+              "L",
+              "PCS"
+            ]
+          }
+        },
+        "required": [
+          "inventoryItemId",
+          "name",
+          "quantityPerUnit",
+          "unit"
+        ]
+      },
+      "StockItemDto": {
+        "type": "object",
+        "properties": {
+          "inventoryItemId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "example": "Mozzarella"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "RAW",
+              "READY",
+              "MIXED"
+            ]
+          },
+          "unit": {
+            "type": "string",
+            "enum": [
+              "G",
+              "KG",
+              "ML",
+              "L",
+              "PCS"
+            ],
+            "description": "The stock unit."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "negative",
+              "out-of-stock",
+              "low-stock",
+              "in-stock",
+              "derived"
+            ]
+          },
+          "currentStock": {
+            "type": "string",
+            "nullable": true,
+            "description": "Null for MIXED items (derived)."
+          },
+          "expectedStock": {
+            "type": "string",
+            "nullable": true,
+            "description": "Latest count + ledger since (ARCHITECTURE §5). Equals currentStock (the ledger keeps them in step); a write landing between the reads of one response can show them apart. Null for MIXED."
+          },
+          "lowStockThreshold": {
+            "type": "string",
+            "nullable": true
+          },
+          "avgUnitCost": {
+            "type": "string",
+            "nullable": true,
+            "description": "Moving average per stock unit."
+          },
+          "standardUnitCost": {
+            "type": "string",
+            "nullable": true
+          },
+          "lastCountedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "derivedStock": {
+            "type": "string",
+            "nullable": true,
+            "description": "MIXED only: how many units its components allow (ADR 0002)."
+          },
+          "limitingItemId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "MIXED only."
+          },
+          "components": {
+            "description": "MIXED only, sorted by component name; empty otherwise.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StockComponentDto"
+            }
+          }
+        },
+        "required": [
+          "inventoryItemId",
+          "name",
+          "type",
+          "unit",
+          "status",
+          "currentStock",
+          "expectedStock",
+          "lowStockThreshold",
+          "avgUnitCost",
+          "standardUnitCost",
+          "lastCountedAt",
+          "derivedStock",
+          "limitingItemId",
+          "components"
+        ]
+      },
+      "StockItemDetailDto": {
+        "type": "object",
+        "properties": {
+          "inventoryItemId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "example": "Mozzarella"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "RAW",
+              "READY",
+              "MIXED"
+            ]
+          },
+          "unit": {
+            "type": "string",
+            "enum": [
+              "G",
+              "KG",
+              "ML",
+              "L",
+              "PCS"
+            ],
+            "description": "The stock unit."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "negative",
+              "out-of-stock",
+              "low-stock",
+              "in-stock",
+              "derived"
+            ]
+          },
+          "currentStock": {
+            "type": "string",
+            "nullable": true,
+            "description": "Null for MIXED items (derived)."
+          },
+          "expectedStock": {
+            "type": "string",
+            "nullable": true,
+            "description": "Latest count + ledger since (ARCHITECTURE §5). Equals currentStock (the ledger keeps them in step); a write landing between the reads of one response can show them apart. Null for MIXED."
+          },
+          "lowStockThreshold": {
+            "type": "string",
+            "nullable": true
+          },
+          "avgUnitCost": {
+            "type": "string",
+            "nullable": true,
+            "description": "Moving average per stock unit."
+          },
+          "standardUnitCost": {
+            "type": "string",
+            "nullable": true
+          },
+          "lastCountedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "derivedStock": {
+            "type": "string",
+            "nullable": true,
+            "description": "MIXED only: how many units its components allow (ADR 0002)."
+          },
+          "limitingItemId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "MIXED only."
+          },
+          "components": {
+            "description": "MIXED only, sorted by component name; empty otherwise.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StockComponentDto"
+            }
+          },
+          "lastCountQuantity": {
+            "type": "string",
+            "nullable": true,
+            "description": "Quantity at the latest count."
+          },
+          "changeSinceLastCount": {
+            "type": "string",
+            "nullable": true,
+            "description": "Sum of ledger rows since the latest count (or since the start)."
+          }
+        },
+        "required": [
+          "inventoryItemId",
+          "name",
+          "type",
+          "unit",
+          "status",
+          "currentStock",
+          "expectedStock",
+          "lowStockThreshold",
+          "avgUnitCost",
+          "standardUnitCost",
+          "lastCountedAt",
+          "derivedStock",
+          "limitingItemId",
+          "components",
+          "lastCountQuantity",
+          "changeSinceLastCount"
+        ]
+      },
+      "RestockDto": {
+        "type": "object",
+        "properties": {
+          "quantity": {
+            "type": "string",
+            "pattern": "^\\d{1,11}(\\.\\d{1,3})?$",
+            "example": "500",
+            "description": "Positive, in `unit` (defaults to the stock unit)."
+          },
+          "unit": {
+            "type": "string",
+            "enum": [
+              "G",
+              "KG",
+              "ML",
+              "L",
+              "PCS"
+            ],
+            "description": "Same dimension as the item's stock unit."
+          },
+          "unitCost": {
+            "type": "string",
+            "pattern": "^\\d{1,10}(\\.\\d{1,4})?$",
+            "example": "0.42",
+            "description": "Cost per entered unit (converted to the stock unit). Optional: without it the moving average is unchanged."
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "Supplier, invoice, anything useful."
+          }
+        },
+        "required": [
+          "quantity"
+        ]
+      },
+      "RestockResultDto": {
+        "type": "object",
+        "properties": {
+          "transactionId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The PURCHASE ledger row."
+          },
+          "inventoryItemId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "quantityDelta": {
+            "type": "string",
+            "description": "In the stock unit."
+          },
+          "unitCost": {
+            "type": "string",
+            "nullable": true,
+            "description": "Stored on the row, per stock unit."
+          },
+          "stockAfter": {
+            "type": "string"
+          },
+          "avgUnitCost": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "transactionId",
+          "inventoryItemId",
+          "quantityDelta",
+          "unitCost",
+          "stockAfter",
+          "avgUnitCost"
         ]
       },
       "ErrorResponse": {

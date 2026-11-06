@@ -231,6 +231,37 @@ const ISOLATION_CASES: Record<string, IsolationCase> = {
     const res = await http().post(`/v1/${A_SLUG}/track/${order.token}/cancel`).expect(404);
     expect(bodyOf(res)).toMatchObject({ code: 'ORDER_NOT_FOUND' });
     expect(await bOrderState(prisma, order.id)).toEqual(order.state);
+  // ── Stock (B702) ────────────────────────────────────────────────────────────────────────
+  'GET /v1/{tenantSlug}/stock': async ({ http, seed }) => {
+    const res = await http().get(`/v1/${A_SLUG}/stock`).set(ADMIN).expect(200);
+    const listed = (bodyOf(res) as { inventoryItemId: string }[]).map((r) => r.inventoryItemId);
+    expect(listed).not.toContain(seed.bInventoryItemId);
+    expect(listed.length).toBeGreaterThan(0);
+  },
+  'GET /v1/{tenantSlug}/stock/low': async ({ http, seed }) => {
+    const res = await http().get(`/v1/${A_SLUG}/stock/low`).set(ADMIN).expect(200);
+    const listed = (bodyOf(res) as { inventoryItemId: string }[]).map((r) => r.inventoryItemId);
+    expect(listed).not.toContain(seed.bInventoryItemId);
+  },
+  'GET /v1/{tenantSlug}/stock/{inventoryItemId}': async ({ http, seed }) => {
+    await http().get(`/v1/${A_SLUG}/stock/${seed.bInventoryItemId}`).set(ADMIN).expect(404);
+    const aItem = seed.a.inventoryItems[0]!.id;
+    await http().get(`/v1/${B_SLUG}/stock/${aItem}`).set(ADMIN).expect(404);
+  },
+  'POST /v1/{tenantSlug}/stock/{inventoryItemId}/restock': async ({ http, seed, prisma }) => {
+    const bRows = () =>
+      prisma.inventoryTransaction.count({ where: { inventoryItemId: seed.bInventoryItemId } });
+    const before = await bRows();
+    const res = await http()
+      .post(`/v1/${A_SLUG}/stock/${seed.bInventoryItemId}/restock`)
+      .set(ADMIN)
+      .send({ quantity: '5' })
+      .expect(404);
+    expect(bodyOf(res)).toMatchObject({ code: 'INVENTORY_ITEM_NOT_FOUND' });
+    expect(await bRows()).toBe(before);
+    expect(
+      await prisma.branchStock.count({ where: { inventoryItemId: seed.bInventoryItemId } }),
+    ).toBe(0);
   },
 };
 
