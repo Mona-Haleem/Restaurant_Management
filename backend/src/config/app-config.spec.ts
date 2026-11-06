@@ -22,6 +22,7 @@ describe('loadConfig', () => {
       directUrl: undefined,
       corsOrigins: ['http://localhost:4200'],
       logLevel: 'debug',
+      rateLimit: { max: 120, windowSeconds: 60 },
     });
   });
 
@@ -45,6 +46,8 @@ describe('loadConfig', () => {
         DIRECT_URL: REMOTE_URL,
         CORS_ORIGINS: ' https://staging.tablz.app , https://tablz-*-mona.vercel.app ',
         LOG_LEVEL: 'warn',
+        RATE_LIMIT_MAX: '300',
+        RATE_LIMIT_WINDOW_SECONDS: '30',
       }),
     ).toEqual({
       appEnv: 'staging',
@@ -53,7 +56,19 @@ describe('loadConfig', () => {
       directUrl: REMOTE_URL,
       corsOrigins: ['https://staging.tablz.app', 'https://tablz-*-mona.vercel.app'],
       logLevel: 'warn',
+      rateLimit: { max: 300, windowSeconds: 30 },
     });
+  });
+
+  it.each([
+    ['RATE_LIMIT_MAX', '0'],
+    ['RATE_LIMIT_MAX', 'lots'],
+    ['RATE_LIMIT_WINDOW_SECONDS', '-5'],
+    ['RATE_LIMIT_WINDOW_SECONDS', '1.5'],
+  ])('rejects %s=%s (B503 rate limit)', (variable, value) => {
+    expect(problemsOf({ APP_ENV: 'local', DATABASE_URL: LOCAL_URL, [variable]: value })).toEqual([
+      `${variable} must be a positive integer.`,
+    ]);
   });
 
   it('stops on a missing DATABASE_URL with a clear message', () => {

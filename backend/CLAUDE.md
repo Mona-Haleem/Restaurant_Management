@@ -62,6 +62,7 @@ Keep this section accurate. Run from `backend/`, Node 24 (root `.nvmrc`).
   - `@ApiTags`, `@ApiOperation` and an `@Api…Response({ type })` on every route.
   - Controller method names are the `operationId`s, so they must be unique and readable (e.g. `listMenuItems`).
   - Never hand-edit `openapi.json`.
+- Tenant routes: controllers under `:tenantSlug/...` with `@TenantRoute()`; staff-only unless `@AllowGuest()`, narrowed by `@Roles(...)`. Services inject `TENANT_DB` (never `PrismaService`; ESLint enforces it), pass `tenantId` from the context on creates, and await queries inside the request. Every new tenant route adds a case to `ISOLATION_CASES` in `test/tenant-isolation.e2e-spec.ts` (ADR 0018).
 - Thin controllers; business rules in services; calculations (expected stock, reconciliation gap, anomalies) as pure functions with unit tests.
 - One error shape everywhere: `{ code, message, details }`, no stack traces. Expected failures throw `AppException(status, 'STABLE_CODE', message, details)` from `src/common/errors/`; anything else becomes a logged, generic 500 `INTERNAL_ERROR`.
 - Config comes from `loadConfig()` (`src/config/app-config.ts`, fail fast, all problems listed) and is injected with `@Inject(APP_CONFIG)`. Never read `process.env` in feature code.

@@ -17,6 +17,7 @@ async function generate(): Promise<void> {
         directUrl: undefined,
         corsOrigins: [],
         logLevel: 'silent',
+        rateLimit: { max: 1, windowSeconds: 1 },
       }),
       { logger: false },
     ),

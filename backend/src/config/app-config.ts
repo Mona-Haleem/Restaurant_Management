@@ -9,6 +9,8 @@ export interface AppConfig {
   directUrl: string | undefined;
   corsOrigins: string[];
   logLevel: LogLevel;
+  /** B503: per-IP limit of `max` requests per `windowSeconds` (health routes excluded). */
+  rateLimit: { max: number; windowSeconds: number };
 }
 
 export const APP_CONFIG = Symbol('APP_CONFIG');
@@ -25,6 +27,8 @@ const DEFAULT_LOG_LEVEL: Record<AppEnv, LogLevel> = {
 
 /** The Angular dev server. Staging/production must list their origins explicitly. */
 const DEFAULT_DEV_ORIGINS = ['http://localhost:4200'];
+
+const DEFAULT_RATE_LIMIT = { max: 120, windowSeconds: 60 };
 
 /** Thrown when the environment is invalid. Lists every problem so one fix-and-restart is enough. */
 export class ConfigValidationError extends EnvironmentGuardError {
@@ -106,6 +110,20 @@ export function loadConfig(env: RawEnv): AppConfig {
     );
   }
 
+  const positiveInt = (variable: string, fallback: number): number => {
+    const raw = env[variable];
+    if (raw === undefined || raw === '') return fallback;
+    if (!/^\d+$/.test(raw) || Number(raw) < 1) {
+      problems.push(`${variable} must be a positive integer.`);
+      return fallback;
+    }
+    return Number(raw);
+  };
+  const rateLimit = {
+    max: positiveInt('RATE_LIMIT_MAX', DEFAULT_RATE_LIMIT.max),
+    windowSeconds: positiveInt('RATE_LIMIT_WINDOW_SECONDS', DEFAULT_RATE_LIMIT.windowSeconds),
+  };
+
   if (problems.length > 0 || appEnv === undefined) throw new ConfigValidationError(problems);
 
   return {
@@ -115,5 +133,6 @@ export function loadConfig(env: RawEnv): AppConfig {
     directUrl,
     corsOrigins: corsOrigins.length > 0 ? corsOrigins : DEFAULT_DEV_ORIGINS,
     logLevel: logLevel ?? DEFAULT_LOG_LEVEL[appEnv],
+    rateLimit,
   };
 }

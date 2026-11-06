@@ -32,6 +32,145 @@
           "meta"
         ]
       }
+    },
+    "/v1/{tenantSlug}/context": {
+      "get": {
+        "description": "The restaurant, branch and actor resolved for this request (guest when no identity header is sent).",
+        "operationId": "getRequestContext",
+        "parameters": [
+          {
+            "name": "x-dev-role",
+            "in": "header",
+            "description": "Phase 1 only: act as the restaurant's demo user with this role. Omit for a guest.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ADMIN",
+                "MANAGER",
+                "WORKER"
+              ]
+            }
+          },
+          {
+            "name": "x-dev-user",
+            "in": "header",
+            "description": "Phase 1 only: act as this active user (uuid) of the restaurant.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-dev-branch",
+            "in": "header",
+            "description": "Phase 1 only, ADMIN: the branch (uuid) to act in.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tenantSlug",
+            "required": true,
+            "in": "path",
+            "description": "The restaurant, e.g. `nile-bites` (the demo tenant).",
+            "schema": {
+              "example": "nile-bites"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestContextDto"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error: `{ code, message, details }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Who the API thinks is calling",
+        "tags": [
+          "context"
+        ]
+      }
+    },
+    "/v1/health": {
+      "get": {
+        "operationId": "getHealth",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthDto"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error: `{ code, message, details }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Is the API up? Never touches the database.",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/v1/health/db": {
+      "get": {
+        "operationId": "getDatabaseHealth",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatabaseHealthDto"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error: `{ code, message, details }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Is the database reachable? Runs a trivial query; 503 DATABASE_UNAVAILABLE if not.",
+        "tags": [
+          "health"
+        ]
+      }
     }
   },
   "info": {
@@ -54,6 +193,123 @@
         },
         "required": [
           "name"
+        ]
+      },
+      "TenantSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "slug": {
+            "type": "string",
+            "example": "nile-bites"
+          },
+          "name": {
+            "type": "string",
+            "example": "Nile Bites"
+          },
+          "isDemo": {
+            "type": "boolean",
+            "description": "Phase 1: only the demo restaurant accepts changes."
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "name",
+          "isDemo"
+        ]
+      },
+      "ActorDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "example": "Omar Hassan"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "ADMIN",
+              "MANAGER",
+              "WORKER"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "role"
+        ]
+      },
+      "RequestContextDto": {
+        "type": "object",
+        "properties": {
+          "tenant": {
+            "$ref": "#/components/schemas/TenantSummaryDto"
+          },
+          "branchId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "Null when an ADMIN of a multi-branch restaurant has not chosen a branch."
+          },
+          "actor": {
+            "nullable": true,
+            "description": "Null for a guest.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ActorDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "tenant",
+          "branchId",
+          "actor"
+        ]
+      },
+      "HealthDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "DatabaseHealthDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok"
+            ]
+          },
+          "database": {
+            "type": "string",
+            "enum": [
+              "up"
+            ]
+          }
+        },
+        "required": [
+          "status",
+          "database"
         ]
       },
       "ErrorResponse": {

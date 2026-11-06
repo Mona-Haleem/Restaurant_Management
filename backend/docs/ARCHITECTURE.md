@@ -30,8 +30,8 @@ The PRD's §10 line "real backend (Express, Mongo, Mongoose)" is superseded by t
 | Module | Owns | Tickets | Depends on |
 | --- | --- | --- | --- |
 | `config` | env schema, fail-fast validation, `APP_ENV` guard | B201, B501 | — |
-| `prisma` | PrismaService, tenant-scoping client extension, transaction helper | B301, B503 | config |
-| `context` | request context provider (tenant, branch, actor, role), role guard | B503 | prisma |
+| `prisma` | PrismaService (unscoped, platform only), `TENANT_DB` tenant-scoped client extension ([ADR 0018](adr/0018-tenant-access-defaults-and-rate-limit.md)) | B301, B503 | config |
+| `context` | request context provider (tenant, branch, actor, role), `TenantAccessGuard` (roles + demo-only writes), context store, `GET /:tenantSlug/context` | B503 | prisma |
 | `health` | `/health`, `/health/db` | B503 | prisma |
 | `catalog` | categories, menu items, menu-item ingredients | B601 | context |
 | `inventory` | inventory items, components, **ledger service** (only writer of `current_stock`), stock queries, restock | B701, B702 | context |
@@ -41,7 +41,7 @@ The PRD's §10 line "real backend (Express, Mongo, Mongoose)" is superseded by t
 | `staff` | users, roles, activation | B1001 | context |
 | `reports` | KPIs, aggregates, anomaly detection (pure functions) | B1101 | orders, inventory, waste |
 
-Folder shape per module: `src/modules/<module>/` with `<module>.module.ts`, `*.controller.ts`, `*.service.ts`, `dto/`, and tests beside the code (`*.spec.ts`). Cross-cutting code lives in `src/common/` (exception filter, interceptors, pipes, decorators). Integration tests live in `test/`.
+Folder shape per module: `src/modules/<module>/` with `<module>.module.ts`, `*.controller.ts`, `*.service.ts`, `dto/`, and tests beside the code (`*.spec.ts`). Cross-cutting code lives in `src/common/` (exception filter, interceptors, pipes, decorators, rate limit). Platform modules that may use the unscoped client live outside `src/modules/`: `src/config/`, `src/prisma/`, `src/context/`, `src/health/`; ESLint forbids `src/modules/**` from importing `PrismaService`. Integration tests live in `test/`.
 
 ---
 
@@ -61,7 +61,9 @@ Rules:
 
 - Guards and services read the context object, never a header. Swapping dev headers for JWT in Phase 2 must touch only the provider.
 - Feature code never imports the unscoped Prisma client. The tenant extension is the only path to the database.
-- Writes are allowed only on the demo tenant until JWT ships (B503 known risk).
+- Writes are allowed only on the demo tenant until JWT ships (B503 known risk): `403 DEMO_READ_ONLY` elsewhere.
+- Tenant routes are staff-only unless `@AllowGuest()`; `@Roles(...)` narrows them. Rate limit runs first, health routes are exempt ([ADR 0018](adr/0018-tenant-access-defaults-and-rate-limit.md)).
+- The scheduled staging reseed resets the demo tenant only ([ADR 0017](adr/0017-demo-tenant-reset.md), built in B1202).
 - No Postgres RLS in Phase 1; isolation is the extension plus composite FKs ([ADR 0015](adr/0015-tenant-isolation-without-rls.md)).
 
 **Phase 1 role capabilities (simple mode, PRD §7.1):**
