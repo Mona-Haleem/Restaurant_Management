@@ -34,7 +34,7 @@ The PRD's §10 line "real backend (Express, Mongo, Mongoose)" is superseded by t
 | `context` | request context provider (tenant, branch, actor, role), `TenantAccessGuard` (roles + demo-only writes), context store, `GET /:tenantSlug/context` | B503 | prisma |
 | `health` | `/health`, `/health/db` | B503 | prisma |
 | `catalog` | categories, menu items, menu-item ingredients, customer menu ([ADR 0019](adr/0019-catalog-rules.md)) | B601 | context |
-| `inventory` | inventory items, components, **ledger service** (only writer of `current_stock`), stock queries, restock | B701, B702 | context |
+| `inventory` | inventory items, components, **ledger service** (only writer of `current_stock`, [ADR 0020](adr/0020-ledger-service-contract.md)), stock queries, restock | B701, B702 | context |
 | `orders` | workflow stages, order lifecycle, stage history, board/tracking queries | B801, B802 | catalog, inventory |
 | `waste` | waste entries (via the ledger service) | B901 | inventory |
 | `reconciliation` | reconciliation entries, ADJUSTMENT rows, snapshots | B902 | inventory |

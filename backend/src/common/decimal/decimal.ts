@@ -34,6 +34,14 @@ export function parseDecimal(value: string): Prisma.Decimal {
   return new Prisma.Decimal(value);
 }
 
+/**
+ * Rounds half-up to the column's scale. ADR 0013 allows this for derived values only (the
+ * moving-average cost); inputs are refused, never rounded.
+ */
+export function roundHalfUp(value: Prisma.Decimal, decimal: DecimalKind): Prisma.Decimal {
+  return value.toDecimalPlaces(decimal.scale, Prisma.Decimal.ROUND_HALF_UP);
+}
+
 /** A Decimal as its wire string, padded to the column's scale (`"185.00"`, `"0.150"`). */
 export function formatDecimal(value: Prisma.Decimal, decimal: DecimalKind): string {
   return value.toFixed(decimal.scale);
