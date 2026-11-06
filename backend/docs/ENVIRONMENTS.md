@@ -79,11 +79,11 @@ Rules:
 - **IPv4:** GitHub's runners are IPv4-only. On the free plan the direct host `db.<ref>.supabase.co` is IPv6-only, so CI must use the **session pooler** string for `DIRECT_URL`. The app uses the **transaction pooler** (`:6543`).
 - **Marker row:** a new staging or production database has no `app_environment` row and the API refuses to boot until CI inserts it (B1202). See ADR 0011.
 
-Status of the Supabase setup (fill in during B201's manual steps):
+Status of the Supabase setup (B201 manual steps, done 2026-11-06):
 
 | Item | Value |
 | --- | --- |
-| `tablz-prod` created | ☐ |
-| `tablz-staging` created | ☐ |
-| Postgres major version (dashboard) | ☐ |
-| Session pooler reachable from a GitHub runner | ☐ |
+| `tablz-prod` created | ✅ |
+| `tablz-staging` created | ✅ |
+| Postgres major version (dashboard) | ✅ 17 (matches compose and CI) |
+| Session pooler reachable from a GitHub runner | ✅ confirmed by the user, 2026-11-06 |
