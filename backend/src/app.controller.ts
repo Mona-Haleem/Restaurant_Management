@@ -1,17 +1,22 @@
 import { Controller, Get } from '@nestjs/common';
+import { ApiOkResponse, ApiOperation, ApiProperty, ApiTags } from '@nestjs/swagger';
 
-export interface ApiInfo {
-  name: string;
+export class ApiInfoDto {
+  @ApiProperty({ example: 'tablz-api' })
+  name!: string;
 }
 
 /**
- * Placeholder root route so the app has something to answer in tests.
- * Real health checks (`/v1/health`, `/v1/health/db`) arrive in B503.
+ * Root route, so the app has something to answer. Real health checks
+ * (`/v1/health`, `/v1/health/db`) arrive in B503.
  */
+@ApiTags('meta')
 @Controller()
 export class AppController {
   @Get()
-  getInfo(): ApiInfo {
+  @ApiOperation({ summary: 'API name' })
+  @ApiOkResponse({ type: ApiInfoDto })
+  getApiInfo(): ApiInfoDto {
     return { name: 'tablz-api' };
   }
 }

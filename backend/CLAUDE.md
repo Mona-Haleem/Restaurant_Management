@@ -30,6 +30,7 @@ Keep this section accurate. Run from `backend/`, Node 24 (root `.nvmrc`).
 - Local DB: `npm run db:up` (Docker `db` on host port 5433 + migrations) · `npm run db:status` · `npm run db:down` — see `docs/ENVIRONMENTS.md`
 - New migration (local only): `npx prisma migrate dev --name <name>` (use `--create-only` when you need to add SQL such as CHECK constraints)
 - Schema: `npm test` checks the table rules (`src/prisma/schema-rules.spec.ts`); after changing `prisma/schema.prisma` run `npm run erd:generate` (rewrites `docs/ERD.md`). Rules and decisions: `docs/SCHEMA.md`.
+- OpenAPI: `npm run openapi:generate` rewrites `openapi.json` (commit it). `npm test` fails when it is out of date. Served at `/v1/openapi.json`; UI at `/v1/docs` (not on production).
 - Env: `.env` if present, else `.env.example`; already-set variables win. `prisma.config.ts` refuses destructive Prisma commands unless `APP_ENV` is local/test with local URLs (ADR 0011).
 
 ## Rules that are never broken
@@ -55,7 +56,12 @@ Keep this section accurate. Run from `backend/`, Node 24 (root `.nvmrc`).
 
 - One folder per module under `src/modules/`; shared code in `src/common/`; Prisma in `src/prisma/` and `prisma/`; unit tests (`*.spec.ts`) beside the code; integration tests in `test/`.
 - App-wide setup (prefix, pipes, filters) lives in `configureApp()` in `src/app.setup.ts`, used by both `main.ts` and the e2e tests, so tests boot the same app production runs.
-- class-validator DTOs with a global `ValidationPipe`; `@nestjs/swagger` decorators on every route; routes under `/v1`.
+- class-validator DTOs with a global `ValidationPipe`; routes under `/v1`.
+- OpenAPI (ADR 0012) is the contract with the Angular app:
+  - `@ApiProperty` on every DTO property.
+  - `@ApiTags`, `@ApiOperation` and an `@Api…Response({ type })` on every route.
+  - Controller method names are the `operationId`s, so they must be unique and readable (e.g. `listMenuItems`).
+  - Never hand-edit `openapi.json`.
 - Thin controllers; business rules in services; calculations (expected stock, reconciliation gap, anomalies) as pure functions with unit tests.
 - One error shape everywhere: `{ code, message, details }`, no stack traces. Expected failures throw `AppException(status, 'STABLE_CODE', message, details)` from `src/common/errors/`; anything else becomes a logged, generic 500 `INTERNAL_ERROR`.
 - Config comes from `loadConfig()` (`src/config/app-config.ts`, fail fast, all problems listed) and is injected with `@Inject(APP_CONFIG)`. Never read `process.env` in feature code.
