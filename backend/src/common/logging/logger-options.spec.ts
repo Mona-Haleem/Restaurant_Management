@@ -1,5 +1,10 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { buildLoggerOptions, requestIdFor, REQUEST_ID_HEADER } from './logger-options';
+import {
+  buildLoggerOptions,
+  redactTrackingToken,
+  requestIdFor,
+  REQUEST_ID_HEADER,
+} from './logger-options';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
@@ -68,5 +73,31 @@ describe('buildLoggerOptions', () => {
     const stream = { write: (): boolean => true };
     const options = buildLoggerOptions({ appEnv: 'test', logLevel: 'info' }, stream);
     expect(options.pinoHttp).toEqual([expect.objectContaining({ level: 'info' }), stream]);
+  });
+});
+
+describe('tracking token redaction (ADR 0008)', () => {
+  it.each([
+    ['/v1/nile-bites/track/abcDEF_123-xyz/cancel', '/v1/nile-bites/track/[REDACTED]/cancel'],
+    ['/v1/nile-bites/track/abcDEF_123-xyz', '/v1/nile-bites/track/[REDACTED]'],
+    ['/v1/nile-bites/track/abc?x=1', '/v1/nile-bites/track/[REDACTED]?x=1'],
+    ['/v1/nile-bites/orders/123/cancel', '/v1/nile-bites/orders/123/cancel'],
+    ['/v1/track', '/v1/track'],
+  ])('%s → %s', (url, expected) => {
+    expect(redactTrackingToken(url)).toBe(expected);
+  });
+
+  it('is applied to the request line pino-http logs', () => {
+    const options = buildLoggerOptions({ appEnv: 'production', logLevel: 'info' });
+    const serializers = (options.pinoHttp as { serializers: { req: (r: unknown) => unknown } })
+      .serializers;
+    const params = { splat: ['a', 'track', 'secret', 'cancel'] };
+    expect(serializers.req({ method: 'POST', url: '/v1/a/track/secret/cancel', params })).toEqual({
+      method: 'POST',
+      url: '/v1/a/track/[REDACTED]/cancel',
+    });
+    // Other routes keep their params.
+    const other = { method: 'GET', url: '/v1/a/menu', params: { splat: ['a', 'menu'] } };
+    expect(serializers.req(other)).toBe(other);
   });
 });

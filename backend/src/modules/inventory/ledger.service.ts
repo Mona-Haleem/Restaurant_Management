@@ -10,10 +10,12 @@ import type { TenantDb } from '../../prisma/tenant-prisma';
 import {
   expandOrder,
   LedgerMathError,
+  nextAverageCost,
   type ComponentLine,
   type RecipeLine,
   type StockItem,
 } from './ledger-math';
+import { costPerStockUnit, StockMathError } from './stock-math';
 
 type Decimal = Prisma.Decimal;
 /** The caller's interactive transaction on the tenant-scoped client. */
@@ -49,6 +51,27 @@ export interface WasteRecorded extends StockMovement {
   negative: boolean;
 }
 
+export interface PurchaseInput {
+  branchId: string;
+  inventoryItemId: string;
+  /** As entered, positive (validated by the caller's DTO). */
+  quantity: string;
+  /** Defaults to the item's stock unit. */
+  unit?: Unit;
+  /** Per entered unit; optional (ADR 0021). Without it the average is unchanged. */
+  unitCost?: string;
+  actorId: string;
+  note?: string;
+}
+
+export interface PurchaseRecorded extends StockMovement {
+  transactionId: string;
+  /** Cost stored on the PURCHASE row, per stock unit. */
+  unitCost: Decimal | null;
+  /** The branch's moving average after the purchase (ADR 0005). */
+  avgUnitCost: Decimal | null;
+}
+
 interface Movement {
   inventoryItemId: string;
   quantityDelta: Decimal;
@@ -56,6 +79,14 @@ interface Movement {
   relatedOrderId?: string;
   note?: string;
   standardUnitCost: Decimal | null;
+  /** PURCHASE only: cost per stock unit; updates the moving average. */
+  purchaseCost?: Decimal | null;
+}
+
+interface Applied extends StockMovement {
+  transactionId: string;
+  unitCost: Decimal | null;
+  avgUnitCost: Decimal | null;
 }
 
 function fromMathError(error: unknown): unknown {
@@ -173,32 +204,11 @@ export class LedgerService {
 
   /** One WASTE row for a logged waste quantity (B901 links its waste entry to the returned id). */
   async recordWaste(tx: LedgerTx, input: WasteInput): Promise<WasteRecorded> {
-    const item = await tx.inventoryItem.findUnique({
-      where: { id: input.inventoryItemId },
-      select: { id: true, type: true, unit: true, isActive: true, standardUnitCost: true },
-    });
-    if (!item || !item.isActive) {
-      throw new AppException(404, 'INVENTORY_ITEM_NOT_FOUND', 'No such inventory item.', {
-        inventoryItemId: input.inventoryItemId,
-      });
-    }
-    if (item.type === 'MIXED') {
-      throw new AppException(
-        400,
-        'MIXED_ITEM_NOT_STOCKED',
-        'A MIXED item has no stock of its own: log the waste against its components (ADR 0002).',
-        { inventoryItemId: item.id },
-      );
-    }
-    const branch = await tx.branch.findFirst({
-      where: { id: input.branchId, isActive: true },
-      select: { id: true },
-    });
-    if (!branch) {
-      throw new AppException(400, 'BRANCH_NOT_FOUND', 'No active branch with that id.', {
-        branchId: input.branchId,
-      });
-    }
+    const item = await this.loadStockedItem(
+      tx,
+      input,
+      'A MIXED item has no stock of its own: log the waste against its components (ADR 0002).',
+    );
     const quantity = this.toStockQuantity(input.quantity, input.unit, item);
     const [movement] = await this.apply(tx, input.branchId, input.actorId, [
       {
@@ -209,7 +219,50 @@ export class LedgerService {
         standardUnitCost: item.standardUnitCost,
       },
     ]);
-    return { ...movement!, negative: movement!.stockAfter.isNegative() };
+    return {
+      transactionId: movement!.transactionId,
+      inventoryItemId: movement!.inventoryItemId,
+      quantityDelta: movement!.quantityDelta,
+      stockAfter: movement!.stockAfter,
+      negative: movement!.stockAfter.isNegative(),
+    };
+  }
+
+  /**
+   * One PURCHASE row for a restock (B702). With a cost, the moving average is re-weighted from
+   * the stock before the purchase (ADR 0005); without one, the row carries the current average
+   * (else the standard cost) and the average is unchanged (ADR 0021).
+   */
+  async recordPurchase(tx: LedgerTx, input: PurchaseInput): Promise<PurchaseRecorded> {
+    const item = await this.loadStockedItem(
+      tx,
+      input,
+      'A MIXED item has no stock of its own: restock its components (ADR 0002).',
+    );
+    const unit = input.unit ?? item.unit;
+    const quantity = this.toStockQuantity(input.quantity, unit, item);
+    let purchaseCost: Decimal | null = null;
+    if (input.unitCost !== undefined) {
+      try {
+        purchaseCost = costPerStockUnit(parseDecimal(input.unitCost), unit, item.unit);
+      } catch (error) {
+        if (error instanceof StockMathError) {
+          throw new AppException(400, error.code, error.message, { inventoryItemId: item.id });
+        }
+        throw error;
+      }
+    }
+    const [movement] = await this.apply(tx, input.branchId, input.actorId, [
+      {
+        inventoryItemId: item.id,
+        quantityDelta: quantity,
+        type: 'PURCHASE',
+        note: input.note,
+        standardUnitCost: item.standardUnitCost,
+        purchaseCost,
+      },
+    ]);
+    return movement!;
   }
 
   // ── Internals ───────────────────────────────────────────────────────────────────────────
@@ -248,6 +301,38 @@ export class LedgerService {
     return converted;
   }
 
+  /** A RAW/READY item that can hold stock in an active branch of the tenant. */
+  private async loadStockedItem(
+    tx: LedgerTx,
+    input: { inventoryItemId: string; branchId: string },
+    mixedMessage: string,
+  ): Promise<{ id: string; unit: Unit; standardUnitCost: Decimal | null }> {
+    const item = await tx.inventoryItem.findUnique({
+      where: { id: input.inventoryItemId },
+      select: { id: true, type: true, unit: true, isActive: true, standardUnitCost: true },
+    });
+    if (!item || !item.isActive) {
+      throw new AppException(404, 'INVENTORY_ITEM_NOT_FOUND', 'No such inventory item.', {
+        inventoryItemId: input.inventoryItemId,
+      });
+    }
+    if (item.type === 'MIXED') {
+      throw new AppException(400, 'MIXED_ITEM_NOT_STOCKED', mixedMessage, {
+        inventoryItemId: item.id,
+      });
+    }
+    const branch = await tx.branch.findFirst({
+      where: { id: input.branchId, isActive: true },
+      select: { id: true },
+    });
+    if (!branch) {
+      throw new AppException(400, 'BRANCH_NOT_FOUND', 'No active branch with that id.', {
+        branchId: input.branchId,
+      });
+    }
+    return item;
+  }
+
   private async loadItems(
     tx: LedgerTx,
     ids: string[],
@@ -264,14 +349,15 @@ export class LedgerService {
    * Applies movements for one branch: for each item, in id order (a fixed lock order, so two
    * transactions never deadlock), make sure the stock row exists, then add the delta atomically
    * (the UPDATE locks the row until commit). Only then insert the ledger rows, each with the cost
-   * at write time: the branch's moving average, else the item's standard cost (ADR 0005).
+   * at write time: the branch's moving average, else the item's standard cost (ADR 0005). A
+   * PURCHASE with a cost stores that cost and re-weights the average on the locked row.
    */
   private async apply(
     tx: LedgerTx,
     branchId: string,
     actorId: string,
     movements: Movement[],
-  ): Promise<(StockMovement & { transactionId: string })[]> {
+  ): Promise<Applied[]> {
     if (movements.length === 0) return [];
     const tenantId = this.tenantId;
     const sorted = [...movements].sort((a, b) =>
@@ -282,20 +368,35 @@ export class LedgerService {
       skipDuplicates: true,
     });
 
-    const applied: (StockMovement & { transactionId: string })[] = [];
+    const applied: Applied[] = [];
     const rows: Prisma.InventoryTransactionCreateManyInput[] = [];
     for (const m of sorted) {
-      const stock = await tx.branchStock.update({
-        where: {
-          tenantId_branchId_inventoryItemId: {
-            tenantId,
-            branchId,
-            inventoryItemId: m.inventoryItemId,
-          },
+      const where = {
+        tenantId_branchId_inventoryItemId: {
+          tenantId,
+          branchId,
+          inventoryItemId: m.inventoryItemId,
         },
+      };
+      const stock = await tx.branchStock.update({
+        where,
         data: { currentStock: { increment: m.quantityDelta } },
         select: { currentStock: true, avgUnitCost: true },
       });
+      let unitCost = stock.avgUnitCost ?? m.standardUnitCost;
+      let avgUnitCost = stock.avgUnitCost;
+      if (m.type === 'PURCHASE' && m.purchaseCost) {
+        // ADR 0005: re-weight from the stock before this purchase; the row is locked already.
+        const stockBefore = stock.currentStock.minus(m.quantityDelta);
+        avgUnitCost = nextAverageCost(
+          stockBefore,
+          stock.avgUnitCost,
+          m.quantityDelta,
+          m.purchaseCost,
+        );
+        await tx.branchStock.update({ where, data: { avgUnitCost } });
+        unitCost = m.purchaseCost;
+      }
       const transactionId = randomUUID();
       rows.push({
         id: transactionId,
@@ -304,7 +405,7 @@ export class LedgerService {
         inventoryItemId: m.inventoryItemId,
         type: m.type,
         quantityDelta: m.quantityDelta,
-        unitCost: stock.avgUnitCost ?? m.standardUnitCost,
+        unitCost,
         relatedOrderId: m.relatedOrderId ?? null,
         actorId,
         note: m.note ?? null,
@@ -314,6 +415,8 @@ export class LedgerService {
         inventoryItemId: m.inventoryItemId,
         quantityDelta: m.quantityDelta,
         stockAfter: stock.currentStock,
+        unitCost,
+        avgUnitCost,
       });
     }
     await tx.inventoryTransaction.createMany({ data: rows });

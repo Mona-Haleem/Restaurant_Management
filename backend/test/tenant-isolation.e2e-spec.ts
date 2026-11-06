@@ -1,3 +1,4 @@
+import { createHash, randomBytes } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import type { INestApplication } from '@nestjs/common';
@@ -250,7 +251,141 @@ const ISOLATION_CASES: Record<string, IsolationCase> = {
       .expect(400);
     expect(bodyOf(moved)).toMatchObject({ code: 'BRANCH_NOT_FOUND' });
   },
+
+  // ── Orders (B801) ───────────────────────────────────────────────────────────────────────
+  'GET /v1/{tenantSlug}/workflow': async ({ http, seed, prisma }) => {
+    const res = await http().get(`/v1/${A_SLUG}/workflow`).expect(200);
+    const aStages = await prisma.orderWorkflowStage.findMany({
+      where: { tenantId: seed.a.tenant.id },
+      orderBy: { position: 'asc' },
+    });
+    // Only A's rows: an unscoped read would return B's four defaults as well.
+    expect((bodyOf(res) as { stages: { key: string }[] }).stages.map((s) => s.key)).toEqual(
+      aStages.map((s) => s.key),
+    );
+  },
+  'POST /v1/{tenantSlug}/orders': async ({ http, seed, prisma }) => {
+    const bOrders = () => prisma.order.count({ where: { tenantId: seed.b.tenant.id } });
+    const before = await bOrders();
+    const res = await http()
+      .post(`/v1/${A_SLUG}/orders`)
+      .send({ items: [{ menuItemId: seed.bMenuItemId, quantity: 1 }] })
+      .expect(400);
+    expect(bodyOf(res)).toMatchObject({
+      code: 'MENU_ITEM_UNAVAILABLE',
+      details: { menuItemIds: [seed.bMenuItemId] },
+    });
+    const aItem = seed.a.menuItems.find((m) => m.status === 'ACTIVE')!.id;
+    const ok = await http()
+      .post(`/v1/${A_SLUG}/orders`)
+      .send({ items: [{ menuItemId: aItem, quantity: 1 }] })
+      .expect(201);
+    const row = await prisma.order.findUnique({ where: { id: (bodyOf(ok) as { id: string }).id } });
+    expect(row?.tenantId).toBe(seed.a.tenant.id);
+    expect(await bOrders()).toBe(before);
+  },
+  'POST /v1/{tenantSlug}/orders/{id}/advance': async ({ http, seed, prisma }) => {
+    const order = await bOrder(prisma, seed);
+    await http().post(`/v1/${A_SLUG}/orders/${order.id}/advance`).set(ADMIN).expect(404);
+    expect(await bOrderState(prisma, order.id)).toEqual(order.state);
+  },
+  'POST /v1/{tenantSlug}/orders/{id}/cancel': async ({ http, seed, prisma }) => {
+    const order = await bOrder(prisma, seed);
+    await http().post(`/v1/${A_SLUG}/orders/${order.id}/cancel`).set(ADMIN).expect(404);
+    expect(await bOrderState(prisma, order.id)).toEqual(order.state);
+  },
+  'POST /v1/{tenantSlug}/track/{token}/cancel': async ({ http, seed, prisma }) => {
+    const order = await bOrder(prisma, seed);
+    const res = await http().post(`/v1/${A_SLUG}/track/${order.token}/cancel`).expect(404);
+    expect(bodyOf(res)).toMatchObject({ code: 'ORDER_NOT_FOUND' });
+    expect(await bOrderState(prisma, order.id)).toEqual(order.state);
+  },
+
+  // ── Waste (B901) ────────────────────────────────────────────────────────────────────────
+  'POST /v1/{tenantSlug}/waste': async ({ http, seed, prisma }) => {
+    const bTenant = seed.b.tenant.id;
+    const counts = async () => ({
+      ledger: await prisma.inventoryTransaction.count({ where: { tenantId: bTenant } }),
+      waste: await prisma.wasteEntry.count({ where: { tenantId: bTenant } }),
+      stock: await prisma.branchStock.findMany({
+        where: { tenantId: bTenant, inventoryItemId: seed.bInventoryItemId },
+      }),
+    });
+    const before = await counts();
+    // B's item does not exist in A's tenant: 404, and nothing is written anywhere.
+    const res = await http()
+      .post(`/v1/${A_SLUG}/waste`)
+      .set(ADMIN)
+      .send({ inventoryItemId: seed.bInventoryItemId, quantity: '1', unit: 'KG', reason: 'x' })
+      .expect(404);
+    expect(bodyOf(res)).toMatchObject({ code: 'INVENTORY_ITEM_NOT_FOUND' });
+    expect(
+      await prisma.inventoryTransaction.count({
+        where: { tenantId: seed.a.tenant.id, inventoryItemId: seed.bInventoryItemId },
+      }),
+    ).toBe(0);
+    expect(await counts()).toEqual(before);
+  },
+
+  // ── Stock (B702) ────────────────────────────────────────────────────────────────────────
+  'GET /v1/{tenantSlug}/stock': async ({ http, seed }) => {
+    const res = await http().get(`/v1/${A_SLUG}/stock`).set(ADMIN).expect(200);
+    const listed = (bodyOf(res) as { inventoryItemId: string }[]).map((r) => r.inventoryItemId);
+    expect(listed).not.toContain(seed.bInventoryItemId);
+    expect(listed.length).toBeGreaterThan(0);
+  },
+  'GET /v1/{tenantSlug}/stock/low': async ({ http, seed }) => {
+    const res = await http().get(`/v1/${A_SLUG}/stock/low`).set(ADMIN).expect(200);
+    const listed = (bodyOf(res) as { inventoryItemId: string }[]).map((r) => r.inventoryItemId);
+    expect(listed).not.toContain(seed.bInventoryItemId);
+  },
+  'GET /v1/{tenantSlug}/stock/{inventoryItemId}': async ({ http, seed }) => {
+    await http().get(`/v1/${A_SLUG}/stock/${seed.bInventoryItemId}`).set(ADMIN).expect(404);
+    const aItem = seed.a.inventoryItems[0]!.id;
+    await http().get(`/v1/${B_SLUG}/stock/${aItem}`).set(ADMIN).expect(404);
+  },
+  'POST /v1/{tenantSlug}/stock/{inventoryItemId}/restock': async ({ http, seed, prisma }) => {
+    const bRows = () =>
+      prisma.inventoryTransaction.count({ where: { inventoryItemId: seed.bInventoryItemId } });
+    const before = await bRows();
+    const res = await http()
+      .post(`/v1/${A_SLUG}/stock/${seed.bInventoryItemId}/restock`)
+      .set(ADMIN)
+      .send({ quantity: '5' })
+      .expect(404);
+    expect(bodyOf(res)).toMatchObject({ code: 'INVENTORY_ITEM_NOT_FOUND' });
+    expect(await bRows()).toBe(before);
+    expect(
+      await prisma.branchStock.count({ where: { inventoryItemId: seed.bInventoryItemId } }),
+    ).toBe(0);
+  },
 };
+
+/** A fresh guest order of tenant B, written directly (B is read-only through the API). */
+async function bOrder(
+  prisma: PrismaClient,
+  seed: SeedTenants,
+): Promise<{ id: string; token: string; state: unknown }> {
+  const token = randomBytes(32).toString('base64url');
+  const order = await prisma.order.create({
+    data: {
+      tenantId: seed.b.tenant.id,
+      branchId: seed.b.branches[0]!.id,
+      stageKey: 'pending',
+      placedByType: 'GUEST',
+      total: '0',
+      trackingTokenHash: createHash('sha256').update(token).digest('hex'),
+    },
+  });
+  return { id: order.id, token, state: await bOrderState(prisma, order.id) };
+}
+
+function bOrderState(prisma: PrismaClient, id: string): Promise<unknown> {
+  return prisma.order.findUnique({
+    where: { id },
+    select: { stageKey: true, canceledAt: true, updatedAt: true },
+  });
+}
 
 function tenantRoutes(): string[] {
   const spec = JSON.parse(readFileSync(path.join(__dirname, '..', 'openapi.json'), 'utf8')) as {

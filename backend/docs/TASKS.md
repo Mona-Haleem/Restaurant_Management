@@ -17,10 +17,10 @@ Ticket details live in `docs/ROADMAP.md` §6. This file tracks order, status and
 | 8 | B503 | Tenant context, auth seam, health, demo safety | 🤖 | B301, B501 | — | done | [#22](https://github.com/Mona-Haleem/Restaurant_Management/pull/22) |
 | 9 | B601 | Menu, categories and ingredients | 🤖 | B503 | — | done | [#23](https://github.com/Mona-Haleem/Restaurant_Management/pull/23) |
 | 10 | B701 | Deduction service (single entry point) | 🤖 | B503 | — | done | [#24](https://github.com/Mona-Haleem/Restaurant_Management/pull/24) |
-| 11 | B702 | Stock queries and restock | 🤖 | B701 | — | todo | |
-| 12 | B801 | Workflow stages and order lifecycle | 🤖 | B601, B701 | — | todo | |
+| 11 | B702 | Stock queries and restock | 🤖 | B701 | — | done | |
+| 12 | B801 | Workflow stages and order lifecycle | 🤖 | B601, B701 | — | done | |
 | 13 | B802 | Order queries for the board and tracking | 🤖 | B801 | — | todo | |
-| 14 | B901 | Waste logging | 🤖 | B701 | — | todo | |
+| 14 | B901 | Waste logging | 🤖 | B701 | — | done | |
 | 15 | B902 | Reconciliation and snapshots | 🤖 | B701, B901 | — | todo | |
 | 16 | B1001 | Staff management | 🤖 | B503 | — | in review | |
 | 17 | B1101 | KPIs, aggregates and anomalies | 🤖 | B801, B901, B902 | — | todo | |
@@ -40,6 +40,9 @@ Ticket details live in `docs/ROADMAP.md` §6. This file tracks order, status and
 - **B503 follow-ups:** B1202 builds the demo-tenant reset command and the scheduled staging reseed workflow (ADR 0017). The Decimal wire format is done in B601 (`src/common/decimal`). B1202/B1203: confirm on staging that `req.ip` is the client IP behind Render (trust proxy = 1 hop), and consider a `statement_timeout` for `/v1/health/db` (ADR 0018).
 - **B601 follow-ups:** B702 adds the customer menu availability (out-of-stock) flag; item images need a `menu_items.image_url` ticket; B701 converts recipe units at deduction time (lines keep their entered unit, ADR 0019). The branch filter of the customer menu is proven by unit tests only: add an e2e case once a seeded tenant has two branches.
 - **B701 follow-ups (ADR 0020):** B702 adds PURCHASE (using `nextAverageCost`) and B902 adds ADJUSTMENT + snapshot to `LedgerService`; B902 needs its own concurrency test for reading `max(seq)` under the stock row lock. B801 calls `deductOrder` and B901 calls `recordWaste` inside their own transactions. B702: `single-writer.spec.ts` matches any `currentStock:` assignment, so a low-stock `where`/`orderBy` will need the check narrowed to write payloads (and raw SQL on `current_stock`).
+- **B801 follow-ups (ADR 0022):** B802 adds the board/detail queries and the guest `GET /track/:token` (with the same polling rules). An optional `fromStageKey` on advance would make sequential double clicks safe. Order creation has no idempotency key yet (needed for Phase 2 offline replay).
+- **B702 follow-ups (ADR 0021):** no API yet to create inventory items or edit their low-stock thresholds (needs a ticket). E2E runs from a worktree under `.claude/worktrees/` need `--testMatch "**/test/*.e2e-spec.ts"`: the config's absolute glob does not match through the `.claude` folder.
+- **B901 follow-ups:** `LedgerService.toStockQuantity` (B701) checks decimals but not size: a large KG/L amount converted to a G/ML stock unit can exceed `numeric(14,3)` and return a 500 instead of a 400; add a `QUANTITY_TOO_LARGE` check (B902 touches the ledger next). A waste list endpoint (`GET /waste`) was left out until a screen needs it (B1101). `BRANCH_REQUIRED` is unit-tested only: add an e2e case once a writable tenant has two branches.
 - **B1001 follow-ups (ADR 0023):** B802 shows order/history actor names via a join on `users` without an `is_active` filter, and adds an API-level test for a deactivated worker's order (B1001 proves it at the DB level). Login (`argon2.verify`) and password changes are Phase 2.
 - **Frontend references:** B302 (TABLZ-401 models), B401 (TABLZ-404 seed), B502 (frontend mock handlers) and B1301 (TABLZ-403 service layer, TABLZ-1902 demo script) need the Angular repo. Per ADR 0001 this is a monorepo: start Claude Code in `backend/` with `--add-dir ../frontend` for those tickets.
 - **👤 / 🤝 steps Claude must not attempt:** creating Supabase or Render projects, setting GitHub branch protection or secrets, configuring UptimeRobot, and anything that connects to staging or production.

@@ -61,9 +61,9 @@ The Prisma schema is `prisma/schema.prisma`; the diagram is [ERD.md](ERD.md), ge
   - a reconciliation's snapshot is for the same branch and item
 
   B901/B902 write these rows together in one transaction, so the services guarantee it. Recorded as deviation D22 in [MODEL-MAPPING.md](MODEL-MAPPING.md). Widening the FKs to `(tenant_id, branch_id, inventory_item_id, id)` stays possible later.
-- **Open for B801:**
-  - History rows keep the stage key as it was. After a rename, the frontend can't map an old key to a label. B801 decides whether to also copy the label.
-  - For STAFF orders, `placed_by_id` duplicates the PLACED history row's `actor_id`, which does have an FK. B801 may drop it for STAFF.
+- **Decided in B801** ([ADR 0022](adr/0022-order-lifecycle.md)):
+  - History rows keep only the stage keys (no label copy); a Phase 3 stage editor revisits this.
+  - STAFF orders keep `placed_by_id` (the actor), even though the PLACED history row has it too.
 - **Reserved for later:** `menu_items.is_combo` is CHECKed to `false` in Phase 1. `role_permissions` and `user_permission_overrides` exist but nothing enforces them.
 
 ## Access-path indexes
