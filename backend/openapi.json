@@ -1044,6 +1044,91 @@
           "menu-items"
         ]
       }
+    },
+    "/v1/{tenantSlug}/waste": {
+      "post": {
+        "description": "In the caller’s branch, as the caller. Stock may go below zero (`negative: true`, ADR 0006). Errors: 404 INVENTORY_ITEM_NOT_FOUND, 400 MIXED_ITEM_NOT_STOCKED, UNIT_DIMENSION_MISMATCH, QUANTITY_TOO_PRECISE, BRANCH_REQUIRED (an ADMIN with no branch chosen).",
+        "operationId": "logWaste",
+        "parameters": [
+          {
+            "name": "x-dev-role",
+            "in": "header",
+            "description": "Phase 1 only: act as the restaurant's demo user with this role. Omit for a guest.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ADMIN",
+                "MANAGER",
+                "WORKER"
+              ]
+            }
+          },
+          {
+            "name": "x-dev-user",
+            "in": "header",
+            "description": "Phase 1 only: act as this active user (uuid) of the restaurant.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-dev-branch",
+            "in": "header",
+            "description": "Phase 1 only, ADMIN: the branch (uuid) to act in.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tenantSlug",
+            "required": true,
+            "in": "path",
+            "description": "The restaurant, e.g. `nile-bites` (the demo tenant).",
+            "schema": {
+              "example": "nile-bites"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LogWasteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WasteEntryDto"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error: `{ code, message, details }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Log waste: stock drops at once and a WASTE row is written to the ledger",
+        "tags": [
+          "waste"
+        ]
+      }
     }
   },
   "info": {
@@ -1591,6 +1676,128 @@
             }
           }
         }
+      },
+      "LogWasteDto": {
+        "type": "object",
+        "properties": {
+          "inventoryItemId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "An active RAW or READY item of this restaurant (MIXED items have no stock)."
+          },
+          "quantity": {
+            "type": "string",
+            "pattern": "^\\d{1,11}(\\.\\d{1,3})?$",
+            "example": "250",
+            "description": "As entered, in `unit`. Positive; at most 3 decimals in the stock unit."
+          },
+          "unit": {
+            "type": "string",
+            "enum": [
+              "G",
+              "KG",
+              "ML",
+              "L",
+              "PCS"
+            ],
+            "description": "Same dimension as the item's stock unit (ADR 0003)."
+          },
+          "reason": {
+            "type": "string",
+            "example": "Failed prep",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Free text, trimmed. The app offers preset reasons as chips."
+          }
+        },
+        "required": [
+          "inventoryItemId",
+          "quantity",
+          "unit",
+          "reason"
+        ]
+      },
+      "WasteEntryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "branchId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "inventoryItemId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "quantity": {
+            "type": "string",
+            "pattern": "^\\d{1,11}(\\.\\d{1,3})?$",
+            "example": "250.000",
+            "description": "As entered."
+          },
+          "unit": {
+            "type": "string",
+            "enum": [
+              "G",
+              "KG",
+              "ML",
+              "L",
+              "PCS"
+            ],
+            "description": "As entered."
+          },
+          "reason": {
+            "type": "string",
+            "example": "Failed prep"
+          },
+          "transactionId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Its WASTE row in the inventory ledger."
+          },
+          "actorId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Who logged it."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "quantityDelta": {
+            "type": "string",
+            "pattern": "^-?\\d{1,11}(\\.\\d{1,3})?$",
+            "example": "-0.250",
+            "description": "The stock change, negative, in the item's stock unit."
+          },
+          "stockAfter": {
+            "type": "string",
+            "pattern": "^-?\\d{1,11}(\\.\\d{1,3})?$",
+            "example": "1.750",
+            "description": "The branch's stock right after, in the stock unit. May be negative."
+          },
+          "negative": {
+            "type": "boolean",
+            "description": "True when stock is now below zero (allowed and flagged, ADR 0006)."
+          }
+        },
+        "required": [
+          "id",
+          "branchId",
+          "inventoryItemId",
+          "quantity",
+          "unit",
+          "reason",
+          "transactionId",
+          "actorId",
+          "createdAt",
+          "quantityDelta",
+          "stockAfter",
+          "negative"
+        ]
       },
       "ErrorResponse": {
         "type": "object",
