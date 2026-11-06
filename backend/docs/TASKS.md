@@ -7,13 +7,13 @@ Ticket details live in `docs/ROADMAP.md` §6. This file tracks order, status and
 
 | Order | Ticket | Title | Who | Depends on | Blocked by (ARCHITECTURE §10) | Status | PR |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | B101 | Workspace, tooling and CI | 🤝 | — | — | in review | |
-| 2 | B201 | Local DB, Supabase projects, env guards | 🤝 | B101 | Supabase projects + IPv4 check are 👤 (docs/ENVIRONMENTS.md) | in review | |
-| 3 | B301 | Prisma schema and first migration | 🤖 | B201 | — | in review | |
+| 1 | B101 | Workspace, tooling and CI | 🤝 | — | — | done (👤 branch protection open) | [#11](https://github.com/Mona-Haleem/Restaurant_Management/pull/11) |
+| 2 | B201 | Local DB, Supabase projects, env guards | 🤝 | B101 | Supabase projects + IPv4 check are 👤 (docs/ENVIRONMENTS.md) | done (👤 Supabase steps open) | [#13](https://github.com/Mona-Haleem/Restaurant_Management/pull/13) |
+| 3 | B301 | Prisma schema and first migration | 🤖 | B201 | — | done | [#12](https://github.com/Mona-Haleem/Restaurant_Management/pull/12) |
 | 4 | B302 | Schema review and ADRs | 🤖 | B301 | — | todo | |
 | 5 | B401 | Idempotent seed | 🤖 | B302 | — | todo | |
-| 6 | B501 | Config, validation, errors, logging | 🤖 | B201 | — | in review | |
-| 7 | B502 | OpenAPI contract | 🤖 | B501 | Angular client + mock contract test wait for frontend TABLZ-401/402/403 (ADR 0012) | in review (backend half) | |
+| 6 | B501 | Config, validation, errors, logging | 🤖 | B201 | — | done | [#14](https://github.com/Mona-Haleem/Restaurant_Management/pull/14) |
+| 7 | B502 | OpenAPI contract | 🤖 | B501 | Angular client + mock contract test wait for frontend TABLZ-401/402/403 (ADR 0012) | backend half done; frontend half blocked | [#15](https://github.com/Mona-Haleem/Restaurant_Management/pull/15) |
 | 8 | B503 | Tenant context, auth seam, health, demo safety | 🤖 | B301, B501 | — | todo | |
 | 9 | B601 | Menu, categories and ingredients | 🤖 | B503 | — | todo | |
 | 10 | B701 | Deduction service (single entry point) | 🤖 | B503 | — | todo | |
