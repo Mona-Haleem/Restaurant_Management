@@ -31,7 +31,7 @@ Rules, all inside the ledger transaction (single writer, ARCHITECTURE §5):
 
 ## Consequences
 
-- **Schema (B301):** the three columns above; CHECK `unit_cost >= 0` and `standard_unit_cost >= 0`. Precision is fixed by the numeric-precision ADR (B302).
+- **Schema (B301):** the three columns above; CHECK `unit_cost >= 0` and `standard_unit_cost >= 0`. Precision is fixed by [ADR 0013](0013-numeric-precision.md): costs are `numeric(14,4)`, and the average is rounded half-up to 4 decimals when stored.
 - **Restock (B702):** `unit_cost` is required on restock (decide in B702 whether it can be omitted; if omitted, the average is unchanged).
 - **KPIs (B1101):** waste cost = Σ |`quantity_delta`| × `unit_cost` over WASTE rows; rows with NULL cost are counted and reported as "uncosted", never treated as zero.
 - **MIXED items:** a sale writes rows for the components, so cost comes from them; no cost on the MIXED item itself ([ADR 0002](0002-mixed-items-derived-stock.md)).

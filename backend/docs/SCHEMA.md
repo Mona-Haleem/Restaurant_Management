@@ -11,7 +11,7 @@ The Prisma schema is `prisma/schema.prisma`; the diagram is [ERD.md](ERD.md), ge
 | uuid primary keys | `id String @id @default(uuid()) @db.Uuid` (only `app_environment` uses `id = 1`) |
 | Tenant isolation (CLAUDE.md rule 1) | <ul><li>`tenant_id` (required uuid) on every table except `tenants` and `app_environment`</li><li>Every table has `@@unique([tenantId, id])`</li><li>Every index starts with `tenant_id`</li><li>Every FK between tenant-owned tables is composite `(tenant_id, x) → (tenant_id, id)`</li></ul>Postgres itself then refuses a row that points at another tenant's row. |
 | No hard deletes (rule 5) | Every FK is `onDelete: Restrict`. Rows are archived or deactivated (`is_active`, `status`, `canceled_at`). |
-| Decimals (rule 4) | <ul><li>Money: `numeric(12,2)`</li><li>Stock quantities: `numeric(14,3)`, i.e. 0.001 of a unit = 1 g on a KG item</li><li>Unit costs: `numeric(14,4)`</li><li>Never `Float`</li></ul>B302's numeric-precision ADR records this choice. |
+| Decimals (rule 4) | <ul><li>Money: `numeric(12,2)`</li><li>Stock quantities: `numeric(14,3)`, i.e. 0.001 of a unit = 1 g on a KG item</li><li>Unit costs: `numeric(14,4)`</li><li>Never `Float`</li></ul>[ADR 0013](adr/0013-numeric-precision.md) records this choice. |
 | Timestamps | `created_at`, `updated_at` on every table, all `timestamptz(3)`. Reports group by the tenant's local day (`tenants.timezone`). |
 | Global unique keys | Only these three skip the leading `tenant_id`:<ul><li>the idempotency key</li><li>`inventory_transactions.seq`</li><li>`orders.tracking_token_hash`</li></ul>A test pins exactly this list. |
 | Names | snake_case tables and columns via `@@map` / `@map`. |
@@ -53,14 +53,14 @@ The Prisma schema is `prisma/schema.prisma`; the diagram is [ERD.md](ERD.md), ge
   - `password_hash` exists for B1001; login is Phase 2.
 - **Precision and unit conversion:** Postgres rounds silently when a value has more decimals than the column.
   - Example: 0.5 G entered against a KG item converts to 0.0005, which `numeric(14,3)` would store as 0.001.
-  - So B601 and B701 must **reject** a converted quantity with more than 3 decimals instead of storing it. B302's precision ADR records this.
-- **Prices of 0 are allowed** (free items): prices, totals and costs are `>= 0` where ROADMAP B301 says "positive". B302 records this as a deviation.
+  - So B601 and B701 must **reject** a converted quantity with more than 3 decimals instead of storing it. [ADR 0013](adr/0013-numeric-precision.md) records this.
+- **Prices of 0 are allowed** (free items): prices, totals and costs are `>= 0` where ROADMAP B301 says "positive". Recorded as deviation D21 in [MODEL-MAPPING.md](MODEL-MAPPING.md).
 - **Service-enforced (the database cannot see these):** the `(tenant_id, id)` foreign keys keep every link inside the tenant. They do not check that:
   - a waste entry's ledger row is a WASTE row for the same branch and item
   - a reconciliation's adjustment is an ADJUSTMENT row for the same branch and item
   - a reconciliation's snapshot is for the same branch and item
 
-  B901/B902 write these rows together in one transaction, so the services guarantee it. B302 lists it among the deviations. Widening the FKs to `(tenant_id, branch_id, inventory_item_id, id)` stays possible later.
+  B901/B902 write these rows together in one transaction, so the services guarantee it. Recorded as deviation D22 in [MODEL-MAPPING.md](MODEL-MAPPING.md). Widening the FKs to `(tenant_id, branch_id, inventory_item_id, id)` stays possible later.
 - **Open for B801:**
   - History rows keep the stage key as it was. After a rename, the frontend can't map an old key to a label. B801 decides whether to also copy the label.
   - For STAFF orders, `placed_by_id` duplicates the PLACED history row's `actor_id`, which does have an FK. B801 may drop it for STAFF.
