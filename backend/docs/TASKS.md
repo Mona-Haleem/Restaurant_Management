@@ -14,8 +14,8 @@ Ticket details live in `docs/ROADMAP.md` §6. This file tracks order, status and
 | 5 | B401 | Idempotent seed | 🤖 | B302 | — | done | [#20](https://github.com/Mona-Haleem/Restaurant_Management/pull/20) |
 | 6 | B501 | Config, validation, errors, logging | 🤖 | B201 | — | done | [#14](https://github.com/Mona-Haleem/Restaurant_Management/pull/14) |
 | 7 | B502 | OpenAPI contract | 🤖 | B501 | Angular client + mock contract test wait for frontend TABLZ-401/402/403 (ADR 0012) | backend half done; frontend half blocked | [#15](https://github.com/Mona-Haleem/Restaurant_Management/pull/15) |
-| 8 | B503 | Tenant context, auth seam, health, demo safety | 🤖 | B301, B501 | — | in review | |
-| 9 | B601 | Menu, categories and ingredients | 🤖 | B503 | — | todo | |
+| 8 | B503 | Tenant context, auth seam, health, demo safety | 🤖 | B301, B501 | — | done | [#22](https://github.com/Mona-Haleem/Restaurant_Management/pull/22) |
+| 9 | B601 | Menu, categories and ingredients | 🤖 | B503 | — | in review | |
 | 10 | B701 | Deduction service (single entry point) | 🤖 | B503 | — | todo | |
 | 11 | B702 | Stock queries and restock | 🤖 | B701 | — | todo | |
 | 12 | B801 | Workflow stages and order lifecycle | 🤖 | B601, B701 | — | todo | |
@@ -37,6 +37,7 @@ Ticket details live in `docs/ROADMAP.md` §6. This file tracks order, status and
 - **B302 mapping is provisional:** `docs/MODEL-MAPPING.md` was built from the TABLZ-401 ticket text because the Angular models did not exist yet. When TABLZ-401 lands, check every row (and deviations D15, D16, D20) against the real interfaces.
 - **Decimal wire format (ADR 0013):** the first ticket that returns a `Decimal` or `bigint` (B601 or B503) adds the string serializer and the OpenAPI `type: string` + `pattern`.
 - **B401 follow-ups:** the staging reseed CI workflow belongs to B1202 (🤝, needs staging secrets); B701 switches the seed to the ledger service and owns the unit-conversion and expected-stock functions the seed copies (ADR 0016); B503 decides how the scheduled reseed restores the demo tenant after visitor writes.
-- **B503 follow-ups:** B1202 builds the demo-tenant reset command and the scheduled staging reseed workflow (ADR 0017). The Decimal/bigint wire serializer is still open for the first endpoint that returns one (B601). B1202/B1203: confirm on staging that `req.ip` is the client IP behind Render (trust proxy = 1 hop), and consider a `statement_timeout` for `/v1/health/db` (ADR 0018).
+- **B503 follow-ups:** B1202 builds the demo-tenant reset command and the scheduled staging reseed workflow (ADR 0017). The Decimal wire format is done in B601 (`src/common/decimal`). B1202/B1203: confirm on staging that `req.ip` is the client IP behind Render (trust proxy = 1 hop), and consider a `statement_timeout` for `/v1/health/db` (ADR 0018).
+- **B601 follow-ups:** B702 adds the customer menu availability (out-of-stock) flag; item images need a `menu_items.image_url` ticket; B701 converts recipe units at deduction time (lines keep their entered unit, ADR 0019). The branch filter of the customer menu is proven by unit tests only: add an e2e case once a seeded tenant has two branches.
 - **Frontend references:** B302 (TABLZ-401 models), B401 (TABLZ-404 seed), B502 (frontend mock handlers) and B1301 (TABLZ-403 service layer, TABLZ-1902 demo script) need the Angular repo. Per ADR 0001 this is a monorepo: start Claude Code in `backend/` with `--add-dir ../frontend` for those tickets.
 - **👤 / 🤝 steps Claude must not attempt:** creating Supabase or Render projects, setting GitHub branch protection or secrets, configuring UptimeRobot, and anything that connects to staging or production.

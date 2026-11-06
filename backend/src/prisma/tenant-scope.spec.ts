@@ -144,11 +144,27 @@ describe('scopeQueryArgs: tables outside the tenant', () => {
 });
 
 describe('scopeQueryArgs: no hard deletes (CLAUDE.md rule 5)', () => {
-  it.each(['delete', 'deleteMany'])('refuses %s', (operation) => {
-    expect(() => scopeQueryArgs('Category', operation, { where: { id: 'x' } }, A)).toThrow(
+  it.each([
+    ['Category', 'delete'],
+    ['Category', 'deleteMany'],
+    ['MenuItem', 'deleteMany'],
+    ['InventoryTransaction', 'delete'],
+    ['Order', 'deleteMany'],
+    ['InventoryItemComponent', 'deleteMany'],
+  ])('refuses %s.%s', (model, operation) => {
+    expect(() => scopeQueryArgs(model, operation, { where: { id: 'x' } }, A)).toThrow(
       /archive or deactivate/,
     );
   });
+
+  it.each(['delete', 'deleteMany'])(
+    'allows %s on recipe lines only, still scoped to the tenant (ADR 0019)',
+    (operation) => {
+      expect(
+        scopeQueryArgs('MenuItemIngredient', operation, { where: { menuItemId: 'm' } }, A).where,
+      ).toEqual({ menuItemId: 'm', AND: [{ tenantId: A }] });
+    },
+  );
 });
 
 describe('scopeQueryArgs: nested relation writes', () => {
