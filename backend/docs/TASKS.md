@@ -7,8 +7,8 @@ Ticket details live in `docs/ROADMAP.md` §6. This file tracks order, status and
 
 | Order | Ticket | Title | Who | Depends on | Blocked by (ARCHITECTURE §10) | Status | PR |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | B101 | Workspace, tooling and CI | 🤝 | — | — | done (👤 branch protection open) | [#11](https://github.com/Mona-Haleem/Restaurant_Management/pull/11) |
-| 2 | B201 | Local DB, Supabase projects, env guards | 🤝 | B101 | Supabase projects + IPv4 check are 👤 (docs/ENVIRONMENTS.md) | done (👤 Supabase steps open) | [#13](https://github.com/Mona-Haleem/Restaurant_Management/pull/13) |
+| 1 | B101 | Workspace, tooling and CI | 🤝 | — | — | done | [#11](https://github.com/Mona-Haleem/Restaurant_Management/pull/11) |
+| 2 | B201 | Local DB, Supabase projects, env guards | 🤝 | B101 | — | done | [#13](https://github.com/Mona-Haleem/Restaurant_Management/pull/13) |
 | 3 | B301 | Prisma schema and first migration | 🤖 | B201 | — | done | [#12](https://github.com/Mona-Haleem/Restaurant_Management/pull/12) |
 | 4 | B302 | Schema review and ADRs | 🤖 | B301 | — | todo | |
 | 5 | B401 | Idempotent seed | 🤖 | B302 | — | todo | |
