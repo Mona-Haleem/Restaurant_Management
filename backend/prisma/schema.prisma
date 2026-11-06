@@ -1,0 +1,31 @@
+// Tablz API schema. B201 adds only the environment marker; B301 adds the business tables.
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum AppEnvironmentName {
+  local
+  test
+  staging
+  production
+
+  @@map("app_environment_name")
+}
+
+/// Single row (id = 1, CHECK constraint) naming the environment this database belongs to.
+/// The API refuses to boot when it differs from APP_ENV (ROADMAP §2, ADR 0011).
+model AppEnvironment {
+  id        Int                @id @default(1)
+  name      AppEnvironmentName
+  createdAt DateTime           @default(now()) @map("created_at")
+  updatedAt DateTime           @updatedAt @map("updated_at")
+
+  @@map("app_environment")
+}

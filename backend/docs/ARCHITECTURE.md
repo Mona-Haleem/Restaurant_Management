@@ -139,7 +139,7 @@ The table list is in ROADMAP §4. Cross-cutting rules:
 
 ## 9. Environments
 
-See ROADMAP §2 and, once written, `docs/ENVIRONMENTS.md` (B201). Short version for Claude: work only against local Docker Postgres and the test database. Staging and production are reached only by CI.
+See ROADMAP §2, [`docs/ENVIRONMENTS.md`](ENVIRONMENTS.md) and [ADR 0011](adr/0011-environment-guards.md). Short version for Claude: work only against local Docker Postgres (`tablz_dev`) and the test database (`tablz_test`), both on `localhost:5433`. Staging and production are reached only by CI. The boot guard and `prisma.config.ts` enforce this; never weaken them to get a command through.
 
 ---
 
