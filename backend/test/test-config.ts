@@ -10,6 +10,8 @@ export function testConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     directUrl: TEST_DATABASE_URL,
     corsOrigins: ['http://localhost:4200'],
     logLevel: 'silent',
+    // High enough that ordinary suites never hit it; the rate-limit test sets its own.
+    rateLimit: { max: 10_000, windowSeconds: 60 },
     ...overrides,
   };
 }

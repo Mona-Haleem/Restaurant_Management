@@ -30,6 +30,38 @@ export default tseslint.config(
     },
   },
   {
+    // CLAUDE.md rule 1 / ARCHITECTURE §3: feature modules reach the database only through the
+    // tenant-scoped client (TENANT_DB from src/prisma/tenant-prisma.ts). Types and enums are fine.
+    files: ['src/modules/**/*.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            'MemberExpression[property.name=/^\\$(queryRaw|executeRaw|queryRawUnsafe|executeRawUnsafe)$/]',
+          message: 'Raw SQL bypasses the tenant scope (ADR 0015). Use TENANT_DB model queries.',
+        },
+      ],
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['**/prisma/prisma.service', '**/prisma/prisma.module'],
+              message: 'Feature code uses the tenant-scoped client: inject TENANT_DB instead.',
+            },
+            {
+              group: ['**/generated/prisma/client'],
+              allowTypeImports: true,
+              message:
+                'Feature code must not build its own PrismaClient: inject TENANT_DB (type imports are fine).',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ['**/*.spec.ts', 'test/**/*.ts'],
     rules: {
       '@typescript-eslint/unbound-method': 'off',

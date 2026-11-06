@@ -9,13 +9,19 @@ jest.mock('./openapi/openapi', () => ({ setupOpenApi: jest.fn() }));
 
 describe('configureApp', () => {
   const logger = { log: jest.fn() };
-  const config = { corsOrigins: ['http://localhost:4200'] };
+  let config: { appEnv: string; corsOrigins: string[] };
+  const express = { set: jest.fn() };
+  beforeEach(() => {
+    config = { appEnv: 'local', corsOrigins: ['http://localhost:4200'] };
+    express.set.mockClear();
+  });
 
   function fakeApp(): {
     get: jest.Mock;
     useLogger: jest.Mock;
     setGlobalPrefix: jest.Mock;
     enableCors: jest.Mock<void, [unknown]>;
+    getHttpAdapter: jest.Mock;
   } {
     return {
       get: jest.fn((token: unknown) =>
@@ -24,6 +30,7 @@ describe('configureApp', () => {
       useLogger: jest.fn(),
       setGlobalPrefix: jest.fn(),
       enableCors: jest.fn<void, [unknown]>(),
+      getHttpAdapter: jest.fn(() => ({ getInstance: () => express })),
     };
   }
 
@@ -50,6 +57,7 @@ describe('configureApp', () => {
         cb: (err: Error | null, allow?: boolean) => void,
       ) => void;
       exposedHeaders: string[];
+      allowedHeaders: string[];
     };
     const cb = jest.fn();
     options.origin('http://localhost:4200', cb);
@@ -59,5 +67,23 @@ describe('configureApp', () => {
       [null, false],
     ]);
     expect(options.exposedHeaders).toContain('x-request-id');
+    expect(options.allowedHeaders).toEqual(
+      expect.arrayContaining(['x-dev-role', 'x-dev-user', 'x-dev-branch']),
+    );
+  });
+
+  it.each(['staging', 'production'])(
+    'trusts one proxy hop on %s (Render), for the rate limit',
+    (appEnv) => {
+      config.appEnv = appEnv;
+      configureApp(fakeApp() as unknown as INestApplication);
+      expect(express.set).toHaveBeenCalledWith('trust proxy', 1);
+    },
+  );
+
+  it.each(['local', 'test'])('trusts no proxy on %s', (appEnv) => {
+    config.appEnv = appEnv;
+    configureApp(fakeApp() as unknown as INestApplication);
+    expect(express.set).not.toHaveBeenCalled();
   });
 });

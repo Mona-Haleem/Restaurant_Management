@@ -7,8 +7,8 @@ export class ApiInfoDto {
 }
 
 /**
- * Root route, so the app has something to answer. Real health checks
- * (`/v1/health`, `/v1/health/db`) arrive in B503.
+ * Root route, so the app has something to answer. Health checks live in src/health
+ * (`/v1/health`, `/v1/health/db`).
  */
 @ApiTags('meta')
 @Controller()
