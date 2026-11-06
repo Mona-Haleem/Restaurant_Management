@@ -231,6 +231,8 @@ const ISOLATION_CASES: Record<string, IsolationCase> = {
     const res = await http().post(`/v1/${A_SLUG}/track/${order.token}/cancel`).expect(404);
     expect(bodyOf(res)).toMatchObject({ code: 'ORDER_NOT_FOUND' });
     expect(await bOrderState(prisma, order.id)).toEqual(order.state);
+  },
+
   // ── Stock (B702) ────────────────────────────────────────────────────────────────────────
   'GET /v1/{tenantSlug}/stock': async ({ http, seed }) => {
     const res = await http().get(`/v1/${A_SLUG}/stock`).set(ADMIN).expect(200);

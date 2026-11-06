@@ -1,4 +1,4 @@
-# ADR 0021 — Order lifecycle: placer, branch scope, concurrency, history
+# ADR 0022 — Order lifecycle: placer, branch scope, concurrency, history
 
 - **Status:** accepted
 - **Date:** 2026-11-06

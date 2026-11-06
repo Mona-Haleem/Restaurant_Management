@@ -1045,14 +1045,368 @@
         ]
       }
     },
-    "/v1/{tenantSlug}/workflow": {
-      "get": {
-        "description": "Behavior reads only `cancellable`, `deductsInventory` and `position`.",
-        "operationId": "getOrderWorkflow",
     "/v1/{tenantSlug}/stock": {
       "get": {
         "description": "400 BRANCH_REQUIRED when an ADMIN of a multi-branch restaurant sent no x-dev-branch.",
         "operationId": "listStock",
+        "parameters": [
+          {
+            "name": "x-dev-role",
+            "in": "header",
+            "description": "Phase 1 only: act as the restaurant's demo user with this role. Omit for a guest.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ADMIN",
+                "MANAGER",
+                "WORKER"
+              ]
+            }
+          },
+          {
+            "name": "x-dev-user",
+            "in": "header",
+            "description": "Phase 1 only: act as this active user (uuid) of the restaurant.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-dev-branch",
+            "in": "header",
+            "description": "Phase 1 only, ADMIN: the branch (uuid) to act in.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "negative",
+                "out-of-stock",
+                "low-stock",
+                "in-stock",
+                "derived"
+              ]
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "RAW",
+                "READY",
+                "MIXED"
+              ]
+            }
+          },
+          {
+            "name": "tenantSlug",
+            "required": true,
+            "in": "path",
+            "description": "The restaurant, e.g. `nile-bites` (the demo tenant).",
+            "schema": {
+              "example": "nile-bites"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StockItemDto"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error: `{ code, message, details }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Stock of every active item in the caller's branch",
+        "tags": [
+          "stock"
+        ]
+      }
+    },
+    "/v1/{tenantSlug}/stock/low": {
+      "get": {
+        "operationId": "listLowStock",
+        "parameters": [
+          {
+            "name": "x-dev-role",
+            "in": "header",
+            "description": "Phase 1 only: act as the restaurant's demo user with this role. Omit for a guest.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ADMIN",
+                "MANAGER",
+                "WORKER"
+              ]
+            }
+          },
+          {
+            "name": "x-dev-user",
+            "in": "header",
+            "description": "Phase 1 only: act as this active user (uuid) of the restaurant.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-dev-branch",
+            "in": "header",
+            "description": "Phase 1 only, ADMIN: the branch (uuid) to act in.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tenantSlug",
+            "required": true,
+            "in": "path",
+            "description": "The restaurant, e.g. `nile-bites` (the demo tenant).",
+            "schema": {
+              "example": "nile-bites"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StockItemDto"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error: `{ code, message, details }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Items below zero, out of stock or below their threshold, worst first",
+        "tags": [
+          "stock"
+        ]
+      }
+    },
+    "/v1/{tenantSlug}/stock/{inventoryItemId}": {
+      "get": {
+        "operationId": "getStockItem",
+        "parameters": [
+          {
+            "name": "x-dev-role",
+            "in": "header",
+            "description": "Phase 1 only: act as the restaurant's demo user with this role. Omit for a guest.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ADMIN",
+                "MANAGER",
+                "WORKER"
+              ]
+            }
+          },
+          {
+            "name": "x-dev-user",
+            "in": "header",
+            "description": "Phase 1 only: act as this active user (uuid) of the restaurant.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-dev-branch",
+            "in": "header",
+            "description": "Phase 1 only, ADMIN: the branch (uuid) to act in.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "inventoryItemId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tenantSlug",
+            "required": true,
+            "in": "path",
+            "description": "The restaurant, e.g. `nile-bites` (the demo tenant).",
+            "schema": {
+              "example": "nile-bites"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockItemDetailDto"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error: `{ code, message, details }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "One item, with how its expected stock is built up",
+        "tags": [
+          "stock"
+        ]
+      }
+    },
+    "/v1/{tenantSlug}/stock/{inventoryItemId}/restock": {
+      "post": {
+        "description": "Adds to the current stock. A unit cost, if given, updates the moving average.",
+        "operationId": "restockItem",
+        "parameters": [
+          {
+            "name": "x-dev-role",
+            "in": "header",
+            "description": "Phase 1 only: act as the restaurant's demo user with this role. Omit for a guest.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ADMIN",
+                "MANAGER",
+                "WORKER"
+              ]
+            }
+          },
+          {
+            "name": "x-dev-user",
+            "in": "header",
+            "description": "Phase 1 only: act as this active user (uuid) of the restaurant.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-dev-branch",
+            "in": "header",
+            "description": "Phase 1 only, ADMIN: the branch (uuid) to act in.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "inventoryItemId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tenantSlug",
+            "required": true,
+            "in": "path",
+            "description": "The restaurant, e.g. `nile-bites` (the demo tenant).",
+            "schema": {
+              "example": "nile-bites"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RestockDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RestockResultDto"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error: `{ code, message, details }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Restock an item (a PURCHASE ledger row)",
+        "tags": [
+          "stock"
+        ]
+      }
+    },
+    "/v1/{tenantSlug}/workflow": {
+      "get": {
+        "description": "Behavior reads only `cancellable`, `deductsInventory` and `position`.",
+        "operationId": "getOrderWorkflow",
         "parameters": [
           {
             "name": "x-dev-role",
@@ -1159,31 +1513,6 @@
             "required": false,
             "schema": {
               "type": "string"
-            "name": "status",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "negative",
-                "out-of-stock",
-                "low-stock",
-                "in-stock",
-                "derived"
-              ]
-            }
-          },
-          {
-            "name": "type",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "RAW",
-                "READY",
-                "MIXED"
-              ]
             }
           },
           {
@@ -1208,17 +1537,11 @@
         },
         "responses": {
           "201": {
-        "responses": {
-          "200": {
             "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PlacedOrderDto"
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/StockItemDto"
-                  }
                 }
               }
             }
@@ -1244,15 +1567,6 @@
       "post": {
         "description": "Reaching a `deductsInventory` stage deducts the order from inventory in the same transaction, once. 409: ORDER_AT_LAST_STAGE, ORDER_CANCELED, ORDER_STAGE_CHANGED.",
         "operationId": "advanceOrder",
-        "summary": "Stock of every active item in the caller's branch",
-        "tags": [
-          "stock"
-        ]
-      }
-    },
-    "/v1/{tenantSlug}/stock/low": {
-      "get": {
-        "operationId": "listLowStock",
         "parameters": [
           {
             "name": "x-dev-role",
@@ -1311,10 +1625,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/OrderDto"
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/StockItemDto"
-                  }
                 }
               }
             }
@@ -1340,15 +1650,6 @@
       "post": {
         "description": "Only while its stage is `cancellable`; no inventory change. 409: ORDER_NOT_CANCELLABLE, ORDER_CANCELED, ORDER_STAGE_CHANGED.",
         "operationId": "cancelOrder",
-        "summary": "Items below zero, out of stock or below their threshold, worst first",
-        "tags": [
-          "stock"
-        ]
-      }
-    },
-    "/v1/{tenantSlug}/stock/{inventoryItemId}": {
-      "get": {
-        "operationId": "getStockItem",
         "parameters": [
           {
             "name": "x-dev-role",
@@ -1384,7 +1685,6 @@
           },
           {
             "name": "id",
-            "name": "inventoryItemId",
             "required": true,
             "in": "path",
             "schema": {
@@ -1408,7 +1708,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/OrderDto"
-                  "$ref": "#/components/schemas/StockItemDetailDto"
                 }
               }
             }
@@ -1434,16 +1733,6 @@
       "post": {
         "description": "Only while its stage is `cancellable`. An unknown token is 404 ORDER_NOT_FOUND. 409: ORDER_NOT_CANCELLABLE, ORDER_CANCELED, ORDER_STAGE_CHANGED.",
         "operationId": "cancelTrackedOrder",
-        "summary": "One item, with how its expected stock is built up",
-        "tags": [
-          "stock"
-        ]
-      }
-    },
-    "/v1/{tenantSlug}/stock/{inventoryItemId}/restock": {
-      "post": {
-        "description": "Adds to the current stock. A unit cost, if given, updates the moving average.",
-        "operationId": "restockItem",
         "parameters": [
           {
             "name": "x-dev-role",
@@ -1486,12 +1775,6 @@
               "pattern": "^[A-Za-z0-9_-]{43}$"
             },
             "description": "The `trackingToken` returned when placing the order."
-            "name": "inventoryItemId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
           },
           {
             "name": "tenantSlug",
@@ -1505,24 +1788,11 @@
         ],
         "responses": {
           "200": {
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RestockDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
             "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/OrderDto"
-                  "$ref": "#/components/schemas/RestockResultDto"
                 }
               }
             }
@@ -1541,9 +1811,6 @@
         "summary": "Cancel my order (guest)",
         "tags": [
           "tracking"
-        "summary": "Restock an item (a PURCHASE ledger row)",
-        "tags": [
-          "stock"
         ]
       }
     }
@@ -2099,301 +2366,6 @@
           }
         }
       },
-      "WorkflowStageDto": {
-        "type": "object",
-        "properties": {
-          "key": {
-            "type": "string",
-            "example": "pending",
-            "description": "A key of the restaurant's workflow (tenant data, not an enum). Defaults: `pending`, `in-preparation`, `ready`, `delivered` (ADR 0009)."
-          },
-          "label": {
-            "type": "string",
-            "example": "Pending"
-          },
-          "position": {
-            "type": "number",
-            "example": 1,
-            "description": "Orders move to the next higher position."
-          },
-          "cancellable": {
-            "type": "boolean",
-            "description": "An order on this stage may be cancelled."
-          },
-          "deductsInventory": {
-            "type": "boolean",
-            "description": "Reaching this stage deducts the order from inventory (once)."
-          }
-        },
-        "required": [
-          "key",
-          "label",
-          "position",
-          "cancellable",
-          "deductsInventory"
-        ]
-      },
-      "WorkflowDto": {
-        "type": "object",
-        "properties": {
-          "stages": {
-            "description": "Sorted by position.",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/WorkflowStageDto"
-            }
-          }
-        },
-        "required": [
-          "stages"
-        ]
-      },
-      "OrderLineInputDto": {
-        "type": "object",
-        "properties": {
-          "menuItemId": {
-            "type": "string",
-            "format": "uuid",
-            "description": "An active menu item sold in this branch (see the customer menu)."
-          },
-          "quantity": {
-            "type": "number",
-            "minimum": 1,
-            "maximum": 99,
-            "example": 2,
-            "description": "How many, a whole number."
-          }
-        },
-        "required": [
-          "menuItemId",
-          "quantity"
-        ]
-      },
-      "PlaceOrderDto": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "minItems": 1,
-            "maxItems": 50,
-            "description": "Name and price are copied from the menu; the client never sends prices.",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/OrderLineInputDto"
-            }
-          },
-          "note": {
-            "type": "string",
-            "maxLength": 500,
-            "example": "No onions, please",
-            "description": "Special instructions. Trimmed; empty = none."
-          }
-        },
-        "required": [
-          "items"
-        ]
-      },
-      "PlacedByDto": {
-        "type": "object",
-        "properties": {
-          "actorType": {
-            "type": "string",
-            "enum": [
-              "STAFF",
-              "CUSTOMER",
-              "GUEST"
-            ],
-            "description": "Phase 1: GUEST, or STAFF for a staff caller."
-          },
-          "actorId": {
-            "type": "string",
-            "format": "uuid",
-            "nullable": true,
-            "description": "null for a guest."
-          }
-        },
-        "required": [
-          "actorType",
-          "actorId"
-        ]
-      },
-      "OrderItemDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "menuItemId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "name": {
-            "type": "string",
-            "description": "Copied when the order was placed."
-          },
-          "unitPrice": {
-            "type": "string",
-            "pattern": "^\\d{1,10}(\\.\\d{1,2})?$",
-            "example": "185.00"
-          },
-          "quantity": {
-            "type": "number",
-            "example": 2
-          },
-          "lineTotal": {
-            "type": "string",
-            "pattern": "^\\d{1,10}(\\.\\d{1,2})?$",
-            "example": "370.00"
-          }
-        },
-        "required": [
-          "id",
-          "menuItemId",
-          "name",
-          "unitPrice",
-          "quantity",
-          "lineTotal"
-        ]
-      },
-      "PlacedOrderDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "branchId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "stageKey": {
-            "type": "string",
-            "example": "pending",
-            "description": "A key of the restaurant's workflow (tenant data, not an enum). Defaults: `pending`, `in-preparation`, `ready`, `delivered` (ADR 0009)."
-          },
-          "status": {
-            "type": "string",
-            "example": "pending",
-            "description": "`cancelled` when `canceledAt` is set, else `stageKey` (ADR 0009). Display only."
-          },
-          "canceledAt": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
-          },
-          "placedBy": {
-            "$ref": "#/components/schemas/PlacedByDto"
-          },
-          "total": {
-            "type": "string",
-            "pattern": "^\\d{1,10}(\\.\\d{1,2})?$",
-            "example": "370.00"
-          },
-          "note": {
-            "type": "string",
-            "nullable": true
-          },
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/OrderItemDto"
-            }
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "trackingToken": {
-            "type": "string",
-            "nullable": true,
-            "example": "q3Jb2wQ0bS6m0eU4f1yZ1c3mX9a7hK2pV5tR8nL4dWs",
-            "description": "Guest orders only: the secret for tracking and cancelling (ADR 0008). Returned once, never stored in plain form; keep it. null for staff orders."
-          }
-        },
-        "required": [
-          "id",
-          "branchId",
-          "stageKey",
-          "status",
-          "canceledAt",
-          "placedBy",
-          "total",
-          "note",
-          "items",
-          "createdAt",
-          "updatedAt",
-          "trackingToken"
-        ]
-      },
-      "OrderDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "branchId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "stageKey": {
-            "type": "string",
-            "example": "pending",
-            "description": "A key of the restaurant's workflow (tenant data, not an enum). Defaults: `pending`, `in-preparation`, `ready`, `delivered` (ADR 0009)."
-          },
-          "status": {
-            "type": "string",
-            "example": "pending",
-            "description": "`cancelled` when `canceledAt` is set, else `stageKey` (ADR 0009). Display only."
-          },
-          "canceledAt": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
-          },
-          "placedBy": {
-            "$ref": "#/components/schemas/PlacedByDto"
-          },
-          "total": {
-            "type": "string",
-            "pattern": "^\\d{1,10}(\\.\\d{1,2})?$",
-            "example": "370.00"
-          },
-          "note": {
-            "type": "string",
-            "nullable": true
-          },
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/OrderItemDto"
-            }
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time"
-          }
-        },
-        "required": [
-          "id",
-          "branchId",
-          "stageKey",
-          "status",
-          "canceledAt",
-          "placedBy",
-          "total",
-          "note",
-          "items",
-          "createdAt",
-          "updatedAt"
       "StockComponentDto": {
         "type": "object",
         "properties": {
@@ -2720,6 +2692,303 @@
           "unitCost",
           "stockAfter",
           "avgUnitCost"
+        ]
+      },
+      "WorkflowStageDto": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "example": "pending",
+            "description": "A key of the restaurant's workflow (tenant data, not an enum). Defaults: `pending`, `in-preparation`, `ready`, `delivered` (ADR 0009)."
+          },
+          "label": {
+            "type": "string",
+            "example": "Pending"
+          },
+          "position": {
+            "type": "number",
+            "example": 1,
+            "description": "Orders move to the next higher position."
+          },
+          "cancellable": {
+            "type": "boolean",
+            "description": "An order on this stage may be cancelled."
+          },
+          "deductsInventory": {
+            "type": "boolean",
+            "description": "Reaching this stage deducts the order from inventory (once)."
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "position",
+          "cancellable",
+          "deductsInventory"
+        ]
+      },
+      "WorkflowDto": {
+        "type": "object",
+        "properties": {
+          "stages": {
+            "description": "Sorted by position.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkflowStageDto"
+            }
+          }
+        },
+        "required": [
+          "stages"
+        ]
+      },
+      "OrderLineInputDto": {
+        "type": "object",
+        "properties": {
+          "menuItemId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "An active menu item sold in this branch (see the customer menu)."
+          },
+          "quantity": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 99,
+            "example": 2,
+            "description": "How many, a whole number."
+          }
+        },
+        "required": [
+          "menuItemId",
+          "quantity"
+        ]
+      },
+      "PlaceOrderDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "minItems": 1,
+            "maxItems": 50,
+            "description": "Name and price are copied from the menu; the client never sends prices.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderLineInputDto"
+            }
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 500,
+            "example": "No onions, please",
+            "description": "Special instructions. Trimmed; empty = none."
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "PlacedByDto": {
+        "type": "object",
+        "properties": {
+          "actorType": {
+            "type": "string",
+            "enum": [
+              "STAFF",
+              "CUSTOMER",
+              "GUEST"
+            ],
+            "description": "Phase 1: GUEST, or STAFF for a staff caller."
+          },
+          "actorId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "null for a guest."
+          }
+        },
+        "required": [
+          "actorType",
+          "actorId"
+        ]
+      },
+      "OrderItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "menuItemId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "description": "Copied when the order was placed."
+          },
+          "unitPrice": {
+            "type": "string",
+            "pattern": "^\\d{1,10}(\\.\\d{1,2})?$",
+            "example": "185.00"
+          },
+          "quantity": {
+            "type": "number",
+            "example": 2
+          },
+          "lineTotal": {
+            "type": "string",
+            "pattern": "^\\d{1,10}(\\.\\d{1,2})?$",
+            "example": "370.00"
+          }
+        },
+        "required": [
+          "id",
+          "menuItemId",
+          "name",
+          "unitPrice",
+          "quantity",
+          "lineTotal"
+        ]
+      },
+      "PlacedOrderDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "branchId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "stageKey": {
+            "type": "string",
+            "example": "pending",
+            "description": "A key of the restaurant's workflow (tenant data, not an enum). Defaults: `pending`, `in-preparation`, `ready`, `delivered` (ADR 0009)."
+          },
+          "status": {
+            "type": "string",
+            "example": "pending",
+            "description": "`cancelled` when `canceledAt` is set, else `stageKey` (ADR 0009). Display only."
+          },
+          "canceledAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "placedBy": {
+            "$ref": "#/components/schemas/PlacedByDto"
+          },
+          "total": {
+            "type": "string",
+            "pattern": "^\\d{1,10}(\\.\\d{1,2})?$",
+            "example": "370.00"
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderItemDto"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "trackingToken": {
+            "type": "string",
+            "nullable": true,
+            "example": "q3Jb2wQ0bS6m0eU4f1yZ1c3mX9a7hK2pV5tR8nL4dWs",
+            "description": "Guest orders only: the secret for tracking and cancelling (ADR 0008). Returned once, never stored in plain form; keep it. null for staff orders."
+          }
+        },
+        "required": [
+          "id",
+          "branchId",
+          "stageKey",
+          "status",
+          "canceledAt",
+          "placedBy",
+          "total",
+          "note",
+          "items",
+          "createdAt",
+          "updatedAt",
+          "trackingToken"
+        ]
+      },
+      "OrderDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "branchId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "stageKey": {
+            "type": "string",
+            "example": "pending",
+            "description": "A key of the restaurant's workflow (tenant data, not an enum). Defaults: `pending`, `in-preparation`, `ready`, `delivered` (ADR 0009)."
+          },
+          "status": {
+            "type": "string",
+            "example": "pending",
+            "description": "`cancelled` when `canceledAt` is set, else `stageKey` (ADR 0009). Display only."
+          },
+          "canceledAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "placedBy": {
+            "$ref": "#/components/schemas/PlacedByDto"
+          },
+          "total": {
+            "type": "string",
+            "pattern": "^\\d{1,10}(\\.\\d{1,2})?$",
+            "example": "370.00"
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderItemDto"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "branchId",
+          "stageKey",
+          "status",
+          "canceledAt",
+          "placedBy",
+          "total",
+          "note",
+          "items",
+          "createdAt",
+          "updatedAt"
         ]
       },
       "ErrorResponse": {
