@@ -6,5 +6,12 @@
   "frontend/**/*.scss": [
     "npm --prefix frontend exec -- stylelint --fix",
     "npm --prefix frontend exec -- prettier --write"
+  ],
+  "backend/**/*.ts": [
+    "npm --prefix backend exec -- eslint --fix --max-warnings=0",
+    "npm --prefix backend exec -- prettier --write --ignore-path backend/.prettierignore"
+  ],
+  "backend/**/*.{json,mjs,yml,yaml}": [
+    "npm --prefix backend exec -- prettier --write --ignore-path backend/.prettierignore"
   ]
 }

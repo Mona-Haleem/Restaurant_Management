@@ -50,3 +50,7 @@ ignore
 frontend/src/app/temp/
 .vercel
 .env*
+!.env.example
+
+# Claude Code personal settings
+**/.claude/settings.local.json

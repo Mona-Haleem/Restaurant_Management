@@ -1,23 +1,108 @@
-   name: CI
+name: CI
 
-   on:
-     pull_request:
-       branches: [main]
-     push:
-       branches: [main]
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
 
-   jobs:
-     build-test:
-       runs-on: ubuntu-latest
-       steps:
-         - uses: actions/checkout@v4
-         - uses: actions/setup-node@v4
-           with:
-             node-version: '24'
-             cache: 'npm'
-         - run: npm ci
-         - run: npm ci --prefix frontend
-         - run: npm run lint
-         - run: npm run frontend:format:check
-         - run: npm run frontend:test:ci
-         - run: npm run build
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  # Decides which app jobs need to run. A job skipped by `if:` counts as passed for
+  # branch protection, unlike a workflow skipped by a `paths:` filter (stays "pending").
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: filter
+        env:
+          BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [ -z "$BASE" ] || ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
+            echo "backend=true" >> "$GITHUB_OUTPUT"   # unknown base: run everything
+          elif git diff --name-only "$BASE" HEAD | grep -qE '^(backend/|\.nvmrc$|\.github/workflows/)'; then
+            echo "backend=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "backend=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: 'npm'
+      - run: npm ci
+      - run: npm ci --prefix frontend
+      - run: npm run lint
+      - run: npm run frontend:format:check
+      - run: npm run frontend:test:ci
+      - run: npm run build
+
+  backend:
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: tablz_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      APP_ENV: test
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tablz_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm run typecheck
+      - name: Unit tests + coverage gate
+        run: npm run test:cov
+      - name: Postgres is reachable
+        run: pg_isready -h localhost -p 5432 -U postgres
+      - name: Integration tests
+        run: npm run test:e2e
+      - run: npm run build
+
+  # The single required status check. Fails if any job failed or was cancelled;
+  # passes when a job was skipped because its app did not change.
+  ci-ok:
+    if: always()
+    needs: [changes, build-test, backend]
+    runs-on: ubuntu-latest
+    steps:
+      - name: All required jobs passed or were skipped
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          echo "$NEEDS"
+          if ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}; then
+            exit 1
+          fi
