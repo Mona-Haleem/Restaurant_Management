@@ -11,6 +11,7 @@ import { ContextModule } from './context/context.module';
 import { HealthModule } from './health/health.module';
 import { CatalogModule } from './modules/catalog/catalog.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
+import { StaffModule } from './modules/staff/staff.module';
 import { PrismaModule } from './prisma/prisma.module';
 
 export interface AppModuleOptions {
@@ -36,6 +37,7 @@ export class AppModule {
         // Feature modules (src/modules/**): tenant-scoped client only.
         CatalogModule,
         InventoryModule,
+        StaffModule,
       ],
       controllers: [AppController],
     };

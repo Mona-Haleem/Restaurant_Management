@@ -1044,6 +1044,375 @@
           "menu-items"
         ]
       }
+    },
+    "/v1/{tenantSlug}/staff": {
+      "get": {
+        "description": "A MANAGER sees their own branch only. `status=ACTIVE` is the list for pickers.",
+        "operationId": "listStaff",
+        "parameters": [
+          {
+            "name": "x-dev-role",
+            "in": "header",
+            "description": "Phase 1 only: act as the restaurant's demo user with this role. Omit for a guest.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ADMIN",
+                "MANAGER",
+                "WORKER"
+              ]
+            }
+          },
+          {
+            "name": "x-dev-user",
+            "in": "header",
+            "description": "Phase 1 only: act as this active user (uuid) of the restaurant.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-dev-branch",
+            "in": "header",
+            "description": "Phase 1 only, ADMIN: the branch (uuid) to act in.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "Absent = active and inactive staff.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ACTIVE",
+                "INACTIVE"
+              ]
+            }
+          },
+          {
+            "name": "role",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ADMIN",
+                "MANAGER",
+                "WORKER"
+              ]
+            }
+          },
+          {
+            "name": "branchId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "tenantSlug",
+            "required": true,
+            "in": "path",
+            "description": "The restaurant, e.g. `nile-bites` (the demo tenant).",
+            "schema": {
+              "example": "nile-bites"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StaffMemberDto"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error: `{ code, message, details }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Staff, inactive ones included unless filtered",
+        "tags": [
+          "staff"
+        ]
+      },
+      "post": {
+        "description": "The password is stored as an argon2id hash; there is no login until Phase 2.",
+        "operationId": "createStaffMember",
+        "parameters": [
+          {
+            "name": "x-dev-role",
+            "in": "header",
+            "description": "Phase 1 only: act as the restaurant's demo user with this role. Omit for a guest.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ADMIN",
+                "MANAGER",
+                "WORKER"
+              ]
+            }
+          },
+          {
+            "name": "x-dev-user",
+            "in": "header",
+            "description": "Phase 1 only: act as this active user (uuid) of the restaurant.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-dev-branch",
+            "in": "header",
+            "description": "Phase 1 only, ADMIN: the branch (uuid) to act in.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tenantSlug",
+            "required": true,
+            "in": "path",
+            "description": "The restaurant, e.g. `nile-bites` (the demo tenant).",
+            "schema": {
+              "example": "nile-bites"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateStaffMemberDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffMemberDto"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error: `{ code, message, details }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create a staff member (409 STAFF_EMAIL_TAKEN for a duplicate email)",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/v1/{tenantSlug}/staff/{id}": {
+      "get": {
+        "operationId": "getStaffMember",
+        "parameters": [
+          {
+            "name": "x-dev-role",
+            "in": "header",
+            "description": "Phase 1 only: act as the restaurant's demo user with this role. Omit for a guest.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ADMIN",
+                "MANAGER",
+                "WORKER"
+              ]
+            }
+          },
+          {
+            "name": "x-dev-user",
+            "in": "header",
+            "description": "Phase 1 only: act as this active user (uuid) of the restaurant.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-dev-branch",
+            "in": "header",
+            "description": "Phase 1 only, ADMIN: the branch (uuid) to act in.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tenantSlug",
+            "required": true,
+            "in": "path",
+            "description": "The restaurant, e.g. `nile-bites` (the demo tenant).",
+            "schema": {
+              "example": "nile-bites"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffMemberDto"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error: `{ code, message, details }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "One staff member, active or not",
+        "tags": [
+          "staff"
+        ]
+      },
+      "patch": {
+        "description": "Never deletes. Demo users cannot be deactivated or change role (409 DEMO_USER_PROTECTED); nobody can deactivate themselves (409 CANNOT_DEACTIVATE_SELF).",
+        "operationId": "updateStaffMember",
+        "parameters": [
+          {
+            "name": "x-dev-role",
+            "in": "header",
+            "description": "Phase 1 only: act as the restaurant's demo user with this role. Omit for a guest.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ADMIN",
+                "MANAGER",
+                "WORKER"
+              ]
+            }
+          },
+          {
+            "name": "x-dev-user",
+            "in": "header",
+            "description": "Phase 1 only: act as this active user (uuid) of the restaurant.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-dev-branch",
+            "in": "header",
+            "description": "Phase 1 only, ADMIN: the branch (uuid) to act in.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tenantSlug",
+            "required": true,
+            "in": "path",
+            "description": "The restaurant, e.g. `nile-bites` (the demo tenant).",
+            "schema": {
+              "example": "nile-bites"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateStaffMemberDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffMemberDto"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error: `{ code, message, details }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Edit, assign a role, deactivate or reactivate a staff member",
+        "tags": [
+          "staff"
+        ]
+      }
     }
   },
   "info": {
@@ -1589,6 +1958,135 @@
             "items": {
               "$ref": "#/components/schemas/IngredientInputDto"
             }
+          }
+        }
+      },
+      "StaffMemberDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "example": "Omar Hassan"
+          },
+          "email": {
+            "type": "string",
+            "nullable": true,
+            "example": "omar@nile-bites.example"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "ADMIN",
+              "MANAGER",
+              "WORKER"
+            ]
+          },
+          "branchId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "Null for an ADMIN (works across branches)."
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "False = deactivated: hidden from active selections, kept (with its name) for history."
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email",
+          "role",
+          "branchId",
+          "isActive",
+          "updatedAt"
+        ]
+      },
+      "CreateStaffMemberDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Mariam Khaled",
+            "minLength": 1,
+            "maxLength": 120,
+            "description": "Trimmed."
+          },
+          "email": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 254,
+            "example": "mariam@nile-bites.example",
+            "description": "Unique per restaurant, any case (stored lowercase)."
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 128,
+            "format": "password",
+            "description": "Stored as an argon2id hash. No login endpoint until Phase 2."
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "ADMIN",
+              "MANAGER",
+              "WORKER"
+            ],
+            "description": "A MANAGER may only create WORKERs."
+          },
+          "branchId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "Required for MANAGER/WORKER (defaults to the caller's branch); must be absent or null for ADMIN."
+          }
+        },
+        "required": [
+          "name",
+          "password",
+          "role"
+        ]
+      },
+      "UpdateStaffMemberDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120,
+            "description": "Trimmed."
+          },
+          "email": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 254
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "ADMIN",
+              "MANAGER",
+              "WORKER"
+            ],
+            "description": "Assign a role. Becoming ADMIN drops the branch."
+          },
+          "branchId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "False deactivates (never deletes), true reactivates."
           }
         }
       },
