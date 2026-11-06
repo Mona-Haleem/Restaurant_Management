@@ -93,7 +93,7 @@ The table list is in ROADMAP §4. Cross-cutting rules:
 
 ## 5. Inventory ledger rules
 
-- **Single writer.** Only the ledger service (B701) changes `branch_stock.current_stock`. Orders, waste, restock and reconciliation all call it.
+- **Single writer.** Only the ledger service (B701) changes `branch_stock.current_stock`. Orders, waste, restock and reconciliation all call it. The demo seed is the one exception ([ADR 0016](adr/0016-demo-seed.md)).
 - **Atomic.** The stock update and its `inventory_transactions` rows are written in one database transaction, using atomic `UPDATE … SET current_stock = current_stock + $delta` or row locks.
 - **Idempotent order deductions.** Unique key on `(related_order_id, inventory_item_id, type)`. Consequence: a deduction must aggregate quantities per inventory item before writing. Two menu items that both use cheese, or a MIXED sauce and a raw ingredient that share a component, produce one CONSUMPTION row per item per order, not one per recipe line.
 - **Expected stock** (per branch and item) = latest snapshot value + sum of `quantity_delta` since that snapshot. Implement the arithmetic as a pure function and test it over randomized sequences (B701 acceptance).

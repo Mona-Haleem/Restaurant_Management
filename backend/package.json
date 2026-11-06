@@ -28,6 +28,7 @@
     "db:reset": "prisma migrate reset",
     "db:status": "prisma migrate status",
     "db:generate": "prisma generate",
+    "db:seed": "npm run build && node dist/prisma/seed/run-seed.js",
     "erd:generate": "npm run build && node dist/prisma/generate-erd.js",
     "openapi:generate": "npm run build && node dist/openapi/generate.js"
   },

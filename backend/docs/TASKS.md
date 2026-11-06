@@ -11,7 +11,7 @@ Ticket details live in `docs/ROADMAP.md` §6. This file tracks order, status and
 | 2 | B201 | Local DB, Supabase projects, env guards | 🤝 | B101 | — | done | [#13](https://github.com/Mona-Haleem/Restaurant_Management/pull/13) |
 | 3 | B301 | Prisma schema and first migration | 🤖 | B201 | — | done | [#12](https://github.com/Mona-Haleem/Restaurant_Management/pull/12) |
 | 4 | B302 | Schema review and ADRs | 🤖 | B301 | — | done | [#18](https://github.com/Mona-Haleem/Restaurant_Management/pull/18) |
-| 5 | B401 | Idempotent seed | 🤖 | B302 | — | todo | |
+| 5 | B401 | Idempotent seed | 🤖 | B302 | — | in review | |
 | 6 | B501 | Config, validation, errors, logging | 🤖 | B201 | — | done | [#14](https://github.com/Mona-Haleem/Restaurant_Management/pull/14) |
 | 7 | B502 | OpenAPI contract | 🤖 | B501 | Angular client + mock contract test wait for frontend TABLZ-401/402/403 (ADR 0012) | backend half done; frontend half blocked | [#15](https://github.com/Mona-Haleem/Restaurant_Management/pull/15) |
 | 8 | B503 | Tenant context, auth seam, health, demo safety | 🤖 | B301, B501 | — | todo | |
@@ -36,5 +36,6 @@ Ticket details live in `docs/ROADMAP.md` §6. This file tracks order, status and
 - **Parallel work:** B501 can run alongside B301/B302. B901 and B1001 can run alongside B801. Don't run two tickets that both create Prisma migrations at the same time — merge one, then start the other.
 - **B302 mapping is provisional:** `docs/MODEL-MAPPING.md` was built from the TABLZ-401 ticket text because the Angular models did not exist yet. When TABLZ-401 lands, check every row (and deviations D15, D16, D20) against the real interfaces.
 - **Decimal wire format (ADR 0013):** the first ticket that returns a `Decimal` or `bigint` (B601 or B503) adds the string serializer and the OpenAPI `type: string` + `pattern`.
+- **B401 follow-ups:** the staging reseed CI workflow belongs to B1202 (🤝, needs staging secrets); B701 switches the seed to the ledger service and owns the unit-conversion and expected-stock functions the seed copies (ADR 0016); B503 decides how the scheduled reseed restores the demo tenant after visitor writes.
 - **Frontend references:** B302 (TABLZ-401 models), B401 (TABLZ-404 seed), B502 (frontend mock handlers) and B1301 (TABLZ-403 service layer, TABLZ-1902 demo script) need the Angular repo. Per ADR 0001 this is a monorepo: start Claude Code in `backend/` with `--add-dir ../frontend` for those tickets.
 - **👤 / 🤝 steps Claude must not attempt:** creating Supabase or Render projects, setting GitHub branch protection or secrets, configuring UptimeRobot, and anything that connects to staging or production.

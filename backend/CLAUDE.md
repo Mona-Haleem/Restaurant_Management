@@ -27,7 +27,7 @@ Keep this section accurate. Run from `backend/`, Node 24 (root `.nvmrc`).
 - Unit tests: `npm run test` · With coverage gate (80% global, what CI runs): `npm run test:cov`
 - Integration tests: `npm run test:e2e` (builds first, resets `tablz_test` from the migrations, then runs `test/**/*.e2e-spec.ts` in band against real Postgres via `TEST_DATABASE_URL`)
 - Tests run through `node --experimental-vm-modules` because NestJS 12 is ESM-only; the warning it prints is expected.
-- Local DB: `npm run db:up` (Docker `db` on host port 5433 + migrations) · `npm run db:status` · `npm run db:down` — see `docs/ENVIRONMENTS.md`
+- Local DB: `npm run db:up` (Docker `db` on host port 5433 + migrations) · `npm run db:seed` (demo tenants, re-runnable, ADR 0016) · `npm run db:status` · `npm run db:down` — see `docs/ENVIRONMENTS.md`
 - New migration (local only): `npx prisma migrate dev --name <name>` (use `--create-only` when you need to add SQL such as CHECK constraints)
 - Schema: `npm test` checks the table rules (`src/prisma/schema-rules.spec.ts`) and that `docs/MODEL-MAPPING.md` lists every column (`src/prisma/model-mapping.spec.ts`; update it when a column changes); after changing `prisma/schema.prisma` run `npm run erd:generate` (rewrites `docs/ERD.md`). Rules and decisions: `docs/SCHEMA.md`.
 - OpenAPI: `npm run openapi:generate` rewrites `openapi.json` (commit it). `npm test` fails when it is out of date. Served at `/v1/openapi.json`; UI at `/v1/docs` (not on production).

@@ -7,6 +7,8 @@ const config: Config = {
   testMatch: ['**/*.spec.ts'],
   moduleFileExtensions: ['ts', 'js', 'json'],
   transform: { '^.+\\.ts$': 'ts-jest' },
+  // The generated Prisma client imports its siblings with `.js` extensions.
+  moduleNameMapper: { '^(\\.{1,2}/.*)\\.js$': '$1' },
   collectCoverageFrom: [
     '**/*.ts',
     '!main.ts',
@@ -19,6 +21,9 @@ const config: Config = {
     '!prisma/generate-erd.ts',
     // CLI script; what it writes is checked by openapi.spec.ts (drift test).
     '!openapi/generate.ts',
+    // Need a real database: covered by test/seed.e2e-spec.ts instead.
+    '!prisma/seed/run-seed.ts',
+    '!prisma/seed/write-seed.ts',
   ],
   coverageDirectory: '../coverage',
   coverageReporters: ['text-summary', 'lcov'],
