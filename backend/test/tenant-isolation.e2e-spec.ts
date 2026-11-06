@@ -184,6 +184,74 @@ const ISOLATION_CASES: Record<string, IsolationCase> = {
       agent.post(`/v1/${A_SLUG}/menu-items/${ctx.seed.bMenuItemId}/restore`),
     ),
 
+  // ── Staff (B1001) ───────────────────────────────────────────────────────────────────────
+  'GET /v1/{tenantSlug}/staff': async ({ http, seed }) => {
+    const res = await http().get(`/v1/${A_SLUG}/staff`).set(ADMIN).expect(200);
+    const listed = ids(bodyOf(res));
+    expect(listed).toEqual(expect.arrayContaining(seed.a.users.map((u) => u.id)));
+    expect(listed.filter((id) => seed.b.users.some((u) => u.id === id))).toEqual([]);
+  },
+  'GET /v1/{tenantSlug}/staff/{id}': async ({ http, seed }) => {
+    await http().get(`/v1/${A_SLUG}/staff/${seed.b.users[0]!.id}`).set(ADMIN).expect(404);
+    await http().get(`/v1/${B_SLUG}/staff/${seed.a.users[0]!.id}`).set(ADMIN).expect(404);
+  },
+  'POST /v1/{tenantSlug}/staff': async ({ http, seed, prisma }) => {
+    const before = await prisma.user.count({ where: { tenantId: seed.b.tenant.id } });
+    const intoB = await http()
+      .post(`/v1/${A_SLUG}/staff`)
+      .set(ADMIN)
+      .send({
+        name: 'Sneaky',
+        password: 'a-long-password',
+        role: 'WORKER',
+        branchId: seed.b.branches[0]!.id,
+      })
+      .expect(400);
+    expect(bodyOf(intoB)).toMatchObject({ code: 'BRANCH_NOT_FOUND' });
+    // Emails are unique per tenant only: A may use B's staff email.
+    const res = await http()
+      .post(`/v1/${A_SLUG}/staff`)
+      .set(ADMIN)
+      .send({
+        name: 'Isolation',
+        email: seed.b.users[0]!.email,
+        password: 'a-long-password',
+        role: 'WORKER',
+        branchId: seed.a.branches[0]!.id,
+      })
+      .expect(201);
+    const row = await prisma.user.findUnique({ where: { id: (bodyOf(res) as { id: string }).id } });
+    expect(row?.tenantId).toBe(seed.a.tenant.id);
+    expect(await prisma.user.count({ where: { tenantId: seed.b.tenant.id } })).toBe(before);
+  },
+  'PATCH /v1/{tenantSlug}/staff/{id}': async ({ http, seed, prisma }) => {
+    const bWorker = seed.b.users.find((u) => u.role === 'WORKER')!.id;
+    const before = await prisma.user.findUnique({ where: { id: bWorker } });
+    await http()
+      .patch(`/v1/${A_SLUG}/staff/${bWorker}`)
+      .set(ADMIN)
+      .send({ name: 'Hacked', isActive: false })
+      .expect(404);
+    expect(await prisma.user.findUnique({ where: { id: bWorker } })).toEqual(before);
+    // A's own worker cannot be moved into B's branch.
+    const aWorker = await http()
+      .post(`/v1/${A_SLUG}/staff`)
+      .set(ADMIN)
+      .send({
+        name: 'Isolation mover',
+        password: 'a-long-password',
+        role: 'WORKER',
+        branchId: seed.a.branches[0]!.id,
+      })
+      .expect(201);
+    const moved = await http()
+      .patch(`/v1/${A_SLUG}/staff/${(bodyOf(aWorker) as { id: string }).id}`)
+      .set(ADMIN)
+      .send({ branchId: seed.b.branches[0]!.id })
+      .expect(400);
+    expect(bodyOf(moved)).toMatchObject({ code: 'BRANCH_NOT_FOUND' });
+  },
+
   // ── Orders (B801) ───────────────────────────────────────────────────────────────────────
   'GET /v1/{tenantSlug}/workflow': async ({ http, seed, prisma }) => {
     const res = await http().get(`/v1/${A_SLUG}/workflow`).expect(200);
