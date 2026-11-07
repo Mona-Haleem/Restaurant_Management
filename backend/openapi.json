@@ -2128,6 +2128,91 @@
         ]
       }
     },
+    "/v1/{tenantSlug}/reconciliations": {
+      "post": {
+        "description": "Per item: expected = latest count + every ledger row since (logged waste included, so it is never part of the gap); a non-zero gap writes an ADJUSTMENT row so stock equals the count; a new snapshot becomes the base of the next expected stock. All items or none. Errors: 404 INVENTORY_ITEM_NOT_FOUND, 400 MIXED_ITEM_NOT_STOCKED, UNIT_DIMENSION_MISMATCH, QUANTITY_TOO_PRECISE, QUANTITY_TOO_LARGE, DUPLICATE_COUNT, BRANCH_REQUIRED.",
+        "operationId": "createReconciliation",
+        "parameters": [
+          {
+            "name": "x-dev-role",
+            "in": "header",
+            "description": "Phase 1 only: act as the restaurant's demo user with this role. Omit for a guest.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ADMIN",
+                "MANAGER",
+                "WORKER"
+              ]
+            }
+          },
+          {
+            "name": "x-dev-user",
+            "in": "header",
+            "description": "Phase 1 only: act as this active user (uuid) of the restaurant.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-dev-branch",
+            "in": "header",
+            "description": "Phase 1 only, ADMIN: the branch (uuid) to act in.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tenantSlug",
+            "required": true,
+            "in": "path",
+            "description": "The restaurant, e.g. `nile-bites` (the demo tenant).",
+            "schema": {
+              "example": "nile-bites"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReconciliationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReconciliationDto"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error: `{ code, message, details }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Submit a physical count: flags only the unexplained gap and starts a new snapshot",
+        "tags": [
+          "reconciliations"
+        ]
+      }
+    },
     "/v1/{tenantSlug}/staff": {
       "get": {
         "description": "A MANAGER sees their own branch only. `status=ACTIVE` is the list for pickers.",
@@ -3988,6 +4073,160 @@
           "stages",
           "createdAt",
           "updatedAt"
+        ]
+      },
+      "CountLineDto": {
+        "type": "object",
+        "properties": {
+          "inventoryItemId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "An active RAW or READY item of this restaurant."
+          },
+          "quantity": {
+            "type": "string",
+            "pattern": "^\\d{1,11}(\\.\\d{1,3})?$",
+            "example": "7.5",
+            "description": "What is physically there, in `unit`. Zero or more; at most 3 decimals in the stock unit."
+          },
+          "unit": {
+            "type": "string",
+            "enum": [
+              "G",
+              "KG",
+              "ML",
+              "L",
+              "PCS"
+            ],
+            "description": "Same dimension as the item's stock unit (ADR 0003)."
+          }
+        },
+        "required": [
+          "inventoryItemId",
+          "quantity",
+          "unit"
+        ]
+      },
+      "CreateReconciliationDto": {
+        "type": "object",
+        "properties": {
+          "counts": {
+            "minItems": 1,
+            "maxItems": 200,
+            "description": "One line per item; an item may appear once. Applied together or not at all.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CountLineDto"
+            }
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 500,
+            "example": "End of day",
+            "description": "Trimmed."
+          }
+        },
+        "required": [
+          "counts"
+        ]
+      },
+      "ReconciliationEntryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "inventoryItemId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "countedQuantity": {
+            "type": "string",
+            "pattern": "^\\d{1,11}(\\.\\d{1,3})?$",
+            "example": "7.500",
+            "description": "The count, in the stock unit."
+          },
+          "expectedQuantity": {
+            "type": "string",
+            "pattern": "^-?\\d{1,11}(\\.\\d{1,3})?$",
+            "example": "8.000",
+            "description": "Latest count + every ledger row since (logged waste included), in the stock unit."
+          },
+          "gap": {
+            "type": "string",
+            "pattern": "^-?\\d{1,11}(\\.\\d{1,3})?$",
+            "example": "-0.500",
+            "description": "counted − expected: the unexplained difference only. Negative = missing."
+          },
+          "flagged": {
+            "type": "boolean",
+            "description": "True when the gap is not zero."
+          },
+          "adjustmentTransactionId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The ADJUSTMENT ledger row for the gap; null when the gap is zero."
+          },
+          "snapshotId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The new snapshot: the next expected stock starts here."
+          },
+          "stockAfter": {
+            "type": "string",
+            "pattern": "^-?\\d{1,11}(\\.\\d{1,3})?$",
+            "example": "7.500",
+            "description": "The branch stock right after, in the stock unit (equals the count)."
+          }
+        },
+        "required": [
+          "id",
+          "inventoryItemId",
+          "countedQuantity",
+          "expectedQuantity",
+          "gap",
+          "flagged",
+          "adjustmentTransactionId",
+          "snapshotId",
+          "stockAfter"
+        ]
+      },
+      "ReconciliationDto": {
+        "type": "object",
+        "properties": {
+          "branchId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "actorId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Who counted."
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "entries": {
+            "description": "In the order of the request.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReconciliationEntryDto"
+            }
+          }
+        },
+        "required": [
+          "branchId",
+          "actorId",
+          "note",
+          "createdAt",
+          "entries"
         ]
       },
       "StaffMemberDto": {

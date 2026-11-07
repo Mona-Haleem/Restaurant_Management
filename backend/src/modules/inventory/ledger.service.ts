@@ -9,15 +9,19 @@ import { RequestContextStore } from '../../context/request-context.store';
 import type { TenantDb } from '../../prisma/tenant-prisma';
 import {
   expandOrder,
+  expectedStock,
   LedgerMathError,
   nextAverageCost,
   type ComponentLine,
   type RecipeLine,
   type StockItem,
 } from './ledger-math';
+import { reconcileCount } from './reconciliation-math';
 import { costPerStockUnit, StockMathError } from './stock-math';
 
 type Decimal = Prisma.Decimal;
+/** Smallest amount that no longer fits numeric(14,3) (11 digits before the point). */
+const QUANTITY_LIMIT = parseDecimal(`1${'0'.repeat(QUANTITY.integerDigits)}`);
 /** The caller's interactive transaction on the tenant-scoped client. */
 export type LedgerTx = Parameters<Parameters<TenantDb['$transaction']>[0]>[0];
 
@@ -70,6 +74,34 @@ export interface PurchaseRecorded extends StockMovement {
   unitCost: Decimal | null;
   /** The branch's moving average after the purchase (ADR 0005). */
   avgUnitCost: Decimal | null;
+}
+
+export interface CountInput {
+  inventoryItemId: string;
+  /** The physical count as entered, zero or more (validated by the caller's DTO). */
+  quantity: string;
+  unit: Unit;
+}
+
+export interface ReconcileInput {
+  branchId: string;
+  actorId: string;
+  /** Stored on each ADJUSTMENT row. */
+  note?: string;
+  counts: CountInput[];
+}
+
+export interface CountApplied {
+  inventoryItemId: string;
+  /** In the stock unit. */
+  countedQuantity: Decimal;
+  /** Latest snapshot + ledger rows since, read under the stock row lock. */
+  expectedQuantity: Decimal;
+  gap: Decimal;
+  /** Null when the gap is zero. */
+  adjustmentTransactionId: string | null;
+  snapshotId: string;
+  stockAfter: Decimal;
 }
 
 interface Movement {
@@ -265,17 +297,149 @@ export class LedgerService {
     return movement!;
   }
 
+  /**
+   * A physical count of one or more items (B902). Per item, in id order (the same lock order as
+   * `apply`, so it never deadlocks with another writer): lock the stock row, then — holding the
+   * lock, so no other writer's row can land in between — read expected stock (latest snapshot +
+   * rows since), write an ADJUSTMENT row for a non-zero gap through `apply`, and snapshot the
+   * count through the item's last ledger row (SCHEMA.md contract). Logged waste is already in
+   * the ledger, so it is never part of the gap. Results come back in input order.
+   */
+  async reconcile(tx: LedgerTx, input: ReconcileInput): Promise<CountApplied[]> {
+    // Keyed by the id as stored (lowercase), not as sent: a uuid in another case is the same item.
+    const ids: string[] = [];
+    const counted = new Map<string, { quantity: Decimal; standardUnitCost: Decimal | null }>();
+    for (const c of input.counts) {
+      const item = await this.loadStockedItem(
+        tx,
+        { inventoryItemId: c.inventoryItemId, branchId: input.branchId },
+        'A MIXED item has no stock of its own: count its components (ADR 0002).',
+      );
+      if (counted.has(item.id)) {
+        throw new AppException(400, 'DUPLICATE_COUNT', 'Count each item once per reconciliation.', {
+          inventoryItemId: item.id,
+        });
+      }
+      const quantity = this.toStockQuantity(c.quantity, c.unit, item, { allowZero: true });
+      counted.set(item.id, { quantity, standardUnitCost: item.standardUnitCost });
+      ids.push(item.id);
+    }
+
+    const tenantId = this.tenantId;
+    const { branchId } = input;
+    const sorted = [...counted.keys()].sort();
+    await tx.branchStock.createMany({
+      data: sorted.map((inventoryItemId) => ({ tenantId, branchId, inventoryItemId })),
+      skipDuplicates: true,
+    });
+
+    const seen = new Map<string, { expected: Decimal; gap: Decimal; current: Decimal }>();
+    for (const inventoryItemId of sorted) {
+      // Lock the row first (the UPDATE holds it until commit); a concurrent writer now waits.
+      const locked = await tx.branchStock.update({
+        where: { tenantId_branchId_inventoryItemId: { tenantId, branchId, inventoryItemId } },
+        data: { updatedAt: new Date() },
+        select: { currentStock: true },
+      });
+      const snapshot = await tx.inventorySnapshot.findFirst({
+        where: { branchId, inventoryItemId },
+        orderBy: { throughSeq: 'desc' },
+        select: { quantity: true, throughSeq: true },
+      });
+      const since = await tx.inventoryTransaction.aggregate({
+        where: {
+          branchId,
+          inventoryItemId,
+          ...(snapshot ? { seq: { gt: snapshot.throughSeq } } : {}),
+        },
+        _sum: { quantityDelta: true },
+      });
+      const expected = expectedStock(snapshot?.quantity ?? null, [
+        since._sum.quantityDelta ?? parseDecimal('0'),
+      ]);
+      // A cache/ledger disagreement is a broken invariant: it surfaces as a logged 500.
+      const { gap } = reconcileCount({
+        counted: counted.get(inventoryItemId)!.quantity,
+        expected,
+        currentStock: locked.currentStock,
+      });
+      seen.set(inventoryItemId, { expected, gap, current: locked.currentStock });
+    }
+
+    const adjustments = await this.apply(
+      tx,
+      branchId,
+      input.actorId,
+      sorted
+        .filter((id) => !seen.get(id)!.gap.isZero())
+        .map((inventoryItemId) => ({
+          inventoryItemId,
+          quantityDelta: seen.get(inventoryItemId)!.gap,
+          type: 'ADJUSTMENT' as const,
+          note: input.note,
+          standardUnitCost: counted.get(inventoryItemId)!.standardUnitCost,
+        })),
+    );
+    const adjusted = new Map(adjustments.map((a) => [a.inventoryItemId, a]));
+
+    const results = new Map<string, CountApplied>();
+    for (const inventoryItemId of sorted) {
+      // Still under the lock: the last row is this count's own ADJUSTMENT or an earlier one.
+      const last = await tx.inventoryTransaction.aggregate({
+        where: { branchId, inventoryItemId },
+        _max: { seq: true },
+      });
+      const snapshotId = randomUUID();
+      const quantity = counted.get(inventoryItemId)!.quantity;
+      await tx.inventorySnapshot.create({
+        data: {
+          id: snapshotId,
+          tenantId,
+          branchId,
+          inventoryItemId,
+          quantity,
+          throughSeq: last._max.seq ?? 0n,
+        },
+      });
+      const { expected, gap, current } = seen.get(inventoryItemId)!;
+      const adjustment = adjusted.get(inventoryItemId);
+      results.set(inventoryItemId, {
+        inventoryItemId,
+        countedQuantity: quantity,
+        expectedQuantity: expected,
+        gap,
+        adjustmentTransactionId: adjustment?.transactionId ?? null,
+        snapshotId,
+        stockAfter: adjustment?.stockAfter ?? current,
+      });
+    }
+    return ids.map((id) => results.get(id)!);
+  }
+
   // ── Internals ───────────────────────────────────────────────────────────────────────────
   private get tenantId(): string {
     return this.context.require().tenantId;
   }
 
-  private toStockQuantity(entered: string, unit: Unit, item: { id: string; unit: Unit }): Decimal {
+  /**
+   * An entered amount in the item's stock unit (ADR 0003). Refused, never rounded or clamped:
+   * not positive (zero allowed only for a count), another dimension, more than 3 decimals, or
+   * too large for numeric(14,3) after conversion (e.g. KG entered for a G item).
+   */
+  private toStockQuantity(
+    entered: string,
+    unit: Unit,
+    item: { id: string; unit: Unit },
+    options: { allowZero?: boolean } = {},
+  ): Decimal {
     const quantity = parseDecimal(entered);
-    if (!quantity.isPositive() || quantity.isZero()) {
-      throw new AppException(400, 'QUANTITY_NOT_POSITIVE', 'The quantity must be above zero.', {
-        inventoryItemId: item.id,
-      });
+    if (quantity.isNegative() || (quantity.isZero() && !options.allowZero)) {
+      throw new AppException(
+        400,
+        'QUANTITY_NOT_POSITIVE',
+        options.allowZero ? 'A count cannot be below zero.' : 'The quantity must be above zero.',
+        { inventoryItemId: item.id },
+      );
     }
     if (!sameDimension(unit, item.unit)) {
       throw new AppException(
@@ -295,6 +459,14 @@ export class LedgerService {
         400,
         'QUANTITY_TOO_PRECISE',
         `In ${item.unit} this needs more than ${QUANTITY.scale} decimals (ADR 0013).`,
+        { inventoryItemId: item.id },
+      );
+    }
+    if (converted.greaterThanOrEqualTo(QUANTITY_LIMIT)) {
+      throw new AppException(
+        400,
+        'QUANTITY_TOO_LARGE',
+        `In ${item.unit} this needs more than ${QUANTITY.integerDigits} digits before the point.`,
         { inventoryItemId: item.id },
       );
     }

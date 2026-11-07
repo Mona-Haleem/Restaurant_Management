@@ -12,6 +12,7 @@ import { HealthModule } from './health/health.module';
 import { CatalogModule } from './modules/catalog/catalog.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { OrdersModule } from './modules/orders/orders.module';
+import { ReconciliationModule } from './modules/reconciliation/reconciliation.module';
 import { StaffModule } from './modules/staff/staff.module';
 import { WasteModule } from './modules/waste/waste.module';
 import { PrismaModule } from './prisma/prisma.module';
@@ -40,6 +41,7 @@ export class AppModule {
         CatalogModule,
         InventoryModule,
         OrdersModule,
+        ReconciliationModule,
         StaffModule,
         WasteModule,
       ],
