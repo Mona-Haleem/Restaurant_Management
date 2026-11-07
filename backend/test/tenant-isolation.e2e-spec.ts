@@ -301,6 +301,36 @@ const ISOLATION_CASES: Record<string, IsolationCase> = {
     expect(await bOrderState(prisma, order.id)).toEqual(order.state);
   },
 
+  // ── Order queries (B802) ────────────────────────────────────────────────────────────────
+  'GET /v1/{tenantSlug}/orders': async ({ http, seed, prisma }) => {
+    const order = await bOrder(prisma, seed);
+    const res = await http().get(`/v1/${A_SLUG}/orders?scope=all`).set(ADMIN).expect(200);
+    const listed = ids(bodyOf(res));
+    expect(listed).not.toContain(order.id);
+    const tenants = await prisma.order.findMany({
+      where: { id: { in: listed } },
+      select: { tenantId: true },
+    });
+    expect(tenants.every((t) => t.tenantId === seed.a.tenant.id)).toBe(true);
+    // The ADMIN branch filter cannot reach another tenant's branch either.
+    const bBranch = await http()
+      .get(`/v1/${A_SLUG}/orders?scope=all&branchId=${seed.b.branches[0]!.id}`)
+      .set(ADMIN)
+      .expect(200);
+    expect(bodyOf(bBranch)).toEqual([]);
+  },
+  'GET /v1/{tenantSlug}/orders/{id}': async ({ http, seed, prisma }) => {
+    const order = await bOrder(prisma, seed);
+    const res = await http().get(`/v1/${A_SLUG}/orders/${order.id}`).set(ADMIN).expect(404);
+    expect(bodyOf(res)).toMatchObject({ code: 'ORDER_NOT_FOUND' });
+  },
+  'GET /v1/{tenantSlug}/track/{token}': async ({ http, seed, prisma }) => {
+    const order = await bOrder(prisma, seed);
+    // B's token under A's slug does not exist; under B's own slug it does.
+    await http().get(`/v1/${A_SLUG}/track/${order.token}`).expect(404);
+    await http().get(`/v1/${B_SLUG}/track/${order.token}`).expect(200);
+  },
+
   // ── Waste (B901) ────────────────────────────────────────────────────────────────────────
   'POST /v1/{tenantSlug}/waste': async ({ http, seed, prisma }) => {
     const bTenant = seed.b.tenant.id;

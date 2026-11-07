@@ -1479,6 +1479,128 @@
       }
     },
     "/v1/{tenantSlug}/orders": {
+      "get": {
+        "description": "Default `scope=active`: not cancelled and not yet in the last stage, oldest first. WORKER and MANAGER see their own branch (403 BRANCH_FORBIDDEN for another `branchId`); ADMIN sees every branch or one. Poll with If-None-Match: unchanged → 304.",
+        "operationId": "listOrders",
+        "parameters": [
+          {
+            "name": "x-dev-role",
+            "in": "header",
+            "description": "Phase 1 only: act as the restaurant's demo user with this role. Omit for a guest.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ADMIN",
+                "MANAGER",
+                "WORKER"
+              ]
+            }
+          },
+          {
+            "name": "x-dev-user",
+            "in": "header",
+            "description": "Phase 1 only: act as this active user (uuid) of the restaurant.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-dev-branch",
+            "in": "header",
+            "description": "Phase 1 only, ADMIN: the branch (uuid) to act in.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "scope",
+            "required": false,
+            "in": "query",
+            "description": "`active` (default): not cancelled and not yet in the last stage, oldest first: the board. `all`: every order including finished and cancelled ones, newest first, at most 200.",
+            "schema": {
+              "default": "active",
+              "type": "string",
+              "enum": [
+                "active",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "stageKey",
+            "required": false,
+            "in": "query",
+            "description": "Only this stage. A key of the restaurant's workflow (tenant data, not an enum). Defaults: `pending`, `in-preparation`, `ready`, `delivered` (ADR 0009).",
+            "schema": {
+              "example": "pending",
+              "type": "string"
+            }
+          },
+          {
+            "name": "branchId",
+            "required": false,
+            "in": "query",
+            "description": "ADMIN only: one branch. WORKER and MANAGER always see their own branch.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "If-None-Match",
+            "in": "header",
+            "description": "The ETag of the previous answer. Unchanged → 304 with no body (ADR 0024).",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tenantSlug",
+            "required": true,
+            "in": "path",
+            "description": "The restaurant, e.g. `nile-bites` (the demo tenant).",
+            "schema": {
+              "example": "nile-bites"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OrderDto"
+                  }
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Not modified: nothing changed since that ETag."
+          },
+          "default": {
+            "description": "Error: `{ code, message, details }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Orders for the board",
+        "tags": [
+          "orders"
+        ]
+      },
       "post": {
         "description": "Starts at the first stage. A guest order returns `trackingToken` once (ADR 0008); a staff caller places a STAFF order. 400 MENU_ITEM_UNAVAILABLE lists `details.menuItemIds`; 400 BRANCH_REQUIRED when the caller has no branch.",
         "operationId": "placeOrder",
@@ -1558,6 +1680,101 @@
           }
         },
         "summary": "Place an order",
+        "tags": [
+          "orders"
+        ]
+      }
+    },
+    "/v1/{tenantSlug}/orders/{id}": {
+      "get": {
+        "description": "Other branches are 404 for WORKER and MANAGER. Unchanged → 304.",
+        "operationId": "getOrder",
+        "parameters": [
+          {
+            "name": "x-dev-role",
+            "in": "header",
+            "description": "Phase 1 only: act as the restaurant's demo user with this role. Omit for a guest.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ADMIN",
+                "MANAGER",
+                "WORKER"
+              ]
+            }
+          },
+          {
+            "name": "x-dev-user",
+            "in": "header",
+            "description": "Phase 1 only: act as this active user (uuid) of the restaurant.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-dev-branch",
+            "in": "header",
+            "description": "Phase 1 only, ADMIN: the branch (uuid) to act in.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "If-None-Match",
+            "in": "header",
+            "description": "The ETag of the previous answer. Unchanged → 304 with no body (ADR 0024).",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tenantSlug",
+            "required": true,
+            "in": "path",
+            "description": "The restaurant, e.g. `nile-bites` (the demo tenant).",
+            "schema": {
+              "example": "nile-bites"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderDetailDto"
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Not modified: nothing changed since that ETag."
+          },
+          "default": {
+            "description": "Error: `{ code, message, details }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "One order with its items and stage history",
         "tags": [
           "orders"
         ]
@@ -1726,6 +1943,103 @@
         "summary": "Cancel an order",
         "tags": [
           "orders"
+        ]
+      }
+    },
+    "/v1/{tenantSlug}/track/{token}": {
+      "get": {
+        "description": "Status, items and the workflow stages for the stepper; no internal ids. An unknown or malformed token is 404 ORDER_NOT_FOUND. Poll with If-None-Match: unchanged → 304.",
+        "operationId": "getTrackedOrder",
+        "parameters": [
+          {
+            "name": "x-dev-role",
+            "in": "header",
+            "description": "Phase 1 only: act as the restaurant's demo user with this role. Omit for a guest.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ADMIN",
+                "MANAGER",
+                "WORKER"
+              ]
+            }
+          },
+          {
+            "name": "x-dev-user",
+            "in": "header",
+            "description": "Phase 1 only: act as this active user (uuid) of the restaurant.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-dev-branch",
+            "in": "header",
+            "description": "Phase 1 only, ADMIN: the branch (uuid) to act in.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{43}$"
+            },
+            "description": "The `trackingToken` returned when placing the order."
+          },
+          {
+            "name": "If-None-Match",
+            "in": "header",
+            "description": "The ETag of the previous answer. Unchanged → 304 with no body (ADR 0024).",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tenantSlug",
+            "required": true,
+            "in": "path",
+            "description": "The restaurant, e.g. `nile-bites` (the demo tenant).",
+            "schema": {
+              "example": "nile-bites"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackedOrderDto"
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Not modified: nothing changed since that ETag."
+          },
+          "default": {
+            "description": "Error: `{ code, message, details }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Track my order (guest)",
+        "tags": [
+          "tracking"
         ]
       }
     },
@@ -3197,50 +3511,6 @@
           "stages"
         ]
       },
-      "OrderLineInputDto": {
-        "type": "object",
-        "properties": {
-          "menuItemId": {
-            "type": "string",
-            "format": "uuid",
-            "description": "An active menu item sold in this branch (see the customer menu)."
-          },
-          "quantity": {
-            "type": "number",
-            "minimum": 1,
-            "maximum": 99,
-            "example": 2,
-            "description": "How many, a whole number."
-          }
-        },
-        "required": [
-          "menuItemId",
-          "quantity"
-        ]
-      },
-      "PlaceOrderDto": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "minItems": 1,
-            "maxItems": 50,
-            "description": "Name and price are copied from the menu; the client never sends prices.",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/OrderLineInputDto"
-            }
-          },
-          "note": {
-            "type": "string",
-            "maxLength": 500,
-            "example": "No onions, please",
-            "description": "Special instructions. Trimmed; empty = none."
-          }
-        },
-        "required": [
-          "items"
-        ]
-      },
       "PlacedByDto": {
         "type": "object",
         "properties": {
@@ -3302,6 +3572,232 @@
           "unitPrice",
           "quantity",
           "lineTotal"
+        ]
+      },
+      "OrderDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "branchId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "stageKey": {
+            "type": "string",
+            "example": "pending",
+            "description": "A key of the restaurant's workflow (tenant data, not an enum). Defaults: `pending`, `in-preparation`, `ready`, `delivered` (ADR 0009)."
+          },
+          "status": {
+            "type": "string",
+            "example": "pending",
+            "description": "`cancelled` when `canceledAt` is set, else `stageKey` (ADR 0009). Display only."
+          },
+          "canceledAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "placedBy": {
+            "$ref": "#/components/schemas/PlacedByDto"
+          },
+          "total": {
+            "type": "string",
+            "pattern": "^\\d{1,10}(\\.\\d{1,2})?$",
+            "example": "370.00"
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderItemDto"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "branchId",
+          "stageKey",
+          "status",
+          "canceledAt",
+          "placedBy",
+          "total",
+          "note",
+          "items",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "OrderHistoryDto": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "PLACED",
+              "ADVANCED",
+              "CANCELED"
+            ]
+          },
+          "fromStageKey": {
+            "type": "string",
+            "nullable": true,
+            "description": "null on PLACED."
+          },
+          "toStageKey": {
+            "type": "string",
+            "nullable": true,
+            "description": "null on CANCELED."
+          },
+          "actorId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "null for a guest."
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "action",
+          "fromStageKey",
+          "toStageKey",
+          "actorId",
+          "at"
+        ]
+      },
+      "OrderDetailDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "branchId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "stageKey": {
+            "type": "string",
+            "example": "pending",
+            "description": "A key of the restaurant's workflow (tenant data, not an enum). Defaults: `pending`, `in-preparation`, `ready`, `delivered` (ADR 0009)."
+          },
+          "status": {
+            "type": "string",
+            "example": "pending",
+            "description": "`cancelled` when `canceledAt` is set, else `stageKey` (ADR 0009). Display only."
+          },
+          "canceledAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "placedBy": {
+            "$ref": "#/components/schemas/PlacedByDto"
+          },
+          "total": {
+            "type": "string",
+            "pattern": "^\\d{1,10}(\\.\\d{1,2})?$",
+            "example": "370.00"
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderItemDto"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "history": {
+            "description": "Every transition, oldest first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderHistoryDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "branchId",
+          "stageKey",
+          "status",
+          "canceledAt",
+          "placedBy",
+          "total",
+          "note",
+          "items",
+          "createdAt",
+          "updatedAt",
+          "history"
+        ]
+      },
+      "OrderLineInputDto": {
+        "type": "object",
+        "properties": {
+          "menuItemId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "An active menu item sold in this branch (see the customer menu)."
+          },
+          "quantity": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 99,
+            "example": 2,
+            "description": "How many, a whole number."
+          }
+        },
+        "required": [
+          "menuItemId",
+          "quantity"
+        ]
+      },
+      "PlaceOrderDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "minItems": 1,
+            "maxItems": 50,
+            "description": "Name and price are copied from the menu; the client never sends prices.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderLineInputDto"
+            }
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 500,
+            "example": "No onions, please",
+            "description": "Special instructions. Trimmed; empty = none."
+          }
+        },
+        "required": [
+          "items"
         ]
       },
       "PlacedOrderDto": {
@@ -3378,17 +3874,64 @@
           "trackingToken"
         ]
       },
-      "OrderDto": {
+      "TrackedItemDto": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
+          "name": {
+            "type": "string"
           },
-          "branchId": {
-            "type": "string",
-            "format": "uuid"
+          "quantity": {
+            "type": "number",
+            "example": 2
           },
+          "unitPrice": {
+            "type": "string",
+            "pattern": "^\\d{1,10}(\\.\\d{1,2})?$",
+            "example": "185.00"
+          },
+          "lineTotal": {
+            "type": "string",
+            "pattern": "^\\d{1,10}(\\.\\d{1,2})?$",
+            "example": "370.00"
+          }
+        },
+        "required": [
+          "name",
+          "quantity",
+          "unitPrice",
+          "lineTotal"
+        ]
+      },
+      "TrackedStageDto": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "example": "pending"
+          },
+          "label": {
+            "type": "string",
+            "example": "Pending"
+          },
+          "position": {
+            "type": "number",
+            "example": 1
+          },
+          "cancellable": {
+            "type": "boolean",
+            "description": "While the order is here, the guest may cancel it."
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "position",
+          "cancellable"
+        ]
+      },
+      "TrackedOrderDto": {
+        "type": "object",
+        "properties": {
           "stageKey": {
             "type": "string",
             "example": "pending",
@@ -3397,15 +3940,12 @@
           "status": {
             "type": "string",
             "example": "pending",
-            "description": "`cancelled` when `canceledAt` is set, else `stageKey` (ADR 0009). Display only."
+            "description": "`cancelled` when cancelled, else `stageKey`."
           },
           "canceledAt": {
             "type": "string",
             "format": "date-time",
             "nullable": true
-          },
-          "placedBy": {
-            "$ref": "#/components/schemas/PlacedByDto"
           },
           "total": {
             "type": "string",
@@ -3419,7 +3959,14 @@
           "items": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/OrderItemDto"
+              "$ref": "#/components/schemas/TrackedItemDto"
+            }
+          },
+          "stages": {
+            "description": "The restaurant's stages, by position, for the stepper.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TrackedStageDto"
             }
           },
           "createdAt": {
@@ -3432,15 +3979,13 @@
           }
         },
         "required": [
-          "id",
-          "branchId",
           "stageKey",
           "status",
           "canceledAt",
-          "placedBy",
           "total",
           "note",
           "items",
+          "stages",
           "createdAt",
           "updatedAt"
         ]
