@@ -23,7 +23,18 @@ describe('loadConfig', () => {
       corsOrigins: ['http://localhost:4200'],
       logLevel: 'debug',
       rateLimit: { max: 120, windowSeconds: 60 },
+      gitCommit: null,
     });
+  });
+
+  it('reads the deployed commit from Render (RENDER_GIT_COMMIT), for the health check', () => {
+    const sha = '0e0195c4f2b1a3d4e5f60718293a4b5c6d7e8f90';
+    const base = { APP_ENV: 'local', DATABASE_URL: LOCAL_URL };
+    expect(loadConfig({ ...base, RENDER_GIT_COMMIT: sha }).gitCommit).toBe(sha);
+    expect(loadConfig({ ...base, RENDER_GIT_COMMIT: '' }).gitCommit).toBeNull();
+    expect(() => loadConfig({ ...base, RENDER_GIT_COMMIT: 'not a sha' })).toThrow(
+      /RENDER_GIT_COMMIT must be a git commit hash/,
+    );
   });
 
   it('uses quiet logs by default in test and info in staging/production', () => {
@@ -48,6 +59,7 @@ describe('loadConfig', () => {
         LOG_LEVEL: 'warn',
         RATE_LIMIT_MAX: '300',
         RATE_LIMIT_WINDOW_SECONDS: '30',
+        RENDER_GIT_COMMIT: 'abc1234',
       }),
     ).toEqual({
       appEnv: 'staging',
@@ -57,6 +69,7 @@ describe('loadConfig', () => {
       corsOrigins: ['https://staging.tablz.app', 'https://tablz-*-mona.vercel.app'],
       logLevel: 'warn',
       rateLimit: { max: 300, windowSeconds: 30 },
+      gitCommit: 'abc1234',
     });
   });
 

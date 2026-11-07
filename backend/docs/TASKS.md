@@ -23,8 +23,8 @@ Ticket details live in `docs/ROADMAP.md` §6. This file tracks order, status and
 | 14 | B901 | Waste logging | 🤖 | B701 | — | done | |
 | 15 | B902 | Reconciliation and snapshots | 🤖 | B701, B901 | — | done | |
 | 16 | B1001 | Staff management | 🤖 | B503 | — | done | |
-| 17 | B1101 | KPIs, aggregates and anomalies | 🤖 | B801, B901, B902 | — | in review | |
-| 18 | B1201 | Render deployment | 👤 | B201, B503 | — | todo | |
+| 17 | B1101 | KPIs, aggregates and anomalies | 🤖 | B801, B901, B902 | — | done | |
+| 18 | B1201 | Render deployment | 👤 | B201, B503 | — | in review (files done; dashboard steps in ADR 0027) | |
 | 19 | B1202 | Migration workflows | 🤝 | B1201 | — | todo | |
 | 20 | B1203 | Keep-alive workflow | 🤝 | B1201 | — | todo | |
 | 21 | B1204 | Backups and restore drill | 🤝 | B1202 | — | todo | |
@@ -47,5 +47,6 @@ Ticket details live in `docs/ROADMAP.md` §6. This file tracks order, status and
 - **B802 follow-ups (ADR 0024):** order lines do not keep the cart's order (`order_items.position` needs its own ticket and migration); `scope=active` is not paginated. Parallel sessions share `tablz_test`: two e2e runs at once break each other (one resets the database under the other), so check that nobody else is connected before running `test:e2e`.
 - **B902 follow-ups (ADR 0025):** no read route for reconciliations yet (B1101 reads the table; add `GET /reconciliations` when a screen needs it). B702's expected-stock view still runs one sum query per counted item: now that counts write snapshots, replace it with one grouped query. `BRANCH_REQUIRED` is unit-tested only (as in B901). `reconcile` runs about 5 queries per line (branch and item looked up per line): batch them if 200-line sheets get slow. The race test covers counts against waste and restock on one item; a delivery whose recipe spans two items raced against a two-item sheet would prove the lock order with `deductOrder` too.
 - **B1101 follow-ups (ADR 0026):** a 366-day daily report runs ~3 aggregates per day (several seconds at 500 orders/day): add a daily rollup if long ranges become common. Orders whose recipe changed after delivery are listed as unchecked until recipe lines are versioned (needs a ticket and migration). B1301 wires the dashboard cards and Reports screen to these routes.
+- **B1201 follow-ups (ADR 0027):** B1202 adds `migrate deploy` + the marker row before the deploy step of both workflows; add the deploy-hook secrets only after it merges, then verify the acceptance live (checklist in ADR 0027). B1203 keeps the free services awake via `/v1/health`.
 - **Frontend references:** B302 (TABLZ-401 models), B401 (TABLZ-404 seed), B502 (frontend mock handlers) and B1301 (TABLZ-403 service layer, TABLZ-1902 demo script) need the Angular repo. Per ADR 0001 this is a monorepo: start Claude Code in `backend/` with `--add-dir ../frontend` for those tickets.
 - **👤 / 🤝 steps Claude must not attempt:** creating Supabase or Render projects, setting GitHub branch protection or secrets, configuring UptimeRobot, and anything that connects to staging or production.

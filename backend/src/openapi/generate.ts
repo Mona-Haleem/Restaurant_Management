@@ -18,6 +18,7 @@ async function generate(): Promise<void> {
         corsOrigins: [],
         logLevel: 'silent',
         rateLimit: { max: 1, windowSeconds: 1 },
+        gitCommit: null,
       }),
       { logger: false },
     ),

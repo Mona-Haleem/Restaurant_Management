@@ -28,9 +28,22 @@ describe('health (B503)', () => {
     });
     afterAll(() => app.close());
 
-    it('GET /v1/health answers ok', async () => {
+    it('GET /v1/health answers ok, with no commit when not deployed', async () => {
       const res = await request(app.getHttpServer()).get('/v1/health').expect(200);
-      expect(bodyOf(res)).toEqual({ status: 'ok' });
+      expect(bodyOf(res)).toEqual({ status: 'ok', commit: null });
+    });
+
+    it('GET /v1/health names the deployed commit (the deploy workflows wait for it)', async () => {
+      const deployed = await boot({ gitCommit: '0e0195c4f2b1a3d4e5f60718293a4b5c6d7e8f90' });
+      try {
+        const res = await request(deployed.getHttpServer()).get('/v1/health').expect(200);
+        expect(bodyOf(res)).toEqual({
+          status: 'ok',
+          commit: '0e0195c4f2b1a3d4e5f60718293a4b5c6d7e8f90',
+        });
+      } finally {
+        await deployed.close();
+      }
     });
 
     it('GET /v1/health/db answers ok after a real query', async () => {

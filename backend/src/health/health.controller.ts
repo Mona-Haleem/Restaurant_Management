@@ -1,8 +1,9 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Inject } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiProperty, ApiTags } from '@nestjs/swagger';
 import { SkipThrottle } from '@nestjs/throttler';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { AppException } from '../common/errors/app-exception';
+import { APP_CONFIG, type AppConfig } from '../config/app-config';
 import { PrismaService } from '../prisma/prisma.service';
 
 /** A health query that hangs is a failure too: keep-alive monitors need a fast answer. */
@@ -11,6 +12,15 @@ const DB_CHECK_TIMEOUT_MS = 3_000;
 export class HealthDto {
   @ApiProperty({ enum: ['ok'] })
   status!: 'ok';
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    example: '0e0195c4f2b1a3d4e5f60718293a4b5c6d7e8f90',
+    description:
+      'The git commit this instance runs (Render deploys); null elsewhere. The deploy workflows wait for it (B1201).',
+  })
+  commit!: string | null;
 }
 
 export class DatabaseHealthDto {
@@ -39,6 +49,7 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 export class HealthController {
   constructor(
     private readonly prisma: PrismaService,
+    @Inject(APP_CONFIG) private readonly config: AppConfig,
     @InjectPinoLogger(HealthController.name) private readonly logger: PinoLogger,
   ) {}
 
@@ -46,7 +57,7 @@ export class HealthController {
   @ApiOperation({ summary: 'Is the API up? Never touches the database.' })
   @ApiOkResponse({ type: HealthDto })
   getHealth(): HealthDto {
-    return { status: 'ok' };
+    return { status: 'ok', commit: this.config.gitCommit };
   }
 
   @Get('db')
