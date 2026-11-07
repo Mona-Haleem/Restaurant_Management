@@ -76,6 +76,12 @@ export class StockService {
       .map((v) => this.summary(v));
   }
 
+  /** How many items `listLowStock` would list for this branch (the dashboard card, B1101). */
+  async lowStockCount(branchId: string): Promise<number> {
+    const views = await this.views(branchId, {});
+    return views.filter((v) => LOW_RANK[v.status] !== undefined).length;
+  }
+
   async getStockItem(inventoryItemId: string): Promise<StockItemDetailDto> {
     const [view] = await this.views(this.requireBranch(), { ids: [inventoryItemId] });
     if (!view) {
