@@ -2213,6 +2213,281 @@
         ]
       }
     },
+    "/v1/{tenantSlug}/reports/kpis": {
+      "get": {
+        "description": "Revenue, order count and waste cost for a day in the restaurant's timezone (default today), plus the current low-stock count. 400 INVALID_DATE_RANGE for a date that does not exist.",
+        "operationId": "getKpis",
+        "parameters": [
+          {
+            "name": "x-dev-role",
+            "in": "header",
+            "description": "Phase 1 only: act as the restaurant's demo user with this role. Omit for a guest.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ADMIN",
+                "MANAGER",
+                "WORKER"
+              ]
+            }
+          },
+          {
+            "name": "x-dev-user",
+            "in": "header",
+            "description": "Phase 1 only: act as this active user (uuid) of the restaurant.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-dev-branch",
+            "in": "header",
+            "description": "Phase 1 only, ADMIN: the branch (uuid) to act in.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "required": false,
+            "in": "query",
+            "description": "A local day in the restaurant's timezone. Defaults to today.",
+            "schema": {
+              "example": "2026-11-06",
+              "type": "string"
+            }
+          },
+          {
+            "name": "tenantSlug",
+            "required": true,
+            "in": "path",
+            "description": "The restaurant, e.g. `nile-bites` (the demo tenant).",
+            "schema": {
+              "example": "nile-bites"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KpisDto"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error: `{ code, message, details }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Dashboard KPIs for one local day",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
+    "/v1/{tenantSlug}/reports/daily": {
+      "get": {
+        "description": "1 to 366 days (400 INVALID_DATE_RANGE otherwise).",
+        "operationId": "getDailyReport",
+        "parameters": [
+          {
+            "name": "x-dev-role",
+            "in": "header",
+            "description": "Phase 1 only: act as the restaurant's demo user with this role. Omit for a guest.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ADMIN",
+                "MANAGER",
+                "WORKER"
+              ]
+            }
+          },
+          {
+            "name": "x-dev-user",
+            "in": "header",
+            "description": "Phase 1 only: act as this active user (uuid) of the restaurant.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-dev-branch",
+            "in": "header",
+            "description": "Phase 1 only, ADMIN: the branch (uuid) to act in.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": true,
+            "in": "query",
+            "description": "First local day, included.",
+            "schema": {
+              "example": "2026-11-01",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": true,
+            "in": "query",
+            "description": "Last local day, included. At most 366 days after `from`.",
+            "schema": {
+              "example": "2026-11-07",
+              "type": "string"
+            }
+          },
+          {
+            "name": "tenantSlug",
+            "required": true,
+            "in": "path",
+            "description": "The restaurant, e.g. `nile-bites` (the demo tenant).",
+            "schema": {
+              "example": "nile-bites"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DailyReportDto"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error: `{ code, message, details }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Revenue, orders and waste cost per local day, with totals",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
+    "/v1/{tenantSlug}/reports/anomalies": {
+      "get": {
+        "description": "Every order that reached a `deductsInventory` stage in the range, compared with its recipe; each flag carries a readable reason. Orders whose recipe changed after delivery are listed as unchecked (ADR 0026).",
+        "operationId": "getAnomalies",
+        "parameters": [
+          {
+            "name": "x-dev-role",
+            "in": "header",
+            "description": "Phase 1 only: act as the restaurant's demo user with this role. Omit for a guest.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ADMIN",
+                "MANAGER",
+                "WORKER"
+              ]
+            }
+          },
+          {
+            "name": "x-dev-user",
+            "in": "header",
+            "description": "Phase 1 only: act as this active user (uuid) of the restaurant.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-dev-branch",
+            "in": "header",
+            "description": "Phase 1 only, ADMIN: the branch (uuid) to act in.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": true,
+            "in": "query",
+            "description": "First local day, included.",
+            "schema": {
+              "example": "2026-11-01",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": true,
+            "in": "query",
+            "description": "Last local day, included. At most 366 days after `from`.",
+            "schema": {
+              "example": "2026-11-07",
+              "type": "string"
+            }
+          },
+          {
+            "name": "tenantSlug",
+            "required": true,
+            "in": "path",
+            "description": "The restaurant, e.g. `nile-bites` (the demo tenant).",
+            "schema": {
+              "example": "nile-bites"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnomaliesDto"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error: `{ code, message, details }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Deductions that do not match the recipe expectation",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
     "/v1/{tenantSlug}/staff": {
       "get": {
         "description": "A MANAGER sees their own branch only. `status=ACTIVE` is the list for pickers.",
@@ -4227,6 +4502,281 @@
           "note",
           "createdAt",
           "entries"
+        ]
+      },
+      "KpisDto": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "example": "2026-11-06",
+            "description": "The local day (restaurant's timezone)."
+          },
+          "revenue": {
+            "type": "string",
+            "pattern": "^\\d{1,10}(\\.\\d{1,2})?$",
+            "example": "1240.00",
+            "description": "Totals of the orders that reached a `deductsInventory` stage that day, not cancelled."
+          },
+          "orderCount": {
+            "type": "number",
+            "example": 12,
+            "description": "Orders placed that day, not cancelled."
+          },
+          "wasteCost": {
+            "type": "string",
+            "pattern": "^\\d{1,10}(\\.\\d{1,2})?$",
+            "example": "36.40",
+            "description": "Σ wasted quantity × the unit cost stored on each WASTE row (ADR 0005), rounded half-up."
+          },
+          "uncostedWasteRows": {
+            "type": "number",
+            "example": 0,
+            "description": "WASTE rows that day with no cost (no average and no standard cost); not in wasteCost."
+          },
+          "timezone": {
+            "type": "string",
+            "example": "Africa/Cairo"
+          },
+          "branchId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The branch reported on; null = every branch (an ADMIN with no branch chosen)."
+          },
+          "lowStockCount": {
+            "type": "number",
+            "example": 2,
+            "description": "Active RAW/READY items now negative, at zero or below their threshold (the B702 rule). Current state, the same for any date."
+          }
+        },
+        "required": [
+          "date",
+          "revenue",
+          "orderCount",
+          "wasteCost",
+          "uncostedWasteRows",
+          "timezone",
+          "branchId",
+          "lowStockCount"
+        ]
+      },
+      "DayFiguresDto": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "example": "2026-11-06",
+            "description": "The local day (restaurant's timezone)."
+          },
+          "revenue": {
+            "type": "string",
+            "pattern": "^\\d{1,10}(\\.\\d{1,2})?$",
+            "example": "1240.00",
+            "description": "Totals of the orders that reached a `deductsInventory` stage that day, not cancelled."
+          },
+          "orderCount": {
+            "type": "number",
+            "example": 12,
+            "description": "Orders placed that day, not cancelled."
+          },
+          "wasteCost": {
+            "type": "string",
+            "pattern": "^\\d{1,10}(\\.\\d{1,2})?$",
+            "example": "36.40",
+            "description": "Σ wasted quantity × the unit cost stored on each WASTE row (ADR 0005), rounded half-up."
+          },
+          "uncostedWasteRows": {
+            "type": "number",
+            "example": 0,
+            "description": "WASTE rows that day with no cost (no average and no standard cost); not in wasteCost."
+          }
+        },
+        "required": [
+          "date",
+          "revenue",
+          "orderCount",
+          "wasteCost",
+          "uncostedWasteRows"
+        ]
+      },
+      "DailyReportDto": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "example": "2026-11-01"
+          },
+          "to": {
+            "type": "string",
+            "example": "2026-11-07"
+          },
+          "timezone": {
+            "type": "string",
+            "example": "Africa/Cairo"
+          },
+          "branchId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "days": {
+            "description": "One row per local day, in date order.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DayFiguresDto"
+            }
+          },
+          "totals": {
+            "description": "Sums over the range; `date` is `from`.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DayFiguresDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "from",
+          "to",
+          "timezone",
+          "branchId",
+          "days",
+          "totals"
+        ]
+      },
+      "DeductionAnomalyDto": {
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "deliveredAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When it reached the deducting stage."
+          },
+          "inventoryItemId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "itemName": {
+            "type": "string",
+            "example": "Mozzarella"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "OVER_DEDUCTED",
+              "UNDER_DEDUCTED",
+              "NOT_IN_RECIPE",
+              "NOT_DEDUCTED"
+            ]
+          },
+          "expectedQuantity": {
+            "type": "string",
+            "pattern": "^\\d{1,11}(\\.\\d{1,3})?$",
+            "example": "0.150"
+          },
+          "actualQuantity": {
+            "type": "string",
+            "pattern": "^\\d{1,11}(\\.\\d{1,3})?$",
+            "example": "0.450"
+          },
+          "unit": {
+            "type": "string",
+            "enum": [
+              "G",
+              "KG",
+              "ML",
+              "L",
+              "PCS"
+            ],
+            "description": "The item's stock unit."
+          },
+          "reason": {
+            "type": "string",
+            "example": "Mozzarella: deducted 3× the recipe expectation (0.450 KG instead of 0.150 KG)."
+          }
+        },
+        "required": [
+          "orderId",
+          "deliveredAt",
+          "inventoryItemId",
+          "itemName",
+          "kind",
+          "expectedQuantity",
+          "actualQuantity",
+          "unit",
+          "reason"
+        ]
+      },
+      "UncheckedOrderDto": {
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "deliveredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "reason": {
+            "type": "string",
+            "example": "A menu item, recipe or inventory item changed after delivery, so it was not checked."
+          }
+        },
+        "required": [
+          "orderId",
+          "deliveredAt",
+          "reason"
+        ]
+      },
+      "AnomaliesDto": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "example": "2026-11-01"
+          },
+          "to": {
+            "type": "string",
+            "example": "2026-11-07"
+          },
+          "branchId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "checkedOrders": {
+            "type": "number",
+            "example": 14,
+            "description": "Delivered orders compared with their recipes."
+          },
+          "anomalies": {
+            "description": "Newest delivery first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DeductionAnomalyDto"
+            }
+          },
+          "unchecked": {
+            "description": "Delivered orders that could not be compared (no recipe history, ADR 0026).",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UncheckedOrderDto"
+            }
+          }
+        },
+        "required": [
+          "from",
+          "to",
+          "branchId",
+          "checkedOrders",
+          "anomalies",
+          "unchecked"
         ]
       },
       "StaffMemberDto": {

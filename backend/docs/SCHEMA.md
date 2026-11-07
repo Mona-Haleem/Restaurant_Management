@@ -75,6 +75,7 @@ The Prisma schema is `prisma/schema.prisma`; the diagram is [ERD.md](ERD.md), ge
 | Ledger by item, in order | `inventory_transactions (tenant_id, branch_id, inventory_item_id, seq)` |
 | Ledger by item and time | `inventory_transactions (tenant_id, branch_id, inventory_item_id, created_at)` |
 | Waste and other types by time (reports) | `inventory_transactions (tenant_id, branch_id, type, created_at)` |
+| Orders that reached a stage in a time range (B1101 revenue, anomalies) | `order_stage_history (tenant_id, to_stage_key, created_at)` — added after measuring 60k orders ([ADR 0026](adr/0026-reports-and-anomalies.md)) |
 | Latest snapshot | `inventory_snapshots (tenant_id, branch_id, inventory_item_id, through_seq)` |
 | Public menu for a branch | `menu_items (tenant_id, status, branch_id)` |
 | Orders by date (reports) | `orders (tenant_id, branch_id, created_at)` |

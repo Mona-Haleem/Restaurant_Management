@@ -37,9 +37,9 @@ The PRD's §10 line "real backend (Express, Mongo, Mongoose)" is superseded by t
 | `inventory` | inventory items, components, **ledger service** (only writer of `current_stock`, [ADR 0020](adr/0020-ledger-service-contract.md)), stock queries, restock, menu availability ([ADR 0021](adr/0021-stock-view-and-restock.md)) | B701, B702 | context |
 | `orders` | workflow stages, order lifecycle, stage history ([ADR 0022](adr/0022-order-lifecycle.md)), board/tracking queries with ETag polling ([ADR 0024](adr/0024-order-polling-and-board.md)) | B801, B802 | catalog, inventory |
 | `waste` | waste entries (via the ledger service) | B901 | inventory |
-| `reconciliation` | reconciliation entries (count sheet); the ledger service writes the ADJUSTMENT rows and snapshots ([ADR 0024](adr/0024-reconciliation-count-sheet.md)) | B902 | inventory |
+| `reconciliation` | reconciliation entries (count sheet); the ledger service writes the ADJUSTMENT rows and snapshots ([ADR 0025](adr/0025-reconciliation-count-sheet.md)) | B902 | inventory |
 | `staff` | users, roles, activation, argon2 password hashes ([ADR 0023](adr/0023-staff-management-rules.md)) | B1001 | context |
-| `reports` | KPIs, aggregates, anomaly detection (pure functions) | B1101 | orders, inventory, waste |
+| `reports` | KPIs, daily aggregates by local day, deduction anomalies (pure functions) ([ADR 0026](adr/0026-reports-and-anomalies.md)) | B1101 | orders, inventory, waste |
 
 Folder shape per module: `src/modules/<module>/` with `<module>.module.ts`, `*.controller.ts`, `*.service.ts`, `dto/`, and tests beside the code (`*.spec.ts`). Cross-cutting code lives in `src/common/` (exception filter, interceptors, pipes, decorators, rate limit). Platform modules that may use the unscoped client live outside `src/modules/`: `src/config/`, `src/prisma/`, `src/context/`, `src/health/`; ESLint forbids `src/modules/**` from importing `PrismaService`. Integration tests live in `test/`.
 

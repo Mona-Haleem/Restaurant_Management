@@ -25,6 +25,36 @@ type IsolationCase = (ctx: Ctx) => Promise<void>;
 
 const ADMIN = { 'x-dev-role': 'ADMIN' };
 const ids = (rows: unknown): string[] => (rows as { id: string }[]).map((r) => r.id);
+/** Cairo dates from two days ago to today: the demo seed's orders (up to ~26 h old) fall inside. */
+function recentDays(): { from: string; to: string } {
+  const day = (msAgo: number): string =>
+    new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Cairo' }).format(
+      new Date(Date.now() - msAgo),
+    );
+  return { from: day(2 * 86_400_000), to: day(0) };
+}
+/** First instant of a Cairo calendar day, found minute by minute from Intl (any season). */
+function cairoDayStart(date: string): Date {
+  const cairo = new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Cairo' });
+  let at = Date.parse(`${date}T00:00:00Z`) - 6 * 3_600_000;
+  while (cairo.format(new Date(at)) < date) at += 60_000;
+  return new Date(at);
+}
+
+/** Non-cancelled orders a tenant placed on these Cairo days, counted from its own table. */
+async function ordersPlaced(
+  prisma: PrismaClient,
+  tenantId: string,
+  from: string,
+  to: string,
+): Promise<number> {
+  const start = cairoDayStart(from);
+  const next = new Date(Date.parse(`${to}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10);
+  const end = cairoDayStart(next);
+  return prisma.order.count({
+    where: { tenantId, canceledAt: null, createdAt: { gte: start, lt: end } },
+  });
+}
 
 /** B's menu item, as the database holds it, to prove a cross-tenant write changed nothing. */
 async function bMenuItemRow(prisma: PrismaClient, seed: SeedTenants): Promise<unknown> {
@@ -355,6 +385,45 @@ const ISOLATION_CASES: Record<string, IsolationCase> = {
       }),
     ).toBe(0);
     expect(await counts()).toEqual(before);
+  },
+
+  // ── Reports (B1101) ─────────────────────────────────────────────────────────────────────
+  // Each tenant's report counts exactly its own rows: B's figures equal what B's own tables
+  // hold (other suites give B a few orders), and nothing of A's leaks in.
+  'GET /v1/{tenantSlug}/reports/kpis': async ({ http, seed, prisma }) => {
+    const today = recentDays().to;
+    const b = bodyOf(await http().get(`/v1/${B_SLUG}/reports/kpis`).set(ADMIN).expect(200));
+    expect(b).toMatchObject({
+      date: today,
+      orderCount: await ordersPlaced(prisma, seed.b.tenant.id, today, today),
+    });
+  },
+  'GET /v1/{tenantSlug}/reports/daily': async ({ http, seed, prisma }) => {
+    const { from, to } = recentDays();
+    const range = `from=${from}&to=${to}`;
+    const a = bodyOf(
+      await http().get(`/v1/${A_SLUG}/reports/daily?${range}`).set(ADMIN).expect(200),
+    ) as { totals: { orderCount: number } };
+    const b = bodyOf(
+      await http().get(`/v1/${B_SLUG}/reports/daily?${range}`).set(ADMIN).expect(200),
+    ) as { totals: { orderCount: number } };
+    expect(a.totals.orderCount).toBe(await ordersPlaced(prisma, seed.a.tenant.id, from, to));
+    expect(b.totals.orderCount).toBe(await ordersPlaced(prisma, seed.b.tenant.id, from, to));
+    expect(a.totals.orderCount).toBeGreaterThan(0);
+  },
+  'GET /v1/{tenantSlug}/reports/anomalies': async ({ http, seed, prisma }) => {
+    const { from, to } = recentDays();
+    const res = await http()
+      .get(`/v1/${B_SLUG}/reports/anomalies?from=${from}&to=${to}`)
+      .set(ADMIN)
+      .expect(200);
+    const b = bodyOf(res) as { anomalies: { orderId: string }[]; unchecked: { orderId: string }[] };
+    const listed = [...b.anomalies, ...b.unchecked].map((x) => x.orderId);
+    const own = await prisma.order.count({
+      where: { id: { in: listed }, tenantId: seed.b.tenant.id },
+    });
+    expect(own).toBe(new Set(listed).size);
+    expect(JSON.stringify(b)).not.toContain(seed.a.tenant.id);
   },
 
   // ── Reconciliation (B902) ───────────────────────────────────────────────────────────────

@@ -1,4 +1,4 @@
-# ADR 0024 — Reconciliation as a count sheet
+# ADR 0025 — Reconciliation as a count sheet
 
 - **Status:** accepted
 - **Date:** 2026-11-06

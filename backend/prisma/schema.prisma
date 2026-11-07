@@ -589,5 +589,7 @@ model OrderStageHistory {
 
   @@unique([tenantId, id])
   @@index([tenantId, orderId, createdAt])
+  /// Reports (B1101): orders that reached a stage in a time range (revenue, anomalies).
+  @@index([tenantId, toStageKey, createdAt])
   @@map("order_stage_history")
 }
