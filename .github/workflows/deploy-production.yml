@@ -1,0 +1,98 @@
+name: Deploy production
+
+# B1201 (ADR 0027): production changes only through this manual workflow. It deploys one commit on
+# main whose CI passed, after a typed confirmation. B1202 adds `migrate deploy` before the deploy.
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Commit SHA or tag on main to deploy
+        required: true
+        type: string
+      confirm:
+        description: Type "deploy production" to confirm
+        required: true
+        type: string
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  checks: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    env:
+      DEPLOY_HOOK: ${{ secrets.RENDER_PRODUCTION_DEPLOY_HOOK }}
+      API_URL: ${{ vars.PRODUCTION_API_URL }}
+      # Inputs go through env, never into the script text.
+      REF: ${{ inputs.ref }}
+      CONFIRM: ${{ inputs.confirm }}
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+    steps:
+      - name: Require the typed confirmation
+        run: |
+          if [ "$CONFIRM" != "deploy production" ]; then
+            echo "::error::Confirmation must be exactly: deploy production"
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve the ref to a commit on main
+        run: |
+          # A plain ref name only: no leading dash (a git option), nothing a log could act on.
+          if ! [[ "$REF" =~ ^[A-Za-z0-9][A-Za-z0-9._/-]*$ ]]; then
+            echo "::error::The ref must be a commit SHA or a tag name."
+            exit 1
+          fi
+          git fetch --tags origin main
+          if ! COMMIT=$(git rev-parse --verify --quiet "${REF}^{commit}"); then
+            echo "::error::${REF} is not a commit or tag in this repository."
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor "$COMMIT" origin/main; then
+            echo "::error::${COMMIT} is not on main."
+            exit 1
+          fi
+          echo "COMMIT=${COMMIT}" >> "$GITHUB_ENV"
+
+      - name: Require a passing CI run for that commit
+        run: |
+          conclusion=$(gh api "repos/${REPO}/commits/${COMMIT}/check-runs?check_name=ci-ok" \
+            --jq '[.check_runs[].conclusion] | map(select(. != null)) | first // "missing"')
+          if [ "$conclusion" != "success" ]; then
+            echo "::error::CI (ci-ok) has not passed for ${COMMIT} (${conclusion})."
+            exit 1
+          fi
+
+      - name: Require the deploy hook
+        run: |
+          if [ -z "$DEPLOY_HOOK" ] || [ -z "$API_URL" ]; then
+            echo "::error::RENDER_PRODUCTION_DEPLOY_HOOK or PRODUCTION_API_URL is not set (see docs/adr/0027-render-deployment.md)."
+            exit 1
+          fi
+
+      - name: Deploy the commit to Render
+        run: curl -fsS -o /dev/null -X POST "${DEPLOY_HOOK}&ref=${COMMIT}"
+
+      - name: Wait until /v1/health reports this commit
+        run: |
+          for attempt in $(seq 1 60); do
+            running=$(curl -fsS --max-time 5 "${API_URL}/v1/health" | jq -r '.commit // empty' || true)
+            if [ "$running" = "$COMMIT" ]; then
+              echo "Production runs ${COMMIT}."
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "::error::Production did not report ${COMMIT} on /v1/health within about 20 minutes; the previous version keeps running."
+          exit 1

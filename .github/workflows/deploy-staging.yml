@@ -1,0 +1,63 @@
+name: Deploy staging
+
+# B1201 (ADR 0027): a merge to main reaches staging with no manual step, but only after CI has
+# passed for that exact commit. B1202 adds `migrate deploy` before the deploy step.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    # A successful CI run on a push to main (a merge), never a pull request run.
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: staging
+    env:
+      DEPLOY_HOOK: ${{ secrets.RENDER_STAGING_DEPLOY_HOOK }}
+      API_URL: ${{ vars.STAGING_API_URL }}
+      COMMIT: ${{ github.event.workflow_run.head_sha }}
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+    steps:
+      - name: Skip until the deploy hook is configured, or if a newer commit is on main
+        id: ready
+        run: |
+          if [ -z "$DEPLOY_HOOK" ] || [ -z "$API_URL" ]; then
+            echo "::notice::RENDER_STAGING_DEPLOY_HOOK or STAGING_API_URL is not set yet: nothing deployed (see docs/adr/0027-render-deployment.md)."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          elif [ "$(gh api "repos/${REPO}/commits/main" --jq .sha)" != "$COMMIT" ]; then
+            # CI runs can finish out of order: never deploy an older commit over a newer one.
+            echo "::notice::${COMMIT} is no longer the tip of main: the newer commit's run deploys instead."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Deploy this commit to Render
+        if: steps.ready.outputs.ready == 'true'
+        # The hook URL already carries ?key=…; ref pins the commit CI tested.
+        run: curl -fsS -o /dev/null -X POST "${DEPLOY_HOOK}&ref=${COMMIT}"
+
+      - name: Wait until /v1/health reports this commit
+        if: steps.ready.outputs.ready == 'true'
+        run: |
+          for attempt in $(seq 1 60); do
+            running=$(curl -fsS --max-time 5 "${API_URL}/v1/health" | jq -r '.commit // empty' || true)
+            if [ "$running" = "$COMMIT" ]; then
+              echo "Staging runs ${COMMIT}."
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "::error::Staging did not report ${COMMIT} on /v1/health within about 20 minutes; the previous version keeps running."
+          exit 1

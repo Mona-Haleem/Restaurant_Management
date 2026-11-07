@@ -12,6 +12,7 @@ export function testConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     logLevel: 'silent',
     // High enough that ordinary suites never hit it; the rate-limit test sets its own.
     rateLimit: { max: 10_000, windowSeconds: 60 },
+    gitCommit: null,
     ...overrides,
   };
 }

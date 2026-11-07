@@ -8,8 +8,8 @@ How Tablz API keeps local, test, staging and production apart (ROADMAP §2, [ADR
 | --- | --- | --- | --- |
 | `local` | Docker Postgres 17, `tablz_dev` on `localhost:5433` | `npm run start:dev` | you, `prisma migrate dev` |
 | `test` | Docker `tablz_test` locally; a Postgres service container in CI. Reset before every run. | Jest + Supertest | automated (`migrate reset` in the e2e global setup) |
-| `staging` | Supabase project `tablz-staging` | Render, deploys on merge to `main` (B1201) | CI only, `migrate deploy` (B1202) |
-| `production` | Supabase project `tablz-prod` | Render, deploys from a release tag | CI only, manual workflow with typed confirmation |
+| `staging` | Supabase project `tablz-staging` | Render `tablz-api-staging`, deployed by the "Deploy staging" workflow after CI passes on `main` (B1201, [ADR 0027](adr/0027-render-deployment.md)) | CI only, `migrate deploy` (B1202) |
+| `production` | Supabase project `tablz-prod` | Render `tablz-api-production`, deployed only by the manual "Deploy production" workflow (a commit or tag on `main`, typed confirmation) | CI only, manual workflow with typed confirmation |
 
 ## Fresh clone → working local database (two commands)
 
@@ -69,6 +69,9 @@ Then `npm run db:up` again. The `-v` deletes the volume, so the init script crea
 | `LOG_LEVEL` (not secret) | default `debug` | default `silent` | default `info` | default `info` |
 | `RATE_LIMIT_MAX`, `RATE_LIMIT_WINDOW_SECONDS` (not secret) | default 120 per 60 s | default | default, or Render env | default, or Render env |
 | Supabase DB password / project ref | — | — | password manager | password manager |
+| Render deploy hook URL (secret) | — | — | GitHub environment `staging` secret `RENDER_STAGING_DEPLOY_HOOK` | GitHub environment `production` secret `RENDER_PRODUCTION_DEPLOY_HOOK` |
+| API base URL (not secret) | — | — | GitHub environment variable `STAGING_API_URL` | GitHub environment variable `PRODUCTION_API_URL` |
+| `RENDER_GIT_COMMIT` (not secret) | unset (`/v1/health` reports `commit: null`) | unset | set by Render | set by Render |
 
 Rules:
 

@@ -11,6 +11,8 @@ export interface AppConfig {
   logLevel: LogLevel;
   /** B503: per-IP limit of `max` requests per `windowSeconds` (health routes excluded). */
   rateLimit: { max: number; windowSeconds: number };
+  /** B1201: the commit Render deployed (RENDER_GIT_COMMIT); null when not deployed by Render. */
+  gitCommit: string | null;
 }
 
 export const APP_CONFIG = Symbol('APP_CONFIG');
@@ -124,6 +126,14 @@ export function loadConfig(env: RawEnv): AppConfig {
     windowSeconds: positiveInt('RATE_LIMIT_WINDOW_SECONDS', DEFAULT_RATE_LIMIT.windowSeconds),
   };
 
+  const gitCommit =
+    env.RENDER_GIT_COMMIT === undefined || env.RENDER_GIT_COMMIT === ''
+      ? null
+      : env.RENDER_GIT_COMMIT;
+  if (gitCommit !== null && !/^[0-9a-f]{7,40}$/.test(gitCommit)) {
+    problems.push('RENDER_GIT_COMMIT must be a git commit hash (set by Render).');
+  }
+
   if (problems.length > 0 || appEnv === undefined) throw new ConfigValidationError(problems);
 
   return {
@@ -134,5 +144,6 @@ export function loadConfig(env: RawEnv): AppConfig {
     corsOrigins: corsOrigins.length > 0 ? corsOrigins : DEFAULT_DEV_ORIGINS,
     logLevel: logLevel ?? DEFAULT_LOG_LEVEL[appEnv],
     rateLimit,
+    gitCommit,
   };
 }
