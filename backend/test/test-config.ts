@@ -13,6 +13,7 @@ export function testConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     // High enough that ordinary suites never hit it; the rate-limit test sets its own.
     rateLimit: { max: 10_000, windowSeconds: 60 },
     gitCommit: null,
+    databasePoolMax: 10,
     ...overrides,
   };
 }

@@ -18,7 +18,7 @@ export class HealthDto {
     nullable: true,
     example: '0e0195c4f2b1a3d4e5f60718293a4b5c6d7e8f90',
     description:
-      'The git commit this instance runs (Render deploys); null elsewhere. The deploy workflows wait for it (B1201).',
+      'The git commit this deployment runs (set by the deploy workflow); null elsewhere. The deploy workflows wait for it (B1201).',
   })
   commit!: string | null;
 }
@@ -40,7 +40,7 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 }
 
 /**
- * B503 health checks, used by Render and the keep-alive workflows (ROADMAP §2). Never rate
+ * B503 health checks, used by the host and the deploy workflows (ROADMAP §2). Never rate
  * limited, and outside the tenant routes.
  */
 @ApiTags('health')

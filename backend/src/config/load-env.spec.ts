@@ -51,6 +51,16 @@ describe('loadEnvFiles', () => {
     expect(process.env.TABLZ_SAMPLE).toBe('from-shell');
   });
 
+  it.each(['staging', 'production'])(
+    'reads no file when APP_ENV is already %s (a deployed service never falls back to local values)',
+    (appEnv) => {
+      writeFileSync(path.join(dir, '.env.example'), 'TABLZ_SAMPLE=from-example\n');
+      const env: NodeJS.ProcessEnv = { APP_ENV: appEnv };
+      expect(loadEnvFiles(dir, env)).toBeNull();
+      expect(env.TABLZ_SAMPLE).toBeUndefined();
+    },
+  );
+
   it('does nothing when neither file exists', () => {
     expect(loadEnvFiles(dir)).toBeNull();
     expect(process.env.TABLZ_SAMPLE).toBeUndefined();

@@ -24,16 +24,25 @@ describe('loadConfig', () => {
       logLevel: 'debug',
       rateLimit: { max: 120, windowSeconds: 60 },
       gitCommit: null,
+      databasePoolMax: 10,
     });
   });
 
-  it('reads the deployed commit from Render (RENDER_GIT_COMMIT), for the health check', () => {
+  it('caps the database pool per instance (DATABASE_POOL_MAX), for serverless hosting', () => {
+    const base = { APP_ENV: 'local', DATABASE_URL: LOCAL_URL };
+    expect(loadConfig({ ...base, DATABASE_POOL_MAX: '3' }).databasePoolMax).toBe(3);
+    expect(() => loadConfig({ ...base, DATABASE_POOL_MAX: '0' })).toThrow(
+      /DATABASE_POOL_MAX must be a positive integer/,
+    );
+  });
+
+  it('reads the deployed commit (DEPLOY_COMMIT, set by the deploy workflow) for the health check', () => {
     const sha = '0e0195c4f2b1a3d4e5f60718293a4b5c6d7e8f90';
     const base = { APP_ENV: 'local', DATABASE_URL: LOCAL_URL };
-    expect(loadConfig({ ...base, RENDER_GIT_COMMIT: sha }).gitCommit).toBe(sha);
-    expect(loadConfig({ ...base, RENDER_GIT_COMMIT: '' }).gitCommit).toBeNull();
-    expect(() => loadConfig({ ...base, RENDER_GIT_COMMIT: 'not a sha' })).toThrow(
-      /RENDER_GIT_COMMIT must be a git commit hash/,
+    expect(loadConfig({ ...base, DEPLOY_COMMIT: sha }).gitCommit).toBe(sha);
+    expect(loadConfig({ ...base, DEPLOY_COMMIT: '' }).gitCommit).toBeNull();
+    expect(() => loadConfig({ ...base, DEPLOY_COMMIT: 'not a sha' })).toThrow(
+      /DEPLOY_COMMIT must be a git commit hash/,
     );
   });
 
@@ -59,7 +68,8 @@ describe('loadConfig', () => {
         LOG_LEVEL: 'warn',
         RATE_LIMIT_MAX: '300',
         RATE_LIMIT_WINDOW_SECONDS: '30',
-        RENDER_GIT_COMMIT: 'abc1234',
+        DEPLOY_COMMIT: 'abc1234',
+        DATABASE_POOL_MAX: '4',
       }),
     ).toEqual({
       appEnv: 'staging',
@@ -70,6 +80,7 @@ describe('loadConfig', () => {
       logLevel: 'warn',
       rateLimit: { max: 300, windowSeconds: 30 },
       gitCommit: 'abc1234',
+      databasePoolMax: 4,
     });
   });
 

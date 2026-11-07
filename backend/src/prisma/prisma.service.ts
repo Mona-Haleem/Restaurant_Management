@@ -16,6 +16,8 @@ export class PrismaService extends PrismaClient implements OnModuleDestroy {
       adapter: new PrismaPg({
         connectionString: config.databaseUrl,
         connectionTimeoutMillis: 3_000,
+        // Many serverless instances share the Supabase pooler: keep each one small (ADR 0028).
+        max: config.databasePoolMax,
       }),
     });
   }

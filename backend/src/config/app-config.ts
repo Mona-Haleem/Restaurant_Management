@@ -11,8 +11,10 @@ export interface AppConfig {
   logLevel: LogLevel;
   /** B503: per-IP limit of `max` requests per `windowSeconds` (health routes excluded). */
   rateLimit: { max: number; windowSeconds: number };
-  /** B1201: the commit Render deployed (RENDER_GIT_COMMIT); null when not deployed by Render. */
+  /** B1201: the commit the deploy workflow deployed (DEPLOY_COMMIT); null when not deployed. */
   gitCommit: string | null;
+  /** Most database connections one instance may hold (DATABASE_POOL_MAX). Serverless runs many instances. */
+  databasePoolMax: number;
 }
 
 export const APP_CONFIG = Symbol('APP_CONFIG');
@@ -127,12 +129,12 @@ export function loadConfig(env: RawEnv): AppConfig {
   };
 
   const gitCommit =
-    env.RENDER_GIT_COMMIT === undefined || env.RENDER_GIT_COMMIT === ''
-      ? null
-      : env.RENDER_GIT_COMMIT;
+    env.DEPLOY_COMMIT === undefined || env.DEPLOY_COMMIT === '' ? null : env.DEPLOY_COMMIT;
   if (gitCommit !== null && !/^[0-9a-f]{7,40}$/.test(gitCommit)) {
-    problems.push('RENDER_GIT_COMMIT must be a git commit hash (set by Render).');
+    problems.push('DEPLOY_COMMIT must be a git commit hash (set by the deploy workflow).');
   }
+
+  const databasePoolMax = positiveInt('DATABASE_POOL_MAX', 10);
 
   if (problems.length > 0 || appEnv === undefined) throw new ConfigValidationError(problems);
 
@@ -145,5 +147,6 @@ export function loadConfig(env: RawEnv): AppConfig {
     logLevel: logLevel ?? DEFAULT_LOG_LEVEL[appEnv],
     rateLimit,
     gitCommit,
+    databasePoolMax,
   };
 }

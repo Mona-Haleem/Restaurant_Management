@@ -3060,7 +3060,7 @@
             "type": "string",
             "nullable": true,
             "example": "0e0195c4f2b1a3d4e5f60718293a4b5c6d7e8f90",
-            "description": "The git commit this instance runs (Render deploys); null elsewhere. The deploy workflows wait for it (B1201)."
+            "description": "The git commit this deployment runs (set by the deploy workflow); null elsewhere. The deploy workflows wait for it (B1201)."
           }
         },
         "required": [

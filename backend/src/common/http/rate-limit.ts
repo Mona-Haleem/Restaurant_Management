@@ -19,7 +19,8 @@ export class AppThrottlerGuard extends ThrottlerGuard {
 
 /**
  * B503: a per-IP limit on every route (`RATE_LIMIT_MAX` requests per `RATE_LIMIT_WINDOW_SECONDS`).
- * Health routes opt out with @SkipThrottle. In-memory: one Render instance in Phase 1.
+ * Health routes opt out with @SkipThrottle. In-memory per instance: on Vercel each function instance counts on its own, so the limit is
+ * approximate (ADR 0028).
  */
 @Module({
   imports: [

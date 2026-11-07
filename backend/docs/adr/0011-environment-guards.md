@@ -26,7 +26,7 @@ Option 3.
 - **Connection strings:** the app uses `DATABASE_URL`; the Prisma CLI uses `DIRECT_URL`, falling back to `DATABASE_URL`.
   - Staging/production: `DATABASE_URL` is the Supabase **transaction pooler** (port 6543); `DIRECT_URL` is the **session pooler** (port 5432).
   - Both pooler hosts are IPv4. The direct `db.<ref>.supabase.co` host is IPv6-only on the free plan, so GitHub runners can't reach it. This is still to be verified in the dashboard (B201 👤 checklist).
-- **Env files:** loaded with Node's built-in parser, `.env` first, else `.env.example`. Already-set variables always win, so CI and Render values can never be overridden by a file.
+- **Env files:** loaded with Node's built-in parser, `.env` first, else `.env.example`. Already-set variables always win, so CI and host values can never be overridden by a file. When `APP_ENV` is already `staging` or `production`, no file is read at all ([ADR 0028](0028-vercel-deployment.md)).
 
 ## Consequences
 
