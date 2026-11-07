@@ -15,7 +15,7 @@ If sources conflict, the roadmap wins over the PRD (e.g. PRD §10's Express/Mong
 
 ## Stack
 
-NestJS (TypeScript strict) · Prisma · PostgreSQL · OpenAPI · Jest + Supertest. Local DB: Postgres in Docker. Staging/production: Supabase, reached only from CI. Hosting: Render.
+NestJS (TypeScript strict) · Prisma · PostgreSQL · OpenAPI · Jest + Supertest. Local DB: Postgres in Docker. Staging/production: Supabase, reached only from CI. Hosting: Vercel (the API as a Vercel Function, ADR 0028).
 
 ## Commands
 

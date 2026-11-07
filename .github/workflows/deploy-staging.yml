@@ -1,7 +1,7 @@
 name: Deploy staging
 
-# B1201 (ADR 0027): a merge to main reaches staging with no manual step, but only after CI has
-# passed for that exact commit. B1202 adds `migrate deploy` before the deploy step.
+# B1201 (ADR 0028): a merge to main reaches the Vercel project tablz-api-staging with no manual step,
+# but only after CI has passed for that exact commit. B1202 adds `migrate deploy` before the build.
 on:
   workflow_run:
     workflows: [CI]
@@ -23,17 +23,19 @@ jobs:
     timeout-minutes: 30
     environment: staging
     env:
-      DEPLOY_HOOK: ${{ secrets.RENDER_STAGING_DEPLOY_HOOK }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
       API_URL: ${{ vars.STAGING_API_URL }}
       COMMIT: ${{ github.event.workflow_run.head_sha }}
       GH_TOKEN: ${{ github.token }}
       REPO: ${{ github.repository }}
     steps:
-      - name: Skip until the deploy hook is configured, or if a newer commit is on main
+      - name: Skip until the project is configured, or if a newer commit is on main
         id: ready
         run: |
-          if [ -z "$DEPLOY_HOOK" ] || [ -z "$API_URL" ]; then
-            echo "::notice::RENDER_STAGING_DEPLOY_HOOK or STAGING_API_URL is not set yet: nothing deployed (see docs/adr/0027-render-deployment.md)."
+          if [ -z "$VERCEL_TOKEN" ] || [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ] || [ -z "$API_URL" ]; then
+            echo "::notice::The staging Vercel secrets or STAGING_API_URL are not set yet: nothing deployed (see backend/docs/adr/0028-vercel-deployment.md)."
             echo "ready=false" >> "$GITHUB_OUTPUT"
           elif [ "$(gh api "repos/${REPO}/commits/main" --jq .sha)" != "$COMMIT" ]; then
             # CI runs can finish out of order: never deploy an older commit over a newer one.
@@ -43,15 +45,34 @@ jobs:
             echo "ready=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Deploy this commit to Render
+      - uses: actions/checkout@v4
         if: steps.ready.outputs.ready == 'true'
-        # The hook URL already carries ?key=…; ref pins the commit CI tested.
-        run: curl -fsS -o /dev/null -X POST "${DEPLOY_HOOK}&ref=${COMMIT}"
+        with:
+          ref: ${{ env.COMMIT }}
+          # vercel build runs npm scripts: leave no GitHub token in .git/config.
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        if: steps.ready.outputs.ready == 'true'
+        with:
+          node-version-file: .nvmrc
+
+      - name: Build this commit with Vercel
+        if: steps.ready.outputs.ready == 'true'
+        # From the repo root: the Vercel project's Root Directory setting is `backend`.
+        run: |
+          npx --yes vercel@65.2.0 pull --yes --environment=production --token="$VERCEL_TOKEN"
+          npx --yes vercel@65.2.0 build --prod --token="$VERCEL_TOKEN"
+
+      - name: Deploy it
+        id: deploy
+        if: steps.ready.outputs.ready == 'true'
+        run: npx --yes vercel@65.2.0 deploy --prebuilt --prod --env DEPLOY_COMMIT="${COMMIT}" --token="$VERCEL_TOKEN"
 
       - name: Wait until /v1/health reports this commit
         if: steps.ready.outputs.ready == 'true'
         run: |
-          for attempt in $(seq 1 60); do
+          for attempt in $(seq 1 40); do
             running=$(curl -fsS --max-time 5 "${API_URL}/v1/health" | jq -r '.commit // empty' || true)
             if [ "$running" = "$COMMIT" ]; then
               echo "Staging runs ${COMMIT}."
@@ -59,5 +80,11 @@ jobs:
             fi
             sleep 15
           done
-          echo "::error::Staging did not report ${COMMIT} on /v1/health within about 20 minutes; the previous version keeps running."
+          echo "::error::Staging did not report ${COMMIT} on /v1/health within about 13 minutes; rolling back to the previous deployment."
           exit 1
+
+      - name: Roll back to the previous deployment
+        # vercel deploy --prod makes the deployment live once it builds; Vercel never checks that it
+        # boots. If it never reports this commit, put the previous deployment back (Hobby allows it).
+        if: failure() && steps.deploy.outcome == 'success'
+        run: npx --yes vercel@65.2.0 rollback --token="$VERCEL_TOKEN"

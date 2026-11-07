@@ -4,13 +4,15 @@ import { parseEnv } from 'node:util';
 
 /**
  * Loads `.env`, or `.env.example` when there is no `.env`, into `env` (default `process.env`)
- * using Node's built-in dotenv parser. Variables already set (shell, CI, Render) always win.
- * Returns the file it loaded, or null.
+ * using Node's built-in dotenv parser. Variables already set (shell, CI, the host) always win.
+ * A deployed service (APP_ENV already staging or production) reads no file at all, so a missing
+ * variable fails loudly instead of quietly taking a local value. Returns the file it loaded, or null.
  */
 export function loadEnvFiles(
   dir: string,
   env: NodeJS.ProcessEnv = process.env,
 ): '.env' | '.env.example' | null {
+  if (env.APP_ENV === 'staging' || env.APP_ENV === 'production') return null;
   for (const file of ['.env', '.env.example'] as const) {
     const fullPath = path.join(dir, file);
     if (!existsSync(fullPath)) continue;

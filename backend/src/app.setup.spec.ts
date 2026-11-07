@@ -73,7 +73,7 @@ describe('configureApp', () => {
   });
 
   it.each(['staging', 'production'])(
-    'trusts one proxy hop on %s (Render), for the rate limit',
+    'trusts one proxy hop on %s (the host), for the rate limit',
     (appEnv) => {
       config.appEnv = appEnv;
       configureApp(fakeApp() as unknown as INestApplication);

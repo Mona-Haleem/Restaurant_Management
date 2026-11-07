@@ -19,7 +19,7 @@ export function configureApp<T extends INestApplication>(app: T): T {
   app.useLogger(app.get(Logger));
   app.setGlobalPrefix(API_PREFIX);
   if (!isDisposableEnv(config.appEnv)) {
-    // Render terminates TLS in front of the app: trust one proxy hop, so the rate limit sees the
+    // The host (Vercel) terminates TLS in front of the app: trust one proxy hop, so the rate limit sees the
     // client's IP (X-Forwarded-For) instead of the proxy's. Locally there is no proxy to trust.
     const express = app.getHttpAdapter().getInstance() as {
       set(key: string, value: unknown): void;

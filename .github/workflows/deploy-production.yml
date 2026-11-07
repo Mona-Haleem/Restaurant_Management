@@ -1,7 +1,8 @@
 name: Deploy production
 
-# B1201 (ADR 0027): production changes only through this manual workflow. It deploys one commit on
-# main whose CI passed, after a typed confirmation. B1202 adds `migrate deploy` before the deploy.
+# B1201 (ADR 0028): production (Vercel project tablz-api-production) changes only through this
+# manual workflow. It deploys one commit on main whose CI passed, after a typed confirmation.
+# B1202 adds `migrate deploy` before the build.
 on:
   workflow_dispatch:
     inputs:
@@ -28,7 +29,9 @@ jobs:
     timeout-minutes: 30
     environment: production
     env:
-      DEPLOY_HOOK: ${{ secrets.RENDER_PRODUCTION_DEPLOY_HOOK }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
       API_URL: ${{ vars.PRODUCTION_API_URL }}
       # Inputs go through env, never into the script text.
       REF: ${{ inputs.ref }}
@@ -43,18 +46,25 @@ jobs:
             exit 1
           fi
 
+      - name: Require the Vercel project settings
+        run: |
+          if [ -z "$VERCEL_TOKEN" ] || [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ] || [ -z "$API_URL" ]; then
+            echo "::error::The production Vercel secrets or PRODUCTION_API_URL are not set (see backend/docs/adr/0028-vercel-deployment.md)."
+            exit 1
+          fi
+
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Resolve the ref to a commit on main
+      - name: Resolve the ref to a commit on main whose CI passed
         run: |
           # A plain ref name only: no leading dash (a git option), nothing a log could act on.
           if ! [[ "$REF" =~ ^[A-Za-z0-9][A-Za-z0-9._/-]*$ ]]; then
             echo "::error::The ref must be a commit SHA or a tag name."
             exit 1
           fi
-          git fetch --tags origin main
+          git fetch --quiet --tags origin main
           if ! COMMIT=$(git rev-parse --verify --quiet "${REF}^{commit}"); then
             echo "::error::${REF} is not a commit or tag in this repository."
             exit 1
@@ -63,30 +73,38 @@ jobs:
             echo "::error::${COMMIT} is not on main."
             exit 1
           fi
-          echo "COMMIT=${COMMIT}" >> "$GITHUB_ENV"
-
-      - name: Require a passing CI run for that commit
-        run: |
           conclusion=$(gh api "repos/${REPO}/commits/${COMMIT}/check-runs?check_name=ci-ok" \
             --jq '[.check_runs[].conclusion] | map(select(. != null)) | first // "missing"')
           if [ "$conclusion" != "success" ]; then
             echo "::error::CI (ci-ok) has not passed for ${COMMIT} (${conclusion})."
             exit 1
           fi
+          echo "COMMIT=${COMMIT}" >> "$GITHUB_ENV"
 
-      - name: Require the deploy hook
+      - name: Check out exactly that commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.COMMIT }}
+          # vercel build runs npm scripts: leave no GitHub token in .git/config.
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Build this commit with Vercel
+        # From the repo root: the Vercel project's Root Directory setting is `backend`.
         run: |
-          if [ -z "$DEPLOY_HOOK" ] || [ -z "$API_URL" ]; then
-            echo "::error::RENDER_PRODUCTION_DEPLOY_HOOK or PRODUCTION_API_URL is not set (see docs/adr/0027-render-deployment.md)."
-            exit 1
-          fi
+          npx --yes vercel@65.2.0 pull --yes --environment=production --token="$VERCEL_TOKEN"
+          npx --yes vercel@65.2.0 build --prod --token="$VERCEL_TOKEN"
 
-      - name: Deploy the commit to Render
-        run: curl -fsS -o /dev/null -X POST "${DEPLOY_HOOK}&ref=${COMMIT}"
+      - name: Deploy it
+        id: deploy
+        run: npx --yes vercel@65.2.0 deploy --prebuilt --prod --env DEPLOY_COMMIT="${COMMIT}" --token="$VERCEL_TOKEN"
 
       - name: Wait until /v1/health reports this commit
         run: |
-          for attempt in $(seq 1 60); do
+          for attempt in $(seq 1 40); do
             running=$(curl -fsS --max-time 5 "${API_URL}/v1/health" | jq -r '.commit // empty' || true)
             if [ "$running" = "$COMMIT" ]; then
               echo "Production runs ${COMMIT}."
@@ -94,5 +112,11 @@ jobs:
             fi
             sleep 15
           done
-          echo "::error::Production did not report ${COMMIT} on /v1/health within about 20 minutes; the previous version keeps running."
+          echo "::error::Production did not report ${COMMIT} on /v1/health within about 13 minutes; rolling back to the previous deployment."
           exit 1
+
+      - name: Roll back to the previous deployment
+        # vercel deploy --prod makes the deployment live once it builds; Vercel never checks that it
+        # boots. If it never reports this commit, put the previous deployment back (Hobby allows it).
+        if: failure() && steps.deploy.outcome == 'success'
+        run: npx --yes vercel@65.2.0 rollback --token="$VERCEL_TOKEN"

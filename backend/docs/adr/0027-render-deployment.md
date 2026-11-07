@@ -1,6 +1,6 @@
 # ADR 0027 — Render deployment
 
-- **Status:** accepted
+- **Status:** superseded by [ADR 0028](0028-vercel-deployment.md) (Render asked for payment details; the API moved to Vercel)
 - **Date:** 2026-11-07
 - **Answers:** ROADMAP §2 (staging deploys on merge, production manual) · **Tickets:** B1201 (then B1202, B1203)
 

@@ -19,6 +19,7 @@ async function generate(): Promise<void> {
         logLevel: 'silent',
         rateLimit: { max: 1, windowSeconds: 1 },
         gitCommit: null,
+        databasePoolMax: 1,
       }),
       { logger: false },
     ),

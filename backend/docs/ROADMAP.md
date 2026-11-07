@@ -18,8 +18,8 @@
 | --- | --- | --- | --- |
 | local | Postgres in Docker | `npm run start:dev` | you, via `prisma migrate dev` |
 | test | throwaway Postgres (local container, CI service container) | Jest + Supertest | automated, recreated every run |
-| staging | Supabase project #2 `tablz-staging` | Render service, deploys on merge to `main` | CI only (`migrate deploy`) |
-| production | Supabase project #1 `tablz-prod` | Render service, deploys from a release tag | CI only, manual trigger with confirmation |
+| staging | Supabase project #2 `tablz-staging` | Vercel project `tablz-api-staging`, deployed by CI after a merge to `main` ([ADR 0028](adr/0028-vercel-deployment.md); was Render) | CI only (`migrate deploy`) |
+| production | Supabase project #1 `tablz-prod` | Vercel project `tablz-api-production`, deployed only by the manual workflow (ADR 0028) | CI only, manual trigger with confirmation |
 
 **Why not SQLite for development.** Prisma binds a schema to one database provider, and SQLite differs from Postgres exactly where Tablz is strict: enums, `numeric` money and stock columns, JSON, row locking, transaction behavior and later RLS. Tests that pass on SQLite and fail on Postgres are worse than no tests, and the ledger and mixed-item cascade need the real engine.
 
@@ -27,7 +27,7 @@
 
 **How the separation is enforced, not just documented:**
 
-1. One `.env.example` is committed. Real `.env.*` files are gitignored. Staging and production secrets exist only in Render, GitHub secrets and your password manager, with different passwords and project refs per environment.
+1. One `.env.example` is committed. Real `.env.*` files are gitignored. Staging and production secrets exist only in Vercel, GitHub secrets and your password manager, with different passwords and project refs per environment.
 2. Two connection strings per environment: `DATABASE_URL` (pooled, for the running app) and `DIRECT_URL` (for migrations). Use the strings from the Supabase dashboard. Migrations and backups run from GitHub's runners, which are IPv4, so use the pooler/session string if the direct host turns out to be IPv6-only (verify in B2).
 3. A single-row `app_environment` table holds `local`, `staging` or `production`. At boot the API compares it with `APP_ENV` and refuses to start on a mismatch, so a production URL pasted into a local `.env` cannot be used by accident.
 4. Destructive commands (`migrate reset`, seed, truncate scripts) hard-fail unless `APP_ENV` is `local` or `test`.
@@ -40,7 +40,7 @@
 | Service | Idle behavior | Protection |
 | --- | --- | --- |
 | Supabase (staging + production) | free projects pause after 7 days without activity | scheduled workflow every 3 days runs a real query against each database; the backup job also counts as activity |
-| Render web service | sleeps after about 15 minutes and wakes in about a minute; it is not deleted | no 24/7 pinging; the keep-alive ping wakes it, and a manual warm-up workflow runs before demos |
+| Vercel Functions (the API, ADR 0028) | no long-running server: a cold start takes a moment after idle time; nothing is deleted | none needed for the API itself; the Supabase keep-alive above still runs |
 | GitHub scheduled workflows | disabled after 60 days without repository activity (documented for public repos; verify for your private repo) | a self-heal job makes a commit only when the last commit is older than 45 days; a second independent monitor (for example UptimeRobot) pings `/health/db`; monthly calendar check of the Actions tab |
 | Vercel | no idle deletion known | none needed; watch account emails |
 
@@ -277,11 +277,11 @@ Acceptance: each KPI matches the seed data exactly; a constructed bad deduction 
 
 ### B12 — CD, keep-alive & backups
 
-**TABLZ-B1201 — Render deployment**
+**TABLZ-B1201 — API deployment (Vercel; Render until 2026-11-07, ADR 0028)**
 
 Requirements:
 
-- [ ] Two Render services (staging and production) with a health check on `/health`, environment variables set in the dashboard, deploys triggered only after CI passes.
+- [ ] Two Vercel projects (staging and production) with a health check on `/v1/health`, environment variables set in the dashboard, deploys triggered only after CI passes.
 
 Acceptance: a merge to `main` updates staging with no manual step; production changes only through the manual workflow.
 
@@ -300,7 +300,7 @@ Acceptance: a deliberately broken migration on staging blocks the deploy and lea
 
 Requirements:
 
-- [ ] A scheduled workflow (every 3 days, at an off-peak minute that is not :00) that calls `/health/db` on staging and production with a generous timeout and retries (to survive Render's cold start) and also runs a direct trivial query through the database connection.
+- [ ] A scheduled workflow (every 3 days, at an off-peak minute that is not :00) that calls `/health/db` on staging and production with a generous timeout and retries (to survive the host's (Vercel) cold start) and also runs a direct trivial query through the database connection.
 - [ ] Any failure exits non-zero. A manual trigger exists for pre-demo warm-ups.
 - [ ] A self-heal job that commits only when the repo has been quiet for more than 45 days, to avoid GitHub's 60-day disable rule.
 - [ ] A second independent monitor outside GitHub pinging `/health/db`, and a monthly reminder to check the Actions tab.
@@ -337,7 +337,7 @@ Requirements:
 
 - [ ] Cross-feature bug bash: double delivery, cancel after delivery, restock of a nonexistent item, concurrent reconciliation, archived item in an open order.
 - [ ] Security basics: security headers, rate limits, no stack traces, dependency audit, Dependabot.
-- [ ] Docs: README, ARCHITECTURE, ENVIRONMENTS and a RUNBOOK covering what to do when Supabase has paused (restore from the dashboard, then verify) and when Render is cold.
+- [ ] Docs: README, ARCHITECTURE, ENVIRONMENTS and a RUNBOOK covering what to do when Supabase has paused (restore from the dashboard, then verify) and after a Vercel cold start.
 - [ ] Release tag `v1.0.0-backend-phase1`.
 
 Acceptance: every pipeline protection from B1 and B12 is confirmed intact; no unresolved undocumented critical bugs remain.

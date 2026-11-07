@@ -8,8 +8,8 @@ How Tablz API keeps local, test, staging and production apart (ROADMAP §2, [ADR
 | --- | --- | --- | --- |
 | `local` | Docker Postgres 17, `tablz_dev` on `localhost:5433` | `npm run start:dev` | you, `prisma migrate dev` |
 | `test` | Docker `tablz_test` locally; a Postgres service container in CI. Reset before every run. | Jest + Supertest | automated (`migrate reset` in the e2e global setup) |
-| `staging` | Supabase project `tablz-staging` | Render `tablz-api-staging`, deployed by the "Deploy staging" workflow after CI passes on `main` (B1201, [ADR 0027](adr/0027-render-deployment.md)) | CI only, `migrate deploy` (B1202) |
-| `production` | Supabase project `tablz-prod` | Render `tablz-api-production`, deployed only by the manual "Deploy production" workflow (a commit or tag on `main`, typed confirmation) | CI only, manual workflow with typed confirmation |
+| `staging` | Supabase project `tablz-staging` | Vercel project `tablz-api-staging` (region `dub1`), deployed by the "Deploy staging" workflow after CI passes on `main` (B1201, [ADR 0028](adr/0028-vercel-deployment.md)) | CI only, `migrate deploy` (B1202) |
+| `production` | Supabase project `tablz-prod` | Vercel project `tablz-api-production` (region `dub1`), deployed only by the manual "Deploy production" workflow (a commit or tag on `main`, typed confirmation) | CI only, manual workflow with typed confirmation |
 
 ## Fresh clone → working local database (two commands)
 
@@ -62,20 +62,22 @@ Then `npm run db:up` again. The `-v` deletes the volume, so the init script crea
 
 | Value | local | test / CI | staging | production |
 | --- | --- | --- | --- | --- |
-| `APP_ENV` | `.env.example` (`local`) | CI job env (`test`) | Render env | Render env |
-| `DATABASE_URL` (app, transaction pooler :6543) | `.env.example`, throwaway | CI job env, throwaway | Render env + password manager | Render env + password manager |
+| `APP_ENV` | `.env.example` (`local`) | CI job env (`test`) | Vercel project env | Vercel project env |
+| `DATABASE_URL` (app, transaction pooler :6543) | `.env.example`, throwaway | CI job env, throwaway | Vercel project env (Production) + password manager | Vercel project env (Production) + password manager |
 | `DIRECT_URL` (migrations, session pooler :5432) | `.env.example` | CI job env | GitHub secret `STAGING_DIRECT_URL` + password manager | GitHub secret `PROD_DIRECT_URL` + password manager |
-| `CORS_ORIGINS` (not secret) | default `http://localhost:4200` | default | Render env: staging frontend + Vercel preview pattern | Render env: production frontend only |
+| `CORS_ORIGINS` (not secret) | default `http://localhost:4200` | default | Vercel env: staging frontend + Vercel preview pattern | Vercel env: production frontend only |
 | `LOG_LEVEL` (not secret) | default `debug` | default `silent` | default `info` | default `info` |
-| `RATE_LIMIT_MAX`, `RATE_LIMIT_WINDOW_SECONDS` (not secret) | default 120 per 60 s | default | default, or Render env | default, or Render env |
+| `RATE_LIMIT_MAX`, `RATE_LIMIT_WINDOW_SECONDS` (not secret) | default 120 per 60 s | default | default, or Vercel env | default, or Vercel env |
 | Supabase DB password / project ref | — | — | password manager | password manager |
-| Render deploy hook URL (secret) | — | — | GitHub environment `staging` secret `RENDER_STAGING_DEPLOY_HOOK` | GitHub environment `production` secret `RENDER_PRODUCTION_DEPLOY_HOOK` |
+| Vercel access token, org id, project id (secrets) | — | — | GitHub environment `staging` secrets `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` (the staging project) | GitHub environment `production` secrets `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` (the production project) |
 | API base URL (not secret) | — | — | GitHub environment variable `STAGING_API_URL` | GitHub environment variable `PRODUCTION_API_URL` |
-| `RENDER_GIT_COMMIT` (not secret) | unset (`/v1/health` reports `commit: null`) | unset | set by Render | set by Render |
+| `DEPLOY_COMMIT` (not secret) | unset (`/v1/health` reports `commit: null`) | unset | set on each deployment by the deploy workflow | set on each deployment by the deploy workflow |
+| `DATABASE_POOL_MAX` (not secret) | default 10 | default | Vercel env, e.g. `3` (many function instances share the pooler) | Vercel env, e.g. `3` |
 
 Rules:
 
 - Only `.env.example` is committed. Every other `.env*` is gitignored.
+- A deployed service (`APP_ENV` already `staging` or `production`) reads no env file, so every variable must be set in its Vercel project ([ADR 0028](adr/0028-vercel-deployment.md)).
 - Staging and production values never sit in a file on a developer machine, and are never pasted into a chat or an issue.
 - Staging and production have different passwords and project refs.
 
