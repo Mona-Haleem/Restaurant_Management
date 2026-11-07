@@ -17,6 +17,10 @@ interface Step {
   run?: string;
   uses?: string;
   with?: Record<string, unknown>;
+  env?: Record<string, string>;
+  id?: string;
+  'working-directory'?: string;
+  'continue-on-error'?: unknown;
 }
 interface Job {
   if?: string;
@@ -193,5 +197,119 @@ describe('.github/workflows/deploy-production.yml (B1201)', () => {
     expect(script).toContain('git merge-base --is-ancestor "$COMMIT" origin/main');
     expect(script).toContain('check-runs');
     expect(script).toContain('ci-ok');
+  });
+});
+// ── B1202: migrations before every deploy (ADR 0029) ────────────────────────────────────────
+describe.each([
+  ['staging', '.github/workflows/deploy-staging.yml', 'STAGING_DIRECT_URL'],
+  ['production', '.github/workflows/deploy-production.yml', 'PROD_DIRECT_URL'],
+])('%s deploy workflow: database step (B1202)', (environment, file, secret) => {
+  const workflow = yamlFile<Workflow>(file);
+  const job = Object.values(workflow.jobs)[0]!;
+  const index = (match: (s: Step) => boolean): number => job.steps.findIndex(match);
+  const dbStep = job.steps.find((s) => s.run?.includes('npm run db:deploy'));
+
+  it('migrates and marks the database with the migration connection, from backend/', () => {
+    expect(dbStep).toBeDefined();
+    expect(dbStep!['working-directory']).toBe('backend');
+    expect(dbStep!.env).toEqual({
+      APP_ENV: environment,
+      DIRECT_URL: `\${{ secrets.${secret} }}`,
+    });
+    expect(dbStep!.run).toContain('npm ci');
+  });
+
+  it('runs after the exact commit is checked out and before anything is built or deployed', () => {
+    const checkout = job.steps.filter((s) => s.uses?.startsWith('actions/checkout')).at(-1)!;
+    const db = job.steps.indexOf(dbStep!);
+    expect(job.steps.indexOf(checkout)).toBeLessThan(db);
+    expect(db).toBeLessThan(index((s) => !!s.run?.includes('build --prod')));
+    expect(db).toBeLessThan(index((s) => !!s.run?.includes('deploy --prebuilt')));
+  });
+
+  it('stops the deploy when the database step fails (no step may continue on error)', () => {
+    for (const step of job.steps) expect(step['continue-on-error']).toBeUndefined();
+    // The rollback only follows a deploy that ran, so a failed migration deploys nothing.
+    const rollback = job.steps.find((s) => s.run?.includes('rollback'))!;
+    expect(rollback.if).toBe("failure() && steps.deploy.outcome == 'success'");
+  });
+
+  it('gives the migration credentials to that one step only, never to the build', () => {
+    expect(JSON.stringify(job.env)).not.toContain('DIRECT_URL');
+    // Besides the database step, only the up-front settings check may see the secret.
+    const others = job.steps.filter(
+      (s) =>
+        s !== dbStep &&
+        !s.name?.startsWith('Skip until') &&
+        s.name !== 'Require the deploy settings',
+    );
+    expect(JSON.stringify(others)).not.toContain(secret);
+  });
+});
+
+describe('deploy-staging.yml waits for the database secret too (B1202)', () => {
+  const job = Object.values(yamlFile<Workflow>('.github/workflows/deploy-staging.yml').jobs)[0]!;
+
+  it('skips with a notice until STAGING_DIRECT_URL is set', () => {
+    const ready = job.steps.find((s) => s.name?.startsWith('Skip until'))!;
+    expect(ready.env).toEqual({
+      DIRECT_URL: '${{ secrets.STAGING_DIRECT_URL }}',
+    });
+    expect(ready.run).toContain('[ -z "$DIRECT_URL" ]');
+  });
+});
+
+describe('.github/workflows/migrate-resolve.yml (B1202)', () => {
+  const workflow = yamlFile<Workflow>('.github/workflows/migrate-resolve.yml');
+  const job = Object.values(workflow.jobs)[0]!;
+  const script = job.steps.map((s) => s.run ?? '').join('\n');
+  const inputs = (
+    workflow.on.workflow_dispatch as {
+      inputs: Record<string, { options?: string[] }>;
+    }
+  ).inputs;
+
+  it('can only be started by hand, for one named environment', () => {
+    expect(Object.keys(workflow.on)).toEqual(['workflow_dispatch']);
+    expect(Object.keys(inputs).sort()).toEqual([
+      'confirm',
+      'environment',
+      'migration',
+      'resolution',
+    ]);
+    expect(inputs.environment!.options).toEqual(['staging', 'production']);
+    expect(inputs.resolution!.options).toEqual(['rolled-back', 'applied']);
+    expect(job.environment).toBe('${{ inputs.environment }}');
+  });
+
+  it('requires the typed confirmation and a well-formed migration name before anything else', () => {
+    expect(job.steps[0]!.run).toContain('"resolve ${ENVIRONMENT}"');
+    expect(job.steps[0]!.run).toContain('^[0-9]{14}_[a-z0-9_]+$');
+    expect(job.steps[0]!.run).toMatch(/exit 1/);
+  });
+
+  it('runs prisma migrate resolve with that environment and its migration connection', () => {
+    expect(script).toContain('npx prisma migrate resolve --"${RESOLUTION}" "${MIGRATION}"');
+    const resolve = job.steps.find((s) => s.run?.includes('migrate resolve'))!;
+    expect(resolve['working-directory']).toBe('backend');
+    expect(resolve.env).toMatchObject({ APP_ENV: '${{ inputs.environment }}' });
+    expect(resolve.env!.DIRECT_URL).toContain('secrets.PROD_DIRECT_URL');
+    expect(resolve.env!.DIRECT_URL).toContain('secrets.STAGING_DIRECT_URL');
+  });
+
+  it('keeps inputs and secrets out of the script text', () => {
+    expect(script).not.toContain('${{');
+  });
+
+  it('fails at once when that environment has no database secret', () => {
+    const resolve = job.steps.find((s) => s.run?.includes('migrate resolve'))!;
+    expect(resolve.run).toContain('[ -z "$DIRECT_URL" ]');
+  });
+
+  it('never runs while a deploy of the same database runs (shares its concurrency group)', () => {
+    expect(workflow.concurrency).toEqual({
+      group: 'deploy-${{ inputs.environment }}',
+      'cancel-in-progress': false,
+    });
   });
 });

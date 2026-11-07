@@ -309,6 +309,14 @@ Quality guidelines: pin third-party actions to a commit SHA or write the few lin
 
 Acceptance: the workflow has run successfully on its own schedule at least twice; pointing it at a wrong URL makes it fail and sends an email.
 
+**TABLZ-B1205 — Demo-tenant reset and scheduled staging reseed** (split from B1202, ADR 0029)
+
+Requirements:
+
+- [ ] A reset command that deletes every row of the `is_demo` tenant only (children first, one transaction) and re-runs the seed for it, and a scheduled staging workflow that runs it (ADR 0017).
+
+Acceptance: after a reset, the demo tenant matches a fresh seed and another tenant's rows are unchanged.
+
 **TABLZ-B1204 — Backups and restore drill**
 
 Requirements:

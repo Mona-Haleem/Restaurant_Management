@@ -32,6 +32,6 @@ Option 3.
 
 - Prisma arrives in B201 with one table (`app_environment`). B301 adds the business tables as the second migration.
 - The B401 seed must call `assertPrismaCommandAllowed` (or the same `isDisposableEnv` check) before writing. `prisma db seed` is already guarded by the config.
-- B1202's staging/production migration workflow must insert the marker row once per database: `INSERT INTO app_environment (id, name, updated_at) VALUES (1, 'staging', now())` (or `'production'`).
+- B1202's staging/production migration step (`npm run db:deploy`, [ADR 0029](0029-migration-workflows.md)) inserts the marker row once per database, never overwriting one, and refuses a database marked for another environment before migrating it.
 - B503's PrismaService can reuse `prismaMarkerStore` and replace the short-lived boot client.
 - Adding a new local host name (e.g. a different compose service name) means updating `LOCAL_HOSTS` in `src/config/environment.ts`.

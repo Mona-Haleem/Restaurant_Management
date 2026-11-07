@@ -2,7 +2,7 @@
 
 - **Status:** accepted
 - **Date:** 2026-11-06
-- **Answers:** — · **Tickets:** B401, B503, B701, B1202
+- **Answers:** — · **Tickets:** B401, B503, B701, B1205
 
 ## Context
 
@@ -27,7 +27,7 @@ Option 2, with insert-missing reruns (not option 3).
 - `src/prisma/seed/write-seed.ts` is the only code besides the ledger service that writes `inventory_transactions` and `branch_stock.current_stock`. It writes them in one transaction per tenant. The builder walks the ledger in time order with the ADR 0005 cost rules, so `current_stock = latest snapshot + Σ quantity_delta since` holds by construction; unit and e2e tests check it.
 - A snapshot's `through_seq` is read from the database (`max(seq)` for that branch and item) after the rows before it are inserted.
 - Guest orders get **demo tracking tokens** derived from the order key, in the same format as ADR 0008's random tokens. They are public by design (the seed prints them) and exist only on seeded orders.
-- The seed refuses anything but `APP_ENV=local|test` with a local URL and a matching `app_environment` marker. Staging reseeding is a CI workflow in B1202.
+- The seed refuses anything but `APP_ENV=local|test` with a local URL and a matching `app_environment` marker. Staging reseeding is a CI workflow in B1205 (split from B1202, ADR 0029).
 - The content stands in for TABLZ-404. It has no combo item, because the B301 CHECK keeps `is_combo` false in Phase 1.
 
 ## Consequences
