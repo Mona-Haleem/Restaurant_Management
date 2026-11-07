@@ -35,7 +35,7 @@ Option 2.
 
 ## Consequences
 
-- **B1202** adds `migrate deploy` and the marker row before "Build this commit with Vercel" in both workflows. Acceptance can only be shown once it has merged and the secrets exist (checklist).
+- **B1202** adds `migrate deploy` and the marker row before "Build this commit with Vercel" in both workflows ([ADR 0029](0029-migration-workflows.md)). Acceptance can only be shown once it has merged and the secrets exist (checklist).
 - **Failed deploys:** a failed *build* or upload leaves the previous deployment live. But `vercel deploy --prod` makes a deployment live as soon as it builds; Vercel never checks that it boots. A deployment that crashes at start (for example a boot-guard refusal) is live until the health wait gives up and the workflow runs `vercel rollback`, up to about 13 minutes of failed requests. Render's health-gated switch (ADR 0027) has no free equivalent here; staging catches most such problems before production.
 - **Cold starts:** the first request after idle time is slower. No keep-alive is needed for the API itself. B1203 still calls `/v1/health/db` every 3 days so the free Supabase projects do not pause.
 - **Unverified until the first real deploy:** NestJS 12 (ESM-only packages) and the generated Prisma client inside Vercel's zero-config NestJS build, `argon2` (a native module built on the Ubuntu runner, run on Vercel), `--env` on a `--prebuilt` deploy, and `vercel rollback` without a prompt in CI. Before the first deploy, check that the pinned CLI exists: `npm view vercel@65.2.0 version`. If either fails, the fix belongs in this ticket's follow-up, not in the app's rules.
@@ -69,7 +69,7 @@ Option 2.
    - Deployment branches and tags → **Selected branches and tags → `main`**, so a workflow edited on another branch never gets these secrets.
    - Optionally, add required reviewers to `production`.
    - Variables: `STAGING_API_URL` / `PRODUCTION_API_URL` = the production domain from step 4, with no trailing slash.
-7. **After B1202 has merged**, add the secrets to each environment:
+7. **After B1202 has merged**, add the secrets to each environment (together with `STAGING_DIRECT_URL` / `PROD_DIRECT_URL`, [ADR 0029](0029-migration-workflows.md) checklist):
    - `VERCEL_TOKEN` (step 5) and `VERCEL_ORG_ID`.
    - `VERCEL_PROJECT_ID`: the staging project's id in `staging`, the production project's id in `production`.
 8. **Verify the acceptance:**

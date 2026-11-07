@@ -63,7 +63,7 @@ Rules:
 - Feature code never imports the unscoped Prisma client. The tenant extension is the only path to the database.
 - Writes are allowed only on the demo tenant until JWT ships (B503 known risk): `403 DEMO_READ_ONLY` elsewhere.
 - Tenant routes are staff-only unless `@AllowGuest()`; `@Roles(...)` narrows them. Rate limit runs first, health routes are exempt ([ADR 0018](adr/0018-tenant-access-defaults-and-rate-limit.md)).
-- The scheduled staging reseed resets the demo tenant only ([ADR 0017](adr/0017-demo-tenant-reset.md), built in B1202).
+- The scheduled staging reseed resets the demo tenant only ([ADR 0017](adr/0017-demo-tenant-reset.md), built in B1205).
 - No Postgres RLS in Phase 1; isolation is the extension plus composite FKs ([ADR 0015](adr/0015-tenant-isolation-without-rls.md)).
 
 **Phase 1 role capabilities (simple mode, PRD §7.1):**
