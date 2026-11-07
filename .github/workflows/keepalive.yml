@@ -1,0 +1,146 @@
+name: Keep-alive
+
+# B1203 (backend/docs/adr/0030-keepalive-workflow.md): keeps the free Supabase projects from
+# pausing and this schedule from being disabled.
+# - ping: every 3 days, /v1/health/db on staging and production plus a direct `select 1`.
+# - self-heal: an empty commit on the default branch only after 45 quiet days (GitHub disables
+#   scheduled workflows after 60 days without repository activity).
+# - reminder: a monthly issue to look at the Actions tab.
+# Every job can also be run by hand (self-heal only as a dry run that never pushes).
+# No third-party actions: curl, jq, psql, git and gh are preinstalled on ubuntu-latest.
+on:
+  schedule:
+    - cron: "17 4 */3 * *" # ping + self-heal: 04:17 UTC, off-peak, not :00
+    - cron: "43 8 1 * *" # reminder: the 1st of each month, 08:43 UTC
+  workflow_dispatch:
+    inputs:
+      job:
+        description: What to run (ping = warm up before a demo)
+        type: choice
+        options: [ping, self-heal-dry-run, reminder]
+        default: ping
+      target:
+        description: Which environment to ping
+        type: choice
+        options: [both, staging, production]
+        default: both
+
+permissions: {}
+
+concurrency:
+  group: keepalive-${{ github.event.schedule || inputs.job }}
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    if: github.event.schedule == '17 4 */3 * *' || (github.event_name == 'workflow_dispatch' && inputs.job == 'ping')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions: {}
+    strategy:
+      fail-fast: false
+      matrix:
+        # A scheduled run has no inputs, so it falls through to both environments.
+        environment: ${{ fromJSON(inputs.target == 'staging' && '["staging"]' || inputs.target == 'production' && '["production"]' || '["staging","production"]') }}
+    environment: ${{ matrix.environment }}
+    env:
+      # Indexed by a non-empty name, so a missing staging URL can never fall through to production's.
+      URL_VAR: ${{ matrix.environment == 'staging' && 'STAGING_API_URL' || 'PRODUCTION_API_URL' }}
+      API_URL: ${{ vars[matrix.environment == 'staging' && 'STAGING_API_URL' || 'PRODUCTION_API_URL'] }}
+      DATABASE_URL: ${{ secrets.KEEPALIVE_DATABASE_URL }}
+      ENVIRONMENT: ${{ matrix.environment }}
+    steps:
+      - name: Require the API URL and the keep-alive database secret
+        run: |
+          set -euo pipefail
+          if [ -z "$API_URL" ] || [ -z "$DATABASE_URL" ]; then
+            echo "::error::${ENVIRONMENT}: set the ${URL_VAR} variable and the KEEPALIVE_DATABASE_URL secret on this GitHub environment (backend/docs/adr/0030-keepalive-workflow.md)."
+            exit 1
+          fi
+
+      - name: Call /v1/health/db (retries for cold starts)
+        run: |
+          set -euo pipefail
+          body=$(curl --silent --show-error --fail --connect-timeout 30 --max-time 60 \
+            --retry 5 --retry-delay 20 --retry-all-errors "$API_URL/v1/health/db")
+          echo "$body"
+          if ! echo "$body" | jq -e '.status == "ok" and .database == "up"' > /dev/null; then
+            echo "::error::${ENVIRONMENT}: /v1/health/db did not report the database up."
+            exit 1
+          fi
+
+      - name: Run a trivial query directly on the database
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3 4 5; do
+            if out=$(PGCONNECT_TIMEOUT=30 psql "$DATABASE_URL" -X -At -v ON_ERROR_STOP=1 -c 'select 1' 2>&1) \
+                && [ "$out" = "1" ]; then
+              echo "select 1 answered on attempt ${attempt}."
+              exit 0
+            fi
+            echo "::warning::${ENVIRONMENT}: select 1 failed (attempt ${attempt}/5): ${out}"
+            if [ "$attempt" -lt 5 ]; then sleep 20; fi
+          done
+          echo "::error::${ENVIRONMENT}: the database did not answer select 1."
+          exit 1
+
+  self-heal:
+    if: github.event.schedule == '17 4 */3 * *' || (github.event_name == 'workflow_dispatch' && inputs.job == 'self-heal-dry-run')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    env:
+      QUIET_DAYS: "45"
+      DRY_RUN: ${{ github.event_name == 'workflow_dispatch' }}
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      SERVER: ${{ github.server_url }}
+    steps:
+      - name: Commit only after more than 45 quiet days
+        run: |
+          set -euo pipefail
+          # Looked up here: a schedule event's payload carries no repository details.
+          branch=$(gh api "repos/${REPO}" --jq .default_branch)
+          last=$(gh api "repos/${REPO}/commits/${branch}" --jq .commit.committer.date)
+          age_days=$(( ( $(date -u +%s) - $(date -u -d "$last" +%s) ) / 86400 ))
+          echo "Last commit on ${branch}: ${last} (${age_days} days ago; threshold ${QUIET_DAYS})."
+          if [ "$age_days" -le "$QUIET_DAYS" ]; then
+            echo "Recent activity: nothing to do."
+            exit 0
+          fi
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "::notice::Dry run: a scheduled run would push a keep-alive commit to ${branch} now."
+            exit 0
+          fi
+          basic=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)
+          echo "::add-mask::${basic}"
+          auth="AUTHORIZATION: basic ${basic}"
+          git -c http.extraheader="$auth" clone --quiet --depth 1 --branch "$branch" \
+            "${SERVER}/${REPO}.git" repo
+          cd repo
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit --allow-empty --quiet \
+            -m "chore: keep-alive after ${age_days} quiet days [skip ci]"
+          git -c http.extraheader="$auth" push --quiet origin "HEAD:${branch}"
+          echo "::notice::Pushed a keep-alive commit to ${branch} after ${age_days} quiet days."
+
+  reminder:
+    if: github.event.schedule == '43 8 1 * *' || (github.event_name == 'workflow_dispatch' && inputs.job == 'reminder')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      OWNER: ${{ github.repository_owner }}
+      SERVER: ${{ github.server_url }}
+    steps:
+      - name: Open the monthly reminder issue
+        run: |
+          set -euo pipefail
+          gh issue create --repo "$REPO" --assignee "$OWNER" \
+            --title "Monthly check: GitHub Actions ($(date -u +%Y-%m))" \
+            --body "Monthly reminder (B1203): open ${SERVER}/${REPO}/actions and check that the Keep-alive runs of the last month passed, that the workflow is still enabled, and that the external monitor is green. Close this issue when done."

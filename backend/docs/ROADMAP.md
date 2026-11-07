@@ -41,7 +41,7 @@
 | --- | --- | --- |
 | Supabase (staging + production) | free projects pause after 7 days without activity | scheduled workflow every 3 days runs a real query against each database; the backup job also counts as activity |
 | Vercel Functions (the API, ADR 0028) | no long-running server: a cold start takes a moment after idle time; nothing is deleted | none needed for the API itself; the Supabase keep-alive above still runs |
-| GitHub scheduled workflows | disabled after 60 days without repository activity (documented for public repos; verify for your private repo) | a self-heal job makes a commit only when the last commit is older than 45 days; a second independent monitor (for example UptimeRobot) pings `/health/db`; monthly calendar check of the Actions tab |
+| GitHub scheduled workflows | disabled after 60 days without repository activity (documented for public repos; verify for your private repo) | a self-heal job makes a commit only when the last commit is older than 45 days; a second independent monitor (for example UptimeRobot) pings `/health/db`; monthly reminder issue to check the Actions tab (ADR 0030) |
 | Vercel | no idle deletion known | none needed; watch account emails |
 
 Failures must be loud: any timeout or non-200 makes the workflow exit non-zero so GitHub emails you, instead of silently passing.
