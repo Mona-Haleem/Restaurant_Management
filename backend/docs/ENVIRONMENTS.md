@@ -69,6 +69,8 @@ Then `npm run db:up` again. The `-v` deletes the volume, so the init script crea
 | `LOG_LEVEL` (not secret) | default `debug` | default `silent` | default `info` | default `info` |
 | `RATE_LIMIT_MAX`, `RATE_LIMIT_WINDOW_SECONDS` (not secret) | default 120 per 60 s | default | default, or Vercel env | default, or Vercel env |
 | Supabase DB password / project ref | — | — | password manager | password manager |
+| `BACKUP_DATABASE_URL` (secret, read-only `backup` login, session pooler) | — | — | GitHub environment `staging` secret | GitHub environment `production` secret |
+| `BACKUP_PASSPHRASE` (secret, encrypts every backup; losing it makes them unreadable) | — | — | GitHub environment `staging` secret + password manager | GitHub environment `production` secret + password manager |
 | Vercel access token, org id, project id (secrets) | — | — | GitHub environment `staging` secrets `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` (the staging project) | GitHub environment `production` secrets `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` (the production project) |
 | API base URL (not secret) | — | — | GitHub environment variable `STAGING_API_URL` | GitHub environment variable `PRODUCTION_API_URL` |
 | `DEPLOY_COMMIT` (not secret) | unset (`/v1/health` reports `commit: null`) | unset | set on each deployment by the deploy workflow | set on each deployment by the deploy workflow |

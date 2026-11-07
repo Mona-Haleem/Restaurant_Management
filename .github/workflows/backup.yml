@@ -1,0 +1,152 @@
+name: Backup
+
+# B1204 (ADR 0031): free Supabase projects have no automated backups, so this is the safety net.
+# Production daily (kept 30 days), staging weekly (kept 7 days). The repository is public, so any
+# signed-in GitHub user can download its artifacts: every backup is encrypted (gpg, AES-256) before
+# upload, and nothing readable is ever uploaded. Restore: backend/docs/RUNBOOK.md.
+on:
+  schedule:
+    - cron: "41 2 * * *" # production, daily
+    - cron: "13 3 * * 0" # staging, Sundays
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Which database to back up now
+        required: true
+        default: production
+        type: choice
+        options: [production, staging, both]
+
+permissions: {}
+
+jobs:
+  targets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      environments: ${{ steps.pick.outputs.environments }}
+    steps:
+      - name: Pick the environments for this run
+        id: pick
+        env:
+          EVENT: ${{ github.event_name }}
+          SCHEDULE: ${{ github.event.schedule }}
+          TARGET: ${{ inputs.target }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" = "schedule" ]; then
+            case "$SCHEDULE" in
+              '41 2 * * *') list='["production"]' ;;
+              '13 3 * * 0') list='["staging"]' ;;
+              *) echo "::error::Unknown schedule: ${SCHEDULE}"; exit 1 ;;
+            esac
+          else
+            case "$TARGET" in
+              production) list='["production"]' ;;
+              staging) list='["staging"]' ;;
+              both) list='["production","staging"]' ;;
+              *) echo "::error::Unknown target: ${TARGET}"; exit 1 ;;
+            esac
+          fi
+          echo "environments=${list}" >> "$GITHUB_OUTPUT"
+
+  backup:
+    needs: targets
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Only to check out the counting SQL; nothing else.
+    permissions:
+      contents: read
+    # One backup per environment at a time, whether it came from the schedule or by hand.
+    concurrency:
+      group: backup-${{ matrix.environment }}
+      cancel-in-progress: false
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: ${{ fromJSON(needs.targets.outputs.environments) }}
+    environment: ${{ matrix.environment }}
+    env:
+      # Read-only `backup` login through the session pooler (ADR 0031 checklist), never the
+      # migration or admin credentials. Secrets reach the scripts only through env.
+      BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+      BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+      ENVIRONMENT: ${{ matrix.environment }}
+      RETENTION_DAYS: ${{ matrix.environment == 'production' && 30 || 7 }}
+      PG_IMAGE: postgres:17
+    steps:
+      - name: Require the backup settings
+        run: |
+          set -euo pipefail
+          if [ -z "$BACKUP_DATABASE_URL" ] || [ -z "$BACKUP_PASSPHRASE" ]; then
+            echo "::error::The ${ENVIRONMENT} environment needs the secrets BACKUP_DATABASE_URL and BACKUP_PASSPHRASE (backend/docs/adr/0031-backups.md)."
+            exit 1
+          fi
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Dump the database (consistent with its row counts)
+        run: |
+          set -euo pipefail
+          umask 077
+          WORK="${RUNNER_TEMP}/backup-work"
+          mkdir -p "$WORK/bundle" "${RUNNER_TEMP}/backup-out"
+          # pg_dump/psql 17 from the official image: the runner's own client is older than
+          # the Supabase server. The URL goes into the container by name (-e VAR), never by value.
+          pg() { docker run --rm -i -e BACKUP_DATABASE_URL -e PGCONNECT_TIMEOUT=30 "$PG_IMAGE" "$@"; }
+          counts() {
+            pg sh -c 'psql "$BACKUP_DATABASE_URL" -X -At -F "$(printf "\t")" -v ON_ERROR_STOP=1 -f -' \
+              < backend/scripts/backup/table-counts.sql
+          }
+          # Counts before and after must agree, so the counts describe exactly what was dumped.
+          ok=""
+          for attempt in 1 2 3; do
+            counts > "$WORK/counts-before.tsv"
+            pg sh -c 'pg_dump --format=custom --schema=public --no-owner --no-privileges --dbname="$BACKUP_DATABASE_URL"' \
+              > "$WORK/bundle/tablz.dump"
+            counts > "$WORK/bundle/counts.tsv"
+            if cmp -s "$WORK/counts-before.tsv" "$WORK/bundle/counts.tsv"; then ok=1; break; fi
+            echo "::warning::Rows changed during the dump (attempt ${attempt}); dumping again."
+          done
+          if [ -z "$ok" ]; then
+            echo "::error::Rows kept changing during three dumps; no backup was made."
+            exit 1
+          fi
+          latest=$(pg sh -c 'psql "$BACKUP_DATABASE_URL" -X -At -v ON_ERROR_STOP=1 -c "SELECT migration_name FROM _prisma_migrations WHERE finished_at IS NOT NULL ORDER BY migration_name DESC LIMIT 1"')
+          tools=$(pg pg_dump --version)
+          jq -n \
+            --arg environment "$ENVIRONMENT" \
+            --arg created "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --arg commit "$GITHUB_SHA" \
+            --arg run "$GITHUB_RUN_ID" \
+            --arg migration "$latest" \
+            --arg tools "$tools" \
+            --arg tables "$(wc -l < "$WORK/bundle/counts.tsv" | tr -d ' ')" \
+            --arg retention "$RETENTION_DAYS" \
+            '{environment: $environment, createdAt: $created, commit: $commit, runId: $run, latestMigration: $migration, pgDump: $tools, tables: ($tables | tonumber), retentionDays: ($retention | tonumber)}' \
+            > "$WORK/bundle/manifest.json"
+          echo "Dumped $(jq -r .tables "$WORK/bundle/manifest.json") tables, latest migration ${latest}."
+
+      - name: Encrypt it and remove every plain file
+        run: |
+          set -euo pipefail
+          umask 077
+          WORK="${RUNNER_TEMP}/backup-work"
+          OUT="${RUNNER_TEMP}/backup-out/tablz-${ENVIRONMENT}-$(date -u +%Y%m%dT%H%M%SZ).tar.gpg"
+          tar -C "$WORK/bundle" -cf "$WORK/bundle.tar" .
+          gpg --batch --yes --pinentry-mode loopback --passphrase-fd 3 \
+            --symmetric --cipher-algo AES256 --output "$OUT" "$WORK/bundle.tar" 3<<< "$BACKUP_PASSPHRASE"
+          rm -rf "$WORK"
+          echo "Encrypted backup: $(basename "$OUT") ($(du -h "$OUT" | cut -f1))."
+
+      - name: Upload the encrypted backup
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: tablz-${{ matrix.environment }}-backup-${{ github.run_id }}
+          path: ${{ runner.temp }}/backup-out/*.tar.gpg
+          retention-days: ${{ env.RETENTION_DAYS }}
+          if-no-files-found: error
+          # Encrypted data does not compress.
+          compression-level: 0

@@ -25,6 +25,8 @@ const config: Config = {
     '!prisma/seed/run-seed.ts',
     // CLI glue around the pure deployDatabase (database-deploy.spec.ts); runs only in CI deploys.
     '!deploy/run-db-deploy.ts',
+    // The restore drill's CLI glue (Docker, gpg); its checks are in restore-check.spec.ts.
+    '!backup/run-restore.ts',
     '!prisma/seed/write-seed.ts',
   ],
   coverageDirectory: '../coverage',
