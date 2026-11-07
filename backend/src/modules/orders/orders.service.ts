@@ -19,7 +19,7 @@ const STAGE_FIELDS = {
   cancellable: true,
   deductsInventory: true,
 } as const;
-const ORDER_FIELDS = {
+export const ORDER_FIELDS = {
   id: true,
   branchId: true,
   stageKey: true,
@@ -31,7 +31,7 @@ const ORDER_FIELDS = {
   createdAt: true,
   updatedAt: true,
 } as const;
-const ITEM_FIELDS = {
+export const ITEM_FIELDS = {
   id: true,
   menuItemId: true,
   name: true,
@@ -40,8 +40,8 @@ const ITEM_FIELDS = {
   lineTotal: true,
 } as const;
 
-type OrderRow = Prisma.OrderGetPayload<{ select: typeof ORDER_FIELDS }>;
-type ItemRow = Prisma.OrderItemGetPayload<{ select: typeof ITEM_FIELDS }>;
+export type OrderRow = Prisma.OrderGetPayload<{ select: typeof ORDER_FIELDS }>;
+export type ItemRow = Prisma.OrderItemGetPayload<{ select: typeof ITEM_FIELDS }>;
 /** `orders.total` is numeric(12,2): at most 10 digits before the point. */
 const MAX_TOTAL = parseDecimal('9999999999.99');
 
@@ -316,7 +316,7 @@ export class OrdersService {
   }
 }
 
-function toOrderDto(order: OrderRow, items: ItemRow[]): OrderDto {
+export function toOrderDto(order: OrderRow, items: ItemRow[]): OrderDto {
   return {
     id: order.id,
     branchId: order.branchId,
