@@ -1,7 +1,7 @@
 name: Deploy staging
 
 # B1201 (ADR 0028): a merge to main reaches the Vercel project tablz-api-staging with no manual step,
-# but only after CI has passed for that exact commit. B1202 adds `migrate deploy` before the build.
+# but only after CI has passed for that exact commit, and after its migrations ran (B1202, ADR 0029).
 on:
   workflow_run:
     workflows: [CI]
@@ -33,9 +33,12 @@ jobs:
     steps:
       - name: Skip until the project is configured, or if a newer commit is on main
         id: ready
+        env:
+          # Only to check that it exists; the database step below is the one step that uses it.
+          DIRECT_URL: ${{ secrets.STAGING_DIRECT_URL }}
         run: |
-          if [ -z "$VERCEL_TOKEN" ] || [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ] || [ -z "$API_URL" ]; then
-            echo "::notice::The staging Vercel secrets or STAGING_API_URL are not set yet: nothing deployed (see backend/docs/adr/0028-vercel-deployment.md)."
+          if [ -z "$VERCEL_TOKEN" ] || [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ] || [ -z "$API_URL" ] || [ -z "$DIRECT_URL" ]; then
+            echo "::notice::The staging Vercel secrets, STAGING_DIRECT_URL or STAGING_API_URL are not set yet: nothing deployed (see backend/docs/adr/0028-vercel-deployment.md and 0029)."
             echo "ready=false" >> "$GITHUB_OUTPUT"
           elif [ "$(gh api "repos/${REPO}/commits/main" --jq .sha)" != "$COMMIT" ]; then
             # CI runs can finish out of order: never deploy an older commit over a newer one.
@@ -56,6 +59,19 @@ jobs:
         if: steps.ready.outputs.ready == 'true'
         with:
           node-version-file: .nvmrc
+
+      - name: Migrate and mark the staging database
+        if: steps.ready.outputs.ready == 'true'
+        # B1202 (ADR 0029): refuses a database marked for another environment, runs
+        # `prisma migrate deploy`, then marks a fresh database. Any failure stops the job here:
+        # nothing is built or deployed, and the previous version keeps running.
+        working-directory: backend
+        env:
+          APP_ENV: staging
+          DIRECT_URL: ${{ secrets.STAGING_DIRECT_URL }}
+        run: |
+          npm ci
+          npm run db:deploy
 
       - name: Build this commit with Vercel
         if: steps.ready.outputs.ready == 'true'

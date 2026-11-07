@@ -1,8 +1,8 @@
 name: Deploy production
 
 # B1201 (ADR 0028): production (Vercel project tablz-api-production) changes only through this
-# manual workflow. It deploys one commit on main whose CI passed, after a typed confirmation.
-# B1202 adds `migrate deploy` before the build.
+# manual workflow. It deploys one commit on main whose CI passed, after a typed confirmation, and
+# runs that commit's migrations first (B1202, ADR 0029).
 on:
   workflow_dispatch:
     inputs:
@@ -46,10 +46,13 @@ jobs:
             exit 1
           fi
 
-      - name: Require the Vercel project settings
+      - name: Require the deploy settings
+        env:
+          # Only to check that it exists; the database step below is the one step that uses it.
+          DIRECT_URL: ${{ secrets.PROD_DIRECT_URL }}
         run: |
-          if [ -z "$VERCEL_TOKEN" ] || [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ] || [ -z "$API_URL" ]; then
-            echo "::error::The production Vercel secrets or PRODUCTION_API_URL are not set (see backend/docs/adr/0028-vercel-deployment.md)."
+          if [ -z "$VERCEL_TOKEN" ] || [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ] || [ -z "$API_URL" ] || [ -z "$DIRECT_URL" ]; then
+            echo "::error::The production Vercel secrets, PROD_DIRECT_URL or PRODUCTION_API_URL are not set (see backend/docs/adr/0028-vercel-deployment.md and 0029)."
             exit 1
           fi
 
@@ -91,6 +94,18 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
+
+      - name: Migrate and mark the production database
+        # B1202 (ADR 0029): refuses a database marked for another environment, runs
+        # `prisma migrate deploy`, then marks a fresh database. Any failure stops the job here:
+        # nothing is built or deployed, and the previous version keeps running.
+        working-directory: backend
+        env:
+          APP_ENV: production
+          DIRECT_URL: ${{ secrets.PROD_DIRECT_URL }}
+        run: |
+          npm ci
+          npm run db:deploy
 
       - name: Build this commit with Vercel
         # From the repo root: the Vercel project's Root Directory setting is `backend`.

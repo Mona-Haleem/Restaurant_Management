@@ -1,0 +1,86 @@
+name: Resolve failed migration
+
+# B1202 (ADR 0029): after a migration fails, `prisma migrate deploy` refuses every later deploy of
+# that database until the failed migration is resolved. Migrations never run from a laptop
+# (CLAUDE.md rule 6), so this manual workflow does it from CI, for one environment at a time.
+#   rolled-back: the failed migration's changes were undone (or never applied); deploy retries it.
+#   applied:     its changes were completed by hand; Prisma records it as done.
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Database to resolve
+        required: true
+        type: choice
+        options: [staging, production]
+      migration:
+        description: Failed migration folder name, e.g. 20261201120000_add_order_note
+        required: true
+        type: string
+      resolution:
+        description: How it was resolved
+        required: true
+        type: choice
+        options: [rolled-back, applied]
+      confirm:
+        description: Type "resolve <environment>", e.g. "resolve staging"
+        required: true
+        type: string
+
+concurrency:
+  # The deploy workflows' groups: never resolve while that database is being deployed.
+  group: deploy-${{ inputs.environment }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: ${{ inputs.environment }}
+    env:
+      # Inputs go through env, never into the script text.
+      ENVIRONMENT: ${{ inputs.environment }}
+      MIGRATION: ${{ inputs.migration }}
+      RESOLUTION: ${{ inputs.resolution }}
+      CONFIRM: ${{ inputs.confirm }}
+    steps:
+      - name: Require the typed confirmation and a migration name
+        run: |
+          if [ "$CONFIRM" != "resolve ${ENVIRONMENT}" ]; then
+            echo "::error::Confirmation must be exactly: resolve ${ENVIRONMENT}"
+            exit 1
+          fi
+          if ! [[ "$MIGRATION" =~ ^[0-9]{14}_[a-z0-9_]+$ ]]; then
+            echo "::error::The migration must be a folder name like 20261201120000_add_order_note."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Resolve it
+        working-directory: backend
+        env:
+          APP_ENV: ${{ inputs.environment }}
+          # Each environment holds only its own secret, so the other one is always empty here.
+          DIRECT_URL: ${{ inputs.environment == 'production' && secrets.PROD_DIRECT_URL || inputs.environment == 'staging' && secrets.STAGING_DIRECT_URL || '' }}
+        run: |
+          if [ -z "$DIRECT_URL" ]; then
+            echo "::error::The ${ENVIRONMENT} environment has no database secret (STAGING_DIRECT_URL / PROD_DIRECT_URL)."
+            exit 1
+          fi
+          if [ ! -d "prisma/migrations/${MIGRATION}" ]; then
+            echo "::error::There is no migration ${MIGRATION} on main."
+            exit 1
+          fi
+          npm ci
+          npx prisma migrate resolve --"${RESOLUTION}" "${MIGRATION}"
+          npx prisma migrate status || true

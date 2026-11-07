@@ -23,6 +23,8 @@ const config: Config = {
     '!openapi/generate.ts',
     // Need a real database: covered by test/seed.e2e-spec.ts instead.
     '!prisma/seed/run-seed.ts',
+    // CLI glue around the pure deployDatabase (database-deploy.spec.ts); runs only in CI deploys.
+    '!deploy/run-db-deploy.ts',
     '!prisma/seed/write-seed.ts',
   ],
   coverageDirectory: '../coverage',

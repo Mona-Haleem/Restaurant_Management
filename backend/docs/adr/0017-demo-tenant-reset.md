@@ -2,7 +2,7 @@
 
 - **Status:** accepted
 - **Date:** 2026-11-06
-- **Answers:** ADR 0016 open point ("B503 decides how the scheduled reseed restores the demo tenant") · **Tickets:** B503, B1202
+- **Answers:** ADR 0016 open point ("B503 decides how the scheduled reseed restores the demo tenant") · **Tickets:** B503, B1205 (was B1202, see ADR 0029)
 
 ## Context
 
@@ -24,7 +24,7 @@ Option 2. A dedicated **demo reset** step deletes all rows that belong to the te
 
 ## Consequences
 
-- **B1202** builds the reset command (with tests that another tenant's rows survive) and the scheduled staging workflow (🤝: needs staging secrets). B503 ships no reset code.
+- **B1205** (split from B1202 by [ADR 0029](0029-migration-workflows.md)) builds the reset command (with tests that another tenant's rows survive) and the scheduled staging workflow (🤝: needs staging secrets). B503 ships no reset code.
 - Seeded tracking tokens stay valid after a reset, because the seed is deterministic (ADR 0016).
 - Visitors may see their changes vanish at the scheduled time; the demo banner should say so (frontend).
 - When JWT ships and real tenants exist, revisit: the reset stays limited to `is_demo` tenants.

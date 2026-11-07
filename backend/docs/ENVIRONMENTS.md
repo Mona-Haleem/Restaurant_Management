@@ -64,7 +64,7 @@ Then `npm run db:up` again. The `-v` deletes the volume, so the init script crea
 | --- | --- | --- | --- | --- |
 | `APP_ENV` | `.env.example` (`local`) | CI job env (`test`) | Vercel project env | Vercel project env |
 | `DATABASE_URL` (app, transaction pooler :6543) | `.env.example`, throwaway | CI job env, throwaway | Vercel project env (Production) + password manager | Vercel project env (Production) + password manager |
-| `DIRECT_URL` (migrations, session pooler :5432) | `.env.example` | CI job env | GitHub secret `STAGING_DIRECT_URL` + password manager | GitHub secret `PROD_DIRECT_URL` + password manager |
+| `DIRECT_URL` (migrations, session pooler :5432) | `.env.example` | CI job env | GitHub environment `staging` secret `STAGING_DIRECT_URL` + password manager (CI migrations only, never in Vercel) | GitHub environment `production` secret `PROD_DIRECT_URL` + password manager |
 | `CORS_ORIGINS` (not secret) | default `http://localhost:4200` | default | Vercel env: staging frontend + Vercel preview pattern | Vercel env: production frontend only |
 | `LOG_LEVEL` (not secret) | default `debug` | default `silent` | default `info` | default `info` |
 | `RATE_LIMIT_MAX`, `RATE_LIMIT_WINDOW_SECONDS` (not secret) | default 120 per 60 s | default | default, or Vercel env | default, or Vercel env |
@@ -85,7 +85,7 @@ Rules:
 
 - **Postgres major version:** the compose file and the CI service container use `postgres:17` to match Supabase. If the dashboard shows a different major version, change both to match.
 - **IPv4:** GitHub's runners are IPv4-only. On the free plan the direct host `db.<ref>.supabase.co` is IPv6-only, so CI must use the **session pooler** string for `DIRECT_URL`. The app uses the **transaction pooler** (`:6543`).
-- **Marker row:** a new staging or production database has no `app_environment` row and the API refuses to boot until CI inserts it (B1202). See ADR 0011.
+- **Marker row:** a new staging or production database has no `app_environment` row and the API refuses to boot until CI inserts it: `npm run db:deploy` in the deploy workflows (B1202, [ADR 0029](adr/0029-migration-workflows.md)). A failed migration blocks later deploys until the "Resolve failed migration" workflow is run. See ADR 0011.
 
 Status of the Supabase setup (B201 manual steps, done 2026-11-06):
 
