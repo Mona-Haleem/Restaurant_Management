@@ -4,9 +4,11 @@ import {
   ArrayMaxSize,
   ArrayMinSize,
   IsArray,
+  IsIn,
   IsInt,
   IsString,
   IsUUID,
+  Matches,
   Max,
   MaxLength,
   Min,
@@ -162,4 +164,121 @@ export class PlacedOrderDto extends OrderDto {
       'never stored in plain form; keep it. null for staff orders.',
   })
   trackingToken!: string | null;
+}
+
+// ── Queries (B802) ───────────────────────────────────────────────────────────────────────
+const SCOPES = ['active', 'all'] as const;
+const HISTORY_ACTIONS = ['PLACED', 'ADVANCED', 'CANCELED'] as const;
+
+export class ListOrdersQueryDto {
+  @ApiPropertyOptional({
+    enum: SCOPES,
+    default: 'active',
+    description:
+      '`active` (default): not cancelled and not yet in the last stage, oldest first: the ' +
+      'board. `all`: every order including finished and cancelled ones, newest first, at most 200.',
+  })
+  @IsOptionalNotNull()
+  @IsIn(SCOPES)
+  scope?: (typeof SCOPES)[number];
+
+  @ApiPropertyOptional({
+    example: 'pending',
+    description: `Only this stage. ${STAGE_KEY_DESCRIPTION}`,
+  })
+  @IsOptionalNotNull()
+  @IsString()
+  @Matches(/^[a-z][a-z0-9-]{0,63}$/)
+  stageKey?: string;
+
+  @ApiPropertyOptional({
+    format: 'uuid',
+    description: 'ADMIN only: one branch. WORKER and MANAGER always see their own branch.',
+  })
+  @IsOptionalNotNull()
+  @IsUUID()
+  branchId?: string;
+}
+
+export class OrderHistoryDto {
+  @ApiProperty({ enum: HISTORY_ACTIONS })
+  action!: (typeof HISTORY_ACTIONS)[number];
+
+  @ApiProperty({ type: String, nullable: true, description: 'null on PLACED.' })
+  fromStageKey!: string | null;
+
+  @ApiProperty({ type: String, nullable: true, description: 'null on CANCELED.' })
+  toStageKey!: string | null;
+
+  @ApiProperty({ type: String, format: 'uuid', nullable: true, description: 'null for a guest.' })
+  actorId!: string | null;
+
+  @ApiProperty({ type: String, format: 'date-time' })
+  at!: string;
+}
+
+export class OrderDetailDto extends OrderDto {
+  @ApiProperty({ type: [OrderHistoryDto], description: 'Every transition, oldest first.' })
+  history!: OrderHistoryDto[];
+}
+
+export class TrackedItemDto {
+  @ApiProperty()
+  name!: string;
+
+  @ApiProperty({ example: 2 })
+  quantity!: number;
+
+  @ApiProperty({ type: String, pattern: MONEY.pattern, example: '185.00' })
+  unitPrice!: string;
+
+  @ApiProperty({ type: String, pattern: MONEY.pattern, example: '370.00' })
+  lineTotal!: string;
+}
+
+export class TrackedStageDto {
+  @ApiProperty({ example: 'pending' })
+  key!: string;
+
+  @ApiProperty({ example: 'Pending' })
+  label!: string;
+
+  @ApiProperty({ example: 1 })
+  position!: number;
+
+  @ApiProperty({ description: 'While the order is here, the guest may cancel it.' })
+  cancellable!: boolean;
+}
+
+/** What a guest sees of their own order: no internal ids, placer or history (ADR 0024). */
+export class TrackedOrderDto {
+  @ApiProperty({ example: 'pending', description: STAGE_KEY_DESCRIPTION })
+  stageKey!: string;
+
+  @ApiProperty({ example: 'pending', description: '`cancelled` when cancelled, else `stageKey`.' })
+  status!: string;
+
+  @ApiProperty({ type: String, format: 'date-time', nullable: true })
+  canceledAt!: string | null;
+
+  @ApiProperty({ type: String, pattern: MONEY.pattern, example: '370.00' })
+  total!: string;
+
+  @ApiProperty({ type: String, nullable: true })
+  note!: string | null;
+
+  @ApiProperty({ type: [TrackedItemDto] })
+  items!: TrackedItemDto[];
+
+  @ApiProperty({
+    type: [TrackedStageDto],
+    description: "The restaurant's stages, by position, for the stepper.",
+  })
+  stages!: TrackedStageDto[];
+
+  @ApiProperty({ type: String, format: 'date-time' })
+  createdAt!: string;
+
+  @ApiProperty({ type: String, format: 'date-time' })
+  updatedAt!: string;
 }

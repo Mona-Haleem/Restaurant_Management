@@ -35,7 +35,7 @@ The PRD's §10 line "real backend (Express, Mongo, Mongoose)" is superseded by t
 | `health` | `/health`, `/health/db` | B503 | prisma |
 | `catalog` | categories, menu items, menu-item ingredients, customer menu ([ADR 0019](adr/0019-catalog-rules.md)) | B601 | context |
 | `inventory` | inventory items, components, **ledger service** (only writer of `current_stock`, [ADR 0020](adr/0020-ledger-service-contract.md)), stock queries, restock, menu availability ([ADR 0021](adr/0021-stock-view-and-restock.md)) | B701, B702 | context |
-| `orders` | workflow stages, order lifecycle, stage history ([ADR 0022](adr/0022-order-lifecycle.md)), board/tracking queries | B801, B802 | catalog, inventory |
+| `orders` | workflow stages, order lifecycle, stage history ([ADR 0022](adr/0022-order-lifecycle.md)), board/tracking queries with ETag polling ([ADR 0024](adr/0024-order-polling-and-board.md)) | B801, B802 | catalog, inventory |
 | `waste` | waste entries (via the ledger service) | B901 | inventory |
 | `reconciliation` | reconciliation entries, ADJUSTMENT rows, snapshots | B902 | inventory |
 | `staff` | users, roles, activation, argon2 password hashes ([ADR 0023](adr/0023-staff-management-rules.md)) | B1001 | context |
@@ -113,7 +113,7 @@ The table list is in ROADMAP §4. Cross-cutting rules:
 - Advance = move to the next stage by position. Reaching a stage flagged `deducts_inventory` calls the ledger service in the same transaction.
 - Cancel = allowed only while the current stage is `cancellable`; sets `canceled_at`; no inventory change.
 - Every transition writes `order_stage_history`.
-- Board/tracking polling uses `updatedSince` or ETag so an unchanged poll is cheap (B802).
+- Board/tracking polling uses an ETag: an unchanged poll with `If-None-Match` gets 304 without loading any order (B802, [ADR 0024](adr/0024-order-polling-and-board.md)). The board lists active orders (not cancelled, not in the last stage by position) by default.
 
 ---
 

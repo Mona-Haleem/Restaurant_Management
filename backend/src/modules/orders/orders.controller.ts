@@ -1,4 +1,15 @@
-import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Headers,
+  HttpCode,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Query,
+  Res,
+} from '@nestjs/common';
 import {
   ApiCreatedResponse,
   ApiOkResponse,
@@ -7,8 +18,18 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { AllowGuest, Roles, TenantRoute } from '../../context/access.decorators';
-import { OrderDto, PlaceOrderDto, PlacedOrderDto, WorkflowDto } from './dto/order.dto';
+import {
+  ListOrdersQueryDto,
+  OrderDetailDto,
+  OrderDto,
+  PlaceOrderDto,
+  PlacedOrderDto,
+  TrackedOrderDto,
+  WorkflowDto,
+} from './dto/order.dto';
+import { OrderQueriesService } from './order-queries.service';
 import { OrdersService } from './orders.service';
+import { Polling, reply, type PollResponse } from './poll-reply';
 import { TRACKING_TOKEN_PATTERN, TrackingTokenPipe } from './tracking-token';
 
 /** The tenant's order workflow (ADR 0014). Guests read it for the tracking stepper. */
@@ -35,7 +56,45 @@ export class WorkflowController {
 @TenantRoute()
 @Controller(':tenantSlug/orders')
 export class OrdersController {
-  constructor(private readonly orders: OrdersService) {}
+  constructor(
+    private readonly orders: OrdersService,
+    private readonly queries: OrderQueriesService,
+  ) {}
+
+  @Get()
+  @Roles('WORKER', 'MANAGER')
+  @Polling()
+  @ApiOperation({
+    summary: 'Orders for the board',
+    description:
+      'Default `scope=active`: not cancelled and not yet in the last stage, oldest first. ' +
+      'WORKER and MANAGER see their own branch (403 BRANCH_FORBIDDEN for another `branchId`); ' +
+      'ADMIN sees every branch or one. Poll with If-None-Match: unchanged → 304.',
+  })
+  @ApiOkResponse({ type: [OrderDto] })
+  async listOrders(
+    @Query() query: ListOrdersQueryDto,
+    @Headers('if-none-match') ifNoneMatch: string | undefined,
+    @Res({ passthrough: true }) res: PollResponse,
+  ): Promise<OrderDto[] | undefined> {
+    return reply(res, await this.queries.listOrders(query, ifNoneMatch));
+  }
+
+  @Get(':id')
+  @Roles('WORKER', 'MANAGER')
+  @Polling()
+  @ApiOperation({
+    summary: 'One order with its items and stage history',
+    description: 'Other branches are 404 for WORKER and MANAGER. Unchanged → 304.',
+  })
+  @ApiOkResponse({ type: OrderDetailDto })
+  async getOrder(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Headers('if-none-match') ifNoneMatch: string | undefined,
+    @Res({ passthrough: true }) res: PollResponse,
+  ): Promise<OrderDetailDto | undefined> {
+    return reply(res, await this.queries.getOrder(id, ifNoneMatch));
+  }
 
   @Post()
   @AllowGuest()
@@ -85,7 +144,33 @@ export class OrdersController {
 @TenantRoute()
 @Controller(':tenantSlug/track')
 export class TrackingController {
-  constructor(private readonly orders: OrdersService) {}
+  constructor(
+    private readonly orders: OrdersService,
+    private readonly queries: OrderQueriesService,
+  ) {}
+
+  @Get(':token')
+  @AllowGuest()
+  @Polling()
+  @ApiParam({
+    name: 'token',
+    schema: { type: 'string', pattern: TRACKING_TOKEN_PATTERN.source },
+    description: 'The `trackingToken` returned when placing the order.',
+  })
+  @ApiOperation({
+    summary: 'Track my order (guest)',
+    description:
+      'Status, items and the workflow stages for the stepper; no internal ids. An unknown or ' +
+      'malformed token is 404 ORDER_NOT_FOUND. Poll with If-None-Match: unchanged → 304.',
+  })
+  @ApiOkResponse({ type: TrackedOrderDto })
+  async getTrackedOrder(
+    @Param('token', TrackingTokenPipe) token: string,
+    @Headers('if-none-match') ifNoneMatch: string | undefined,
+    @Res({ passthrough: true }) res: PollResponse,
+  ): Promise<TrackedOrderDto | undefined> {
+    return reply(res, await this.queries.getTrackedOrder(token, ifNoneMatch));
+  }
 
   @Post(':token/cancel')
   @HttpCode(200)
